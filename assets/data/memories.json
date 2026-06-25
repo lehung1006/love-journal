@@ -1,0 +1,171 @@
+[
+  {
+    "id": "mem_anniversary_walk",
+    "title": "Một chiều mình đi thật chậm",
+    "date": "2024-08-12",
+    "category": "trip",
+    "phase": "year_2",
+    "locationName": "Đà Lạt",
+    "latitude": 11.9404,
+    "longitude": 108.4583,
+    "placeId": "place_dalat",
+    "media": [
+      {
+        "id": "media_walk_cover",
+        "type": "image",
+        "uri": "assets/images/anniversary-hero.png",
+        "width": 864,
+        "height": 1536,
+        "alt": "Hai người nắm tay đi dưới ánh đèn chiều mưa."
+      }
+    ],
+    "coverMediaId": "media_walk_cover",
+    "story": "Hôm đó trời lạnh vừa đủ. Anh nhớ cách em cười khi mình lạc đường, rồi cả hai vẫn quyết định đi tiếp vì con dốc đó quá đẹp. Không có kế hoạch nào lớn lao, chỉ có một buổi chiều dài hơn thường lệ và cảm giác mọi thứ đang ở đúng chỗ.",
+    "favoriteMoment": "Điều anh nhớ nhất là cảm giác được đi cạnh em mà không cần vội.",
+    "messageForHer": "Cảm ơn em vì đã làm những đoạn đường bình thường trở thành một nơi để nhớ.",
+    "voiceNoteUrl": "assets/audio/anniversary-note.m4a",
+    "isFeatured": true,
+    "createdAt": "2024-08-12T20:30:00.000Z",
+    "updatedAt": "2024-08-12T20:30:00.000Z"
+  },
+  {
+    "id": "mem_first_coffee",
+    "title": "Ly cà phê đầu tiên của tụi mình",
+    "date": "2023-06-24",
+    "category": "milestone",
+    "phase": "year_1",
+    "locationName": "Sài Gòn",
+    "latitude": 10.7769,
+    "longitude": 106.7009,
+    "placeId": "place_saigon",
+    "media": [
+      {
+        "id": "media_coffee_cover",
+        "type": "image",
+        "uri": "assets/images/anniversary-hero.png",
+        "width": 864,
+        "height": 1536,
+        "alt": "Ánh đèn ấm của một quán nhỏ."
+      }
+    ],
+    "coverMediaId": "media_coffee_cover",
+    "story": "Mình ngồi rất lâu chỉ để nói những chuyện bé xíu. Anh vẫn nhớ lúc em nghiêng đầu nghe anh kể một câu chuyện không đầu không cuối, rồi cười như thể nó đáng nghe lắm.",
+    "favoriteMoment": "Từ một buổi cà phê, anh bắt đầu muốn có thêm thật nhiều ngày bình thường với em.",
+    "messageForHer": "Nếu được quay lại, anh vẫn sẽ chọn chiếc bàn đó, buổi tối đó, và em.",
+    "isFeatured": false,
+    "createdAt": "2023-06-24T14:00:00.000Z",
+    "updatedAt": "2023-06-24T14:00:00.000Z"
+  },
+  {
+    "id": "mem_birthday_cake",
+    "title": "Chiếc bánh sinh nhật hơi nghiêng",
+    "date": "2023-12-12",
+    "category": "birthday",
+    "phase": "year_1",
+    "locationName": "Sài Gòn",
+    "latitude": 10.7769,
+    "longitude": 106.7009,
+    "placeId": "place_saigon",
+    "media": [
+      {
+        "id": "media_birthday_cover",
+        "type": "image",
+        "uri": "assets/images/anniversary-hero.png",
+        "width": 864,
+        "height": 1536,
+        "alt": "Một buổi tối sinh nhật ấm."
+      }
+    ],
+    "coverMediaId": "media_birthday_cover",
+    "story": "Anh đã cố giấu chiếc bánh thật kỹ, nhưng nến thì cháy nhanh hơn dự tính và kem thì hơi chảy. Em vẫn nói đó là chiếc bánh đáng yêu nhất, và anh tin em một nửa, thương em gấp đôi.",
+    "favoriteMoment": "Em ước một điều rất nhỏ, nhưng mắt em sáng như vừa giữ cả một bầu trời.",
+    "messageForHer": "Sinh nhật nào của em, anh cũng muốn có mặt để vụng về một chút.",
+    "isFeatured": false,
+    "createdAt": "2023-12-12T13:30:00.000Z",
+    "updatedAt": "2023-12-12T13:30:00.000Z"
+  },
+  {
+    "id": "mem_rainy_movie",
+    "title": "Tối mưa và một bộ phim cũ",
+    "date": "2025-03-09",
+    "category": "daily",
+    "phase": "year_2",
+    "locationName": "Nhà",
+    "latitude": 10.7626,
+    "longitude": 106.6602,
+    "placeId": "place_home",
+    "media": [
+      {
+        "id": "media_movie_cover",
+        "type": "image",
+        "uri": "assets/images/anniversary-hero.png",
+        "width": 864,
+        "height": 1536,
+        "alt": "Một tối mưa yên."
+      }
+    ],
+    "coverMediaId": "media_movie_cover",
+    "story": "Có những ngày mình chẳng đi đâu xa, chỉ tắt bớt đèn, mở một bộ phim cũ và để tiếng mưa làm nền. Anh thích những tối như vậy vì chẳng cần chứng minh điều gì, chỉ cần ở cạnh nhau.",
+    "favoriteMoment": "Em ngủ quên trước đoạn kết, còn anh thì nhớ mãi cách tay em vẫn nắm tay anh.",
+    "messageForHer": "Những ngày yên cũng là một kiểu kỷ niệm rất lớn.",
+    "isFeatured": false,
+    "createdAt": "2025-03-09T15:10:00.000Z",
+    "updatedAt": "2025-03-09T15:10:00.000Z"
+  },
+  {
+    "id": "mem_sea_morning",
+    "title": "Buổi sáng nghe biển thở",
+    "date": "2025-09-02",
+    "category": "trip",
+    "phase": "year_3",
+    "locationName": "Đà Nẵng",
+    "latitude": 16.0544,
+    "longitude": 108.2022,
+    "placeId": "place_danang",
+    "media": [
+      {
+        "id": "media_sea_cover",
+        "type": "image",
+        "uri": "assets/images/anniversary-hero.png",
+        "width": 864,
+        "height": 1536,
+        "alt": "Một chuyến đi biển."
+      }
+    ],
+    "coverMediaId": "media_sea_cover",
+    "story": "Mình dậy sớm hơn mọi ngày, đi bộ ra biển khi trời còn mềm. Không ai nói quá nhiều. Sóng cứ vào bờ, còn anh cứ nghĩ: nếu có một nơi để bắt đầu lại mỗi ngày, chắc là cạnh em.",
+    "favoriteMoment": "Em nhặt một chiếc vỏ sò rất nhỏ và bảo sẽ giữ nó như một bằng chứng của bình yên.",
+    "messageForHer": "Anh muốn cùng em có thêm nhiều buổi sáng không cần vội.",
+    "isFeatured": false,
+    "createdAt": "2025-09-02T01:20:00.000Z",
+    "updatedAt": "2025-09-02T01:20:00.000Z"
+  },
+  {
+    "id": "mem_three_years",
+    "title": "Ngày mình tròn ba năm",
+    "date": "2026-06-23",
+    "category": "anniversary",
+    "phase": "year_3",
+    "locationName": "Nơi mình đang ở",
+    "latitude": 10.7769,
+    "longitude": 106.7009,
+    "placeId": "place_saigon",
+    "media": [
+      {
+        "id": "media_three_years_cover",
+        "type": "image",
+        "uri": "assets/images/anniversary-hero.png",
+        "width": 864,
+        "height": 1536,
+        "alt": "Hai người đi tiếp cùng nhau."
+      }
+    ],
+    "coverMediaId": "media_three_years_cover",
+    "story": "Ba năm không làm tình yêu trở nên ít lạ lùng hơn. Nó chỉ khiến anh hiểu rõ hơn rằng mình đã chọn nhau qua rất nhiều ngày khác nhau: ngày vui, ngày mệt, ngày xa, ngày gần. Và anh vẫn muốn chọn em thêm nhiều lần nữa.",
+    "favoriteMoment": "Khoảnh khắc anh nhận ra mình không chỉ nhớ những dịp lớn, mà còn nhớ cả cách em gọi tên anh trong những ngày rất nhỏ.",
+    "messageForHer": "Cùng anh viết tiếp nhé?",
+    "isFeatured": true,
+    "createdAt": "2026-06-23T02:00:00.000Z",
+    "updatedAt": "2026-06-23T02:00:00.000Z"
+  }
+]

@@ -1,0 +1,2034 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mình & Em · Figma Handoff Board</title>
+  <style>
+    :root {
+      --paper: #fff8f2;
+      --paper-muted: #f4ebe4;
+      --surface: #ffffff;
+      --surface-warm: #fff4ee;
+      --ink: #20191d;
+      --ink-soft: #3a3036;
+      --muted: #75686f;
+      --muted-light: #9b8d93;
+      --line: #e7d9cf;
+      --rose: #bf5363;
+      --rose-dark: #923b4a;
+      --wine: #5f2634;
+      --teal: #3f7b84;
+      --moss: #687f6f;
+      --amber: #c5964f;
+      --lavender: #87779d;
+      --night: #19151d;
+      --success: #5e8c73;
+      --danger: #b84a52;
+      --frame-w: 393px;
+      --frame-h: 852px;
+      --safe-top: 59px;
+      --safe-bottom: 34px;
+      --radius-card: 8px;
+      --shadow-card: 0 12px 28px rgba(56, 34, 42, .08);
+      --shadow-floating: 0 18px 48px rgba(35, 24, 31, .18);
+      --shadow-hero: 0 26px 72px rgba(35, 24, 31, .22);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    * {
+      box-sizing: border-box;
+      letter-spacing: 0;
+    }
+
+    body {
+      margin: 0;
+      min-width: 1180px;
+      background:
+        linear-gradient(180deg, #fff8f2 0%, #f6ede6 46%, #fffaf5 100%);
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .board {
+      width: 1760px;
+      max-width: calc(100% - 48px);
+      margin: 0 auto;
+      padding: 48px 0 96px;
+    }
+
+    .cover {
+      position: relative;
+      min-height: 520px;
+      overflow: hidden;
+      border: 1px solid rgba(231, 217, 207, .9);
+      border-radius: 8px;
+      color: #fff;
+      background:
+        linear-gradient(90deg, rgba(25, 21, 29, .90) 0%, rgba(25, 21, 29, .62) 44%, rgba(25, 21, 29, .16) 100%),
+        linear-gradient(180deg, rgba(25, 21, 29, .10) 0%, rgba(25, 21, 29, .82) 100%),
+        url("assets/anniversary-hero.png") center / cover no-repeat;
+      box-shadow: var(--shadow-hero);
+      padding: 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .cover-mark {
+      position: absolute;
+      left: 52px;
+      top: 42px;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 12px;
+      align-items: center;
+      color: rgba(255,255,255,.78);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .logo-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.34);
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.10);
+      backdrop-filter: blur(12px);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 560;
+    }
+
+    h1 {
+      max-width: 900px;
+      font-size: 104px;
+      line-height: 90px;
+    }
+
+    .cover p {
+      max-width: 730px;
+      margin: 24px 0 0;
+      color: rgba(255,255,255,.80);
+      font-size: 21px;
+      line-height: 32px;
+    }
+
+    .cover-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .meta-pill {
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.84);
+      padding: 9px 13px;
+      font-size: 13px;
+      font-weight: 760;
+      backdrop-filter: blur(14px);
+    }
+
+    .section {
+      margin-top: 72px;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 560px 1fr;
+      gap: 56px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      color: var(--rose-dark);
+      font-size: 12px;
+      line-height: 16px;
+      text-transform: uppercase;
+      font-weight: 850;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      font-size: 56px;
+      line-height: 54px;
+      color: var(--ink);
+    }
+
+    .section-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 26px;
+      max-width: 760px;
+    }
+
+    .decision-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.74);
+      box-shadow: var(--shadow-card);
+    }
+
+    .decision {
+      min-height: 220px;
+      padding: 24px;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .decision:last-child {
+      border-right: 0;
+    }
+
+    .decision b {
+      color: var(--rose-dark);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .decision h3 {
+      font-size: 29px;
+      line-height: 30px;
+      margin-bottom: 10px;
+    }
+
+    .decision p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .frame-grid {
+      display: grid;
+      grid-template-columns: repeat(3, var(--frame-w));
+      gap: 44px 36px;
+      align-items: start;
+    }
+
+    .frame-wrap {
+      position: relative;
+    }
+
+    .frame-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: var(--ink);
+    }
+
+    .frame-label strong {
+      display: block;
+      font-size: 16px;
+      line-height: 21px;
+    }
+
+    .frame-label span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .frame {
+      position: relative;
+      width: var(--frame-w);
+      height: var(--frame-h);
+      overflow: hidden;
+      border: 1px solid #dac9bf;
+      border-radius: 30px;
+      background: var(--paper);
+      box-shadow: 0 18px 48px rgba(35, 24, 31, .16);
+    }
+
+    .frame.show-redline::before {
+      content: "";
+      position: absolute;
+      z-index: 20;
+      left: 20px;
+      right: 20px;
+      top: var(--safe-top);
+      bottom: var(--safe-bottom);
+      border-left: 1px dashed rgba(191,83,99,.58);
+      border-right: 1px dashed rgba(191,83,99,.58);
+      pointer-events: none;
+    }
+
+    .frame.show-redline::after {
+      content: "";
+      position: absolute;
+      z-index: 20;
+      left: 0;
+      right: 0;
+      top: var(--safe-top);
+      height: 1px;
+      background: rgba(191,83,99,.46);
+      box-shadow: 0 calc(var(--frame-h) - var(--safe-top) - var(--safe-bottom)) 0 rgba(191,83,99,.46);
+      pointer-events: none;
+    }
+
+    .redline-tag {
+      position: absolute;
+      z-index: 24;
+      right: 12px;
+      top: 64px;
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: rgba(191,83,99,.94);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 850;
+    }
+
+    .app-content {
+      position: relative;
+      z-index: 2;
+      min-height: 100%;
+      padding: 16px 20px calc(34px + 82px);
+    }
+
+    .status-bar {
+      height: 43px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: rgba(32,25,29,.74);
+      font-size: 12px;
+      font-weight: 820;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .sig {
+      width: 18px;
+      height: 11px;
+      position: relative;
+    }
+
+    .sig i {
+      position: absolute;
+      bottom: 0;
+      width: 3px;
+      border-radius: 2px;
+      background: currentColor;
+    }
+
+    .sig i:nth-child(1) { left: 0; height: 4px; }
+    .sig i:nth-child(2) { left: 5px; height: 7px; }
+    .sig i:nth-child(3) { left: 10px; height: 10px; }
+
+    .battery {
+      width: 24px;
+      height: 11px;
+      border: 1.5px solid currentColor;
+      border-radius: 3px;
+      position: relative;
+    }
+
+    .battery::before {
+      content: "";
+      position: absolute;
+      right: -4px;
+      top: 3px;
+      width: 2px;
+      height: 4px;
+      border-radius: 0 2px 2px 0;
+      background: currentColor;
+    }
+
+    .battery::after {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      bottom: 2px;
+      width: 14px;
+      border-radius: 2px;
+      background: currentColor;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 4px 0 18px;
+    }
+
+    .micro {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .screen-title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 30px;
+      line-height: 32px;
+      color: var(--ink);
+    }
+
+    .screen-title.large {
+      font-size: 43px;
+      line-height: 43px;
+    }
+
+    .screen-title.medium {
+      font-size: 25px;
+      line-height: 28px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(191, 83, 99, .18);
+      background: rgba(255,255,255,.86);
+      display: grid;
+      place-items: center;
+      color: var(--rose);
+      box-shadow: 0 10px 24px rgba(58, 43, 49, .08);
+    }
+
+    .glyph {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .glyph.heart::before,
+    .glyph.heart::after {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 15px;
+      background: currentColor;
+      border-radius: 10px 10px 0 0;
+      transform: rotate(-45deg);
+      transform-origin: 0 100%;
+      left: 9px;
+      top: 2px;
+    }
+
+    .glyph.heart::after {
+      transform: rotate(45deg);
+      transform-origin: 100% 100%;
+      left: -1px;
+    }
+
+    .glyph.search {
+      width: 15px;
+      height: 15px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+    }
+
+    .glyph.search::after {
+      content: "";
+      position: absolute;
+      right: -6px;
+      bottom: -3px;
+      width: 8px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 999px;
+      transform: rotate(45deg);
+    }
+
+    .glyph.plus::before,
+    .glyph.plus::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 3px;
+      width: 2px;
+      height: 12px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    .glyph.plus::after {
+      transform: rotate(90deg);
+    }
+
+    .glyph.back::before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 3px;
+      width: 12px;
+      height: 12px;
+      border-left: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(45deg);
+    }
+
+    .glyph.mail {
+      width: 19px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-radius: 3px;
+    }
+
+    .glyph.mail::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: -4px;
+      width: 12px;
+      height: 12px;
+      border-left: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(-45deg);
+      background: transparent;
+    }
+
+    .glyph.pin {
+      width: 18px;
+      height: 18px;
+      border-radius: 50% 50% 50% 0;
+      background: currentColor;
+      transform: rotate(-45deg);
+    }
+
+    .glyph.pin::after {
+      content: "";
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .btn {
+      min-height: 52px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      font-size: 14px;
+      font-weight: 850;
+      cursor: default;
+    }
+
+    .btn.primary {
+      background: var(--rose);
+      color: #fff;
+      box-shadow: 0 16px 32px rgba(191, 83, 99, .25);
+    }
+
+    .btn.light {
+      background: #fff;
+      color: var(--rose-dark);
+      box-shadow: 0 18px 46px rgba(0,0,0,.24);
+    }
+
+    .btn.secondary {
+      min-height: 44px;
+      background: #fff;
+      color: var(--rose-dark);
+      border: 1px solid var(--line);
+    }
+
+    .tabbar {
+      position: absolute;
+      z-index: 18;
+      left: 16px;
+      right: 16px;
+      bottom: 12px;
+      height: 64px;
+      border: 1px solid rgba(231, 217, 207, .92);
+      border-radius: 999px;
+      background: rgba(255,255,255,.90);
+      backdrop-filter: blur(16px);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      align-items: center;
+      box-shadow: 0 16px 36px rgba(56, 34, 42, .15);
+    }
+
+    .tab {
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      color: var(--muted-light);
+      font-size: 10px;
+      line-height: 13px;
+      font-weight: 800;
+    }
+
+    .tab-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #e8dcd4;
+      position: relative;
+    }
+
+    .tab.active {
+      color: var(--rose-dark);
+    }
+
+    .tab.active .tab-dot {
+      background: var(--rose);
+      box-shadow: 0 6px 12px rgba(191, 83, 99, .25);
+    }
+
+    .opening-frame {
+      background:
+        linear-gradient(180deg, rgba(25,21,29,.02) 0%, rgba(25,21,29,.30) 46%, rgba(25,21,29,.88) 100%),
+        url("assets/anniversary-hero.png") center / cover no-repeat;
+      color: #fff;
+    }
+
+    .opening-frame .app-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding-bottom: 40px;
+    }
+
+    .opening-frame .status-bar {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      right: 20px;
+      color: rgba(255,255,255,.88);
+    }
+
+    .opening-kicker {
+      color: rgba(255,255,255,.80);
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 850;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .opening-frame .screen-title {
+      color: #fff;
+      font-size: 46px;
+      line-height: 45px;
+      text-shadow: 0 12px 34px rgba(0,0,0,.30);
+    }
+
+    .body-copy {
+      margin: 13px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 21px;
+    }
+
+    .opening-frame .body-copy {
+      color: rgba(255,255,255,.80);
+      max-width: 292px;
+      margin-bottom: 24px;
+    }
+
+    .hero-memory {
+      height: 252px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(25,21,29,.02) 0%, rgba(25,21,29,.68) 100%),
+        url("assets/anniversary-hero.png") center / cover no-repeat;
+      box-shadow: var(--shadow-hero);
+    }
+
+    .hero-memory.compact {
+      height: 196px;
+    }
+
+    .hero-memory-content {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      color: #fff;
+    }
+
+    .hero-memory-content b {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 560;
+      font-size: 31px;
+      line-height: 33px;
+      margin-bottom: 6px;
+    }
+
+    .hero-memory-content span {
+      color: rgba(255,255,255,.78);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .stat-card {
+      min-height: 94px;
+      padding: 13px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow-card);
+    }
+
+    .stat-card b {
+      display: block;
+      color: var(--rose-dark);
+      font-size: 30px;
+      line-height: 30px;
+      margin-bottom: 7px;
+    }
+
+    .memory-card {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 12px;
+      align-items: center;
+      min-height: 104px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow-card);
+    }
+
+    .memory-thumb {
+      position: relative;
+      height: 84px;
+      border-radius: 8px;
+      overflow: hidden;
+      background:
+        linear-gradient(140deg, rgba(191,83,99,.52), rgba(63,123,132,.42)),
+        url("assets/anniversary-hero.png") center / cover no-repeat;
+    }
+
+    .memory-card strong {
+      display: block;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 19px;
+      margin-bottom: 5px;
+    }
+
+    .memory-card p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .home-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .next-letter {
+      padding: 13px;
+      border-radius: 8px;
+      border: 1px solid rgba(191,83,99,.18);
+      background: var(--surface-warm);
+      display: grid;
+      grid-template-columns: 38px 1fr auto;
+      gap: 11px;
+      align-items: center;
+    }
+
+    .mini-envelope {
+      width: 38px;
+      height: 28px;
+      border: 2px solid var(--rose);
+      border-radius: 5px;
+      position: relative;
+    }
+
+    .mini-envelope::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: -7px;
+      width: 24px;
+      height: 24px;
+      border-left: 2px solid var(--rose);
+      border-bottom: 2px solid var(--rose);
+      transform: rotate(-45deg);
+      background: var(--surface-warm);
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .chip {
+      flex: 0 0 auto;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(191,83,99,.18);
+      background: rgba(255,255,255,.82);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 800;
+    }
+
+    .chip.active {
+      color: #fff;
+      background: var(--rose);
+      border-color: var(--rose);
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      gap: 12px;
+      padding-left: 18px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      border-radius: 99px;
+      background: linear-gradient(var(--rose), var(--teal), var(--amber));
+    }
+
+    .timeline-card {
+      position: relative;
+    }
+
+    .timeline-card::before {
+      content: "";
+      position: absolute;
+      left: -17px;
+      top: 28px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: var(--rose);
+      box-shadow: 0 0 0 2px rgba(191,83,99,.18);
+      z-index: 3;
+    }
+
+    .timeline-card:nth-child(2)::before { background: var(--teal); }
+    .timeline-card:nth-child(3)::before { background: var(--amber); }
+    .timeline-card:nth-child(4)::before { background: var(--moss); }
+
+    .year-label {
+      color: var(--teal);
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 850;
+      margin-bottom: 10px;
+    }
+
+    .detail-cover {
+      position: relative;
+      height: 324px;
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(25,21,29,.02) 0%, rgba(25,21,29,.22) 52%, rgba(25,21,29,.82) 100%),
+        url("assets/anniversary-hero.png") center / cover no-repeat;
+    }
+
+    .detail-cover .status-bar {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 16px;
+      color: rgba(255,255,255,.88);
+      z-index: 4;
+    }
+
+    .detail-actions {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 72px;
+      display: flex;
+      justify-content: space-between;
+      z-index: 5;
+    }
+
+    .detail-sheet {
+      position: relative;
+      z-index: 4;
+      margin: -42px 20px 0;
+      padding: 18px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.96);
+      box-shadow: var(--shadow-floating);
+    }
+
+    .detail-sheet h3 {
+      font-size: 29px;
+      line-height: 31px;
+      margin: 8px 0 10px;
+    }
+
+    .quote-block {
+      margin-top: 14px;
+      border-left: 3px solid var(--rose);
+      border-radius: 0 8px 8px 0;
+      background: #fff8f4;
+      color: var(--ink-soft);
+      padding: 12px 12px 12px 14px;
+      font-size: 13px;
+      line-height: 19px;
+    }
+
+    .voice-note {
+      display: grid;
+      grid-template-columns: 32px 1fr 38px;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      border-radius: 999px;
+      background: #f7eee8;
+      padding: 10px;
+    }
+
+    .play-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--night);
+      position: relative;
+    }
+
+    .play-btn::after {
+      content: "";
+      position: absolute;
+      left: 13px;
+      top: 10px;
+      border-left: 10px solid #fff;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+    }
+
+    .wave {
+      height: 24px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .wave i {
+      width: 3px;
+      border-radius: 999px;
+      background: var(--rose);
+      opacity: .72;
+    }
+
+    .wave i:nth-child(1) { height: 8px; }
+    .wave i:nth-child(2) { height: 16px; }
+    .wave i:nth-child(3) { height: 10px; }
+    .wave i:nth-child(4) { height: 21px; }
+    .wave i:nth-child(5) { height: 12px; }
+    .wave i:nth-child(6) { height: 18px; }
+    .wave i:nth-child(7) { height: 8px; }
+    .wave i:nth-child(8) { height: 14px; }
+    .wave i:nth-child(9) { height: 22px; }
+    .wave i:nth-child(10) { height: 10px; }
+    .wave i:nth-child(11) { height: 17px; }
+    .wave i:nth-child(12) { height: 9px; }
+
+    .gallery-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 14px 20px 0;
+    }
+
+    .gallery-strip .memory-thumb {
+      height: 70px;
+      border: 1px solid rgba(255,255,255,.6);
+    }
+
+    .map-bg {
+      background:
+        linear-gradient(145deg, rgba(255,248,242,.96), rgba(239,229,219,.96)),
+        #f4ebe4;
+    }
+
+    .map-canvas {
+      position: relative;
+      height: 560px;
+      overflow: hidden;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(35deg, rgba(255,255,255,.42) 0 18%, transparent 18%),
+        linear-gradient(140deg, rgba(104,127,111,.20), rgba(63,123,132,.24)),
+        #f7efe9;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.38), var(--shadow-card);
+    }
+
+    .map-line {
+      position: absolute;
+      left: 30px;
+      top: 120px;
+      width: 330px;
+      height: 260px;
+      border: 3px solid rgba(191,83,99,.42);
+      border-left: 0;
+      border-bottom: 0;
+      border-radius: 50%;
+      transform: rotate(-18deg);
+    }
+
+    .map-line.second {
+      left: 98px;
+      top: 210px;
+      width: 238px;
+      height: 220px;
+      border-color: rgba(63,123,132,.42);
+      transform: rotate(32deg);
+    }
+
+    .place-pin {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50% 50% 50% 0;
+      background: var(--rose);
+      transform: rotate(-45deg);
+      box-shadow: 0 12px 22px rgba(191,83,99,.28);
+    }
+
+    .place-pin::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .place-pin.one { left: 62px; top: 152px; }
+    .place-pin.two { left: 236px; top: 98px; background: var(--teal); }
+    .place-pin.three { left: 276px; top: 318px; background: var(--amber); }
+    .place-pin.four { left: 132px; top: 392px; background: var(--moss); }
+
+    .place-sheet {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 12px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.93);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 14px 34px rgba(56,34,42,.14);
+    }
+
+    .place-sheet .memory-thumb {
+      height: 92px;
+    }
+
+    .place-sheet strong {
+      display: block;
+      font-size: 16px;
+      line-height: 21px;
+      margin-bottom: 5px;
+    }
+
+    .letter-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .letter-card {
+      position: relative;
+      min-height: 112px;
+      padding: 16px 14px 14px 82px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow-card);
+    }
+
+    .letter-card::after {
+      content: "";
+      position: absolute;
+      left: -26px;
+      bottom: -46px;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 1px solid rgba(191,83,99,.12);
+    }
+
+    .letter-card strong {
+      position: relative;
+      z-index: 1;
+      display: block;
+      font-size: 16px;
+      line-height: 21px;
+      margin-bottom: 5px;
+    }
+
+    .letter-card.locked {
+      opacity: .72;
+    }
+
+    .envelope {
+      position: absolute;
+      left: 18px;
+      top: 30px;
+      width: 46px;
+      height: 34px;
+      border: 2px solid var(--rose);
+      border-radius: 5px;
+      z-index: 2;
+    }
+
+    .envelope::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: -8px;
+      width: 29px;
+      height: 29px;
+      border-left: 2px solid var(--rose);
+      border-bottom: 2px solid var(--rose);
+      transform: rotate(-45deg);
+      background: #fff;
+    }
+
+    .state-tag {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      margin-top: 10px;
+      padding: 0 9px;
+      border-radius: 999px;
+      color: var(--rose-dark);
+      background: #fff4ee;
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 850;
+    }
+
+    .letter-detail {
+      min-height: 620px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,248,242,.96)),
+        #fff;
+      box-shadow: var(--shadow-floating);
+      padding: 24px;
+    }
+
+    .letter-detail .large-envelope {
+      width: 116px;
+      height: 82px;
+      border: 2px solid var(--rose);
+      border-radius: 8px;
+      position: relative;
+      margin: 16px auto 34px;
+      background: #fff;
+    }
+
+    .letter-detail .large-envelope::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: -21px;
+      width: 74px;
+      height: 74px;
+      border-left: 2px solid var(--rose);
+      border-bottom: 2px solid var(--rose);
+      transform: rotate(-45deg);
+      background: #fff;
+    }
+
+    .letter-paper {
+      margin-top: 12px;
+      border-top: 1px solid var(--line);
+      padding-top: 20px;
+      color: var(--ink-soft);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 19px;
+      line-height: 30px;
+    }
+
+    .recap-hero {
+      min-height: 310px;
+      border-radius: 8px;
+      color: #fff;
+      background:
+        linear-gradient(180deg, rgba(25,21,29,.06) 0%, rgba(25,21,29,.80) 100%),
+        url("assets/anniversary-hero.png") center / cover no-repeat;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      box-shadow: var(--shadow-hero);
+    }
+
+    .recap-hero h3 {
+      font-size: 39px;
+      line-height: 39px;
+      margin: 8px 0 8px;
+    }
+
+    .recap-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .recap-cell {
+      min-height: 98px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .recap-cell b {
+      display: block;
+      color: var(--rose-dark);
+      font-size: 31px;
+      line-height: 31px;
+      margin-bottom: 7px;
+    }
+
+    .form-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow-card);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .photo-upload {
+      height: 142px;
+      border-radius: 8px;
+      border: 1px dashed rgba(191,83,99,.42);
+      background:
+        linear-gradient(135deg, rgba(191,83,99,.08), rgba(63,123,132,.08)),
+        var(--surface-warm);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--rose-dark);
+      font-weight: 850;
+      font-size: 13px;
+      line-height: 18px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 800;
+    }
+
+    .field .control {
+      min-height: 46px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fffaf7;
+      padding: 12px;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 20px;
+    }
+
+    .field .control.textarea {
+      min-height: 98px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .component-board {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.74);
+      box-shadow: var(--shadow-card);
+      padding: 24px;
+    }
+
+    .panel h3 {
+      font-size: 31px;
+      line-height: 32px;
+      margin-bottom: 18px;
+    }
+
+    .palette {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+    }
+
+    .swatch {
+      min-height: 112px;
+      border-radius: 8px;
+      border: 1px solid rgba(32,25,29,.08);
+      padding: 10px;
+      display: flex;
+      align-items: flex-end;
+      color: #fff;
+      font-size: 11px;
+      line-height: 15px;
+      font-weight: 850;
+      text-shadow: 0 2px 12px rgba(0,0,0,.28);
+    }
+
+    .swatch.light {
+      color: var(--ink);
+      text-shadow: none;
+    }
+
+    .token-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      line-height: 18px;
+    }
+
+    .token-table td,
+    .token-table th {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 0;
+      text-align: left;
+    }
+
+    .token-table th {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .component-set {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .component-cell {
+      min-height: 150px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .component-cell strong {
+      font-size: 14px;
+      line-height: 19px;
+    }
+
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .spec-card {
+      min-height: 250px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow-card);
+      padding: 22px;
+    }
+
+    .spec-card b {
+      display: block;
+      color: var(--rose-dark);
+      font-size: 12px;
+      line-height: 16px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .spec-card h3 {
+      font-size: 27px;
+      line-height: 28px;
+      margin-bottom: 12px;
+    }
+
+    .spec-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .state-matrix {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .state-card {
+      min-height: 184px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 18px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .state-card h3 {
+      font-size: 24px;
+      line-height: 25px;
+      margin-bottom: 12px;
+    }
+
+    .state-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .handoff-footer {
+      margin-top: 72px;
+      padding: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--night);
+      color: #fff;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .handoff-footer h2 {
+      color: #fff;
+      font-size: 39px;
+      line-height: 40px;
+      margin-bottom: 10px;
+    }
+
+    .handoff-footer p {
+      margin: 0;
+      color: rgba(255,255,255,.72);
+      font-size: 15px;
+      line-height: 24px;
+      max-width: 860px;
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <section class="cover">
+      <div class="cover-mark">
+        <div class="logo-mark">M</div>
+        <div>Mình & Em · Design Handoff</div>
+      </div>
+      <h1>Private memory journal for couples</h1>
+      <p>Bản thiết kế hoàn chỉnh để bắt tay vào phát triển: art direction, information architecture, high-fidelity mobile frames, component library, tokens, states, interaction notes, và MVP scope.</p>
+      <div class="cover-meta">
+        <span class="meta-pill">Frame: iPhone 15 Pro · 393 x 852</span>
+        <span class="meta-pill">Grid: 20px screen padding</span>
+        <span class="meta-pill">MVP: local-first gift app</span>
+        <span class="meta-pill">Product-ready: shared couple journal</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Design decisions</div>
+          <h2>Quyết định nền trước khi code.</h2>
+        </div>
+        <p class="section-note">App này phải có cảm giác được biên tập như một cuốn album riêng, không giống thư viện ảnh. Vì vậy design ưu tiên hình ảnh lớn, nhịp đọc chậm, microcopy riêng tư, và điều hướng cực rõ.</p>
+      </div>
+
+      <div class="decision-grid">
+        <article class="decision">
+          <b>01</b>
+          <div>
+            <h3>Opening là nghi thức</h3>
+            <p>Lần mở đầu không có menu. Chỉ có ảnh, lời nhắn và một CTA để đi vào món quà.</p>
+          </div>
+        </article>
+        <article class="decision">
+          <b>02</b>
+          <div>
+            <h3>Timeline là cốt truyện</h3>
+            <p>Người dùng đọc hành trình theo thời gian. Mỗi card là một cảnh trong bộ phim riêng.</p>
+          </div>
+        </article>
+        <article class="decision">
+          <b>03</b>
+          <div>
+            <h3>Map là khoảnh khắc wow</h3>
+            <p>Không cần nhiều pin. Cần pin có ý nghĩa, preview tốt, và route kể được hành trình.</p>
+          </div>
+        </article>
+        <article class="decision">
+          <b>04</b>
+          <div>
+            <h3>Letters tạo vòng quay lại</h3>
+            <p>Time capsule giúp app không kết thúc trong ngày kỷ niệm, đồng thời mở đường product hóa.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Mobile frames</div>
+          <h2>High-fidelity app screens.</h2>
+        </div>
+        <p class="section-note">Các frame dưới đây dùng kích thước 393 x 852, tương đương iPhone 15 Pro. Padding ngang 20px, tab bar cao 64px, nội dung chính luôn tránh safe area bottom 34px.</p>
+      </div>
+
+      <div class="frame-grid">
+        <article class="frame-wrap">
+          <div class="frame-label"><div><strong>00 · Opening Gift</strong><span>First launch ritual</span></div><span>393 x 852</span></div>
+          <div class="frame opening-frame show-redline">
+            <div class="redline-tag">20px grid</div>
+            <div class="app-content">
+              <div class="status-bar">
+                <span>20:26</span>
+                <span class="status-icons"><span class="sig"><i></i><i></i><i></i></span><span class="battery"></span></span>
+              </div>
+              <div class="opening-kicker">Gửi riêng em</div>
+              <div class="screen-title">Ba năm,<br>mình vẫn ở đây.</div>
+              <p class="body-copy">Anh gom những ngày mình đã đi qua vào một nơi nhỏ. Mở chậm thôi nhé.</p>
+              <button class="btn light">Mở món quà</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label"><div><strong>01 · Home</strong><span>Today dashboard</span></div><span>Default tab</span></div>
+          <div class="frame show-redline">
+            <div class="app-content">
+              <div class="status-bar">
+                <span>20:26</span>
+                <span class="status-icons"><span class="sig"><i></i><i></i><i></i></span><span class="battery"></span></span>
+              </div>
+              <div class="topbar">
+                <div><div class="micro">Hôm nay của mình</div><div class="screen-title">Mình & Em</div></div>
+                <div class="icon-btn"><span class="glyph heart"></span></div>
+              </div>
+              <div class="home-stack">
+                <div class="hero-memory">
+                  <div class="hero-memory-content">
+                    <b>1,095 ngày</b>
+                    <span>và rất nhiều điều anh chưa nói hết.</span>
+                  </div>
+                </div>
+                <div class="stat-row">
+                  <div class="stat-card"><b>24</b><span class="micro">kỷ niệm đã lưu</span></div>
+                  <div class="stat-card"><b>9</b><span class="micro">nơi đã đi qua</span></div>
+                </div>
+                <div class="memory-card">
+                  <div class="memory-thumb"></div>
+                  <div><strong>Một chiều mình đi thật chậm</strong><span class="micro">Kỷ niệm nổi bật hôm nay</span><p>Đà Lạt · 12.08.2024</p></div>
+                </div>
+                <div class="next-letter">
+                  <div class="mini-envelope"></div>
+                  <div><strong style="font-size:14px;line-height:18px">Lá thư tiếp theo</strong><div class="micro">Mở vào sinh nhật em</div></div>
+                  <div class="state-tag" style="margin:0">184 ngày</div>
+                </div>
+              </div>
+              <nav class="tabbar">
+                <div class="tab active"><span class="tab-dot"></span>Home</div>
+                <div class="tab"><span class="tab-dot"></span>Time</div>
+                <div class="tab"><span class="tab-dot"></span>Map</div>
+                <div class="tab"><span class="tab-dot"></span>Thư</div>
+              </nav>
+            </div>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label"><div><strong>02 · Timeline</strong><span>Chronological memories</span></div><span>Grouped list</span></div>
+          <div class="frame">
+            <div class="app-content">
+              <div class="status-bar">
+                <span>20:26</span>
+                <span class="status-icons"><span class="sig"><i></i><i></i><i></i></span><span class="battery"></span></span>
+              </div>
+              <div class="topbar">
+                <div><div class="micro">Theo dòng thời gian</div><div class="screen-title">Timeline</div></div>
+                <div class="icon-btn"><span class="glyph search"></span></div>
+              </div>
+              <div class="chips">
+                <span class="chip active">Tất cả</span>
+                <span class="chip">Chuyến đi</span>
+                <span class="chip">Ngày thường</span>
+              </div>
+              <div class="year-label">Năm thứ ba</div>
+              <div class="timeline">
+                <div class="timeline-card memory-card">
+                  <div class="memory-thumb"></div>
+                  <div><strong>Lần mình trở lại biển</strong><span class="micro">Phú Quốc · 04.2026</span><p>Mình cứ nghĩ biển hôm đó đẹp, cho đến khi em cười.</p></div>
+                </div>
+                <div class="timeline-card memory-card">
+                  <div class="memory-thumb"></div>
+                  <div><strong>Sinh nhật em</strong><span class="micro">Căn phòng nhỏ · 01.2026</span><p>Một tối không lớn lao, nhưng rất riêng.</p></div>
+                </div>
+                <div class="timeline-card memory-card">
+                  <div class="memory-thumb"></div>
+                  <div><strong>Bữa tối rất bình thường</strong><span class="micro">Quận 1 · 11.2025</span><p>Bình thường đến mức anh biết mình sẽ nhớ lâu.</p></div>
+                </div>
+                <div class="timeline-card memory-card">
+                  <div class="memory-thumb"></div>
+                  <div><strong>Một ngày mưa</strong><span class="micro">Cafe góc phố · 09.2025</span><p>Mình ngồi thêm chỉ vì chưa muốn về.</p></div>
+                </div>
+              </div>
+              <nav class="tabbar">
+                <div class="tab"><span class="tab-dot"></span>Home</div>
+                <div class="tab active"><span class="tab-dot"></span>Time</div>
+                <div class="tab"><span class="tab-dot"></span>Map</div>
+                <div class="tab"><span class="tab-dot"></span>Thư</div>
+              </nav>
+            </div>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label"><div><strong>03 · Memory Detail</strong><span>Story, quote, audio</span></div><span>Drill-down</span></div>
+          <div class="frame">
+            <div class="detail-cover">
+              <div class="status-bar">
+                <span>20:26</span>
+                <span class="status-icons"><span class="sig"><i></i><i></i><i></i></span><span class="battery"></span></span>
+              </div>
+              <div class="detail-actions">
+                <div class="icon-btn"><span class="glyph back"></span></div>
+                <div class="icon-btn"><span class="glyph heart"></span></div>
+              </div>
+            </div>
+            <div class="detail-sheet">
+              <span class="micro">12.08.2024 · Đà Lạt</span>
+              <h3>Một chiều mình đi thật chậm</h3>
+              <p class="body-copy">Hôm đó trời lạnh vừa đủ. Anh nhớ cách em cười khi mình lạc đường, rồi cả hai vẫn quyết định đi tiếp vì con dốc đó quá đẹp.</p>
+              <div class="quote-block">Điều anh nhớ nhất là cảm giác được đi cạnh em mà không cần vội.</div>
+              <div class="voice-note">
+                <div class="play-btn"></div>
+                <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <span class="micro">0:34</span>
+              </div>
+            </div>
+            <div class="gallery-strip">
+              <div class="memory-thumb"></div>
+              <div class="memory-thumb"></div>
+              <div class="memory-thumb"></div>
+              <div class="memory-thumb"></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label"><div><strong>04 · Map</strong><span>Places as a journey</span></div><span>Pin + sheet</span></div>
+          <div class="frame map-bg">
+            <div class="app-content">
+              <div class="status-bar">
+                <span>20:26</span>
+                <span class="status-icons"><span class="sig"><i></i><i></i><i></i></span><span class="battery"></span></span>
+              </div>
+              <div class="topbar">
+                <div><div class="micro">Những nơi mình qua</div><div class="screen-title">Bản đồ</div></div>
+                <div class="icon-btn"><span class="glyph pin"></span></div>
+              </div>
+              <div class="map-canvas">
+                <div class="map-line"></div>
+                <div class="map-line second"></div>
+                <div class="place-pin one"></div>
+                <div class="place-pin two"></div>
+                <div class="place-pin three"></div>
+                <div class="place-pin four"></div>
+                <div class="place-sheet">
+                  <div class="memory-thumb"></div>
+                  <div><strong>Đà Lạt</strong><span class="micro">5 kỷ niệm · nơi mình học cách đi chậm hơn một chút.</span><div class="state-tag">Xem kỷ niệm</div></div>
+                </div>
+              </div>
+              <nav class="tabbar">
+                <div class="tab"><span class="tab-dot"></span>Home</div>
+                <div class="tab"><span class="tab-dot"></span>Time</div>
+                <div class="tab active"><span class="tab-dot"></span>Map</div>
+                <div class="tab"><span class="tab-dot"></span>Thư</div>
+              </nav>
+            </div>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label"><div><strong>05 · Letters</strong><span>Time capsule list</span></div><span>Open/locked</span></div>
+          <div class="frame">
+            <div class="app-content">
+              <div class="status-bar">
+                <span>20:26</span>
+                <span class="status-icons"><span class="sig"><i></i><i></i><i></i></span><span class="battery"></span></span>
+              </div>
+              <div class="topbar">
+                <div><div class="micro">Dành cho em</div><div class="screen-title">Những lá thư</div></div>
+                <div class="icon-btn"><span class="glyph mail"></span></div>
+              </div>
+              <div class="letter-stack">
+                <div class="letter-card">
+                  <div class="envelope"></div>
+                  <strong>Mở vào hôm nay</strong>
+                  <span class="micro">Lá thư cho ngày mình tròn ba năm.</span>
+                  <div class="state-tag">Đã sẵn sàng</div>
+                </div>
+                <div class="letter-card locked">
+                  <div class="envelope"></div>
+                  <strong>Mở vào sinh nhật em</strong>
+                  <span class="micro">Một điều anh muốn để dành.</span>
+                  <div class="state-tag">Còn 184 ngày</div>
+                </div>
+                <div class="letter-card locked">
+                  <div class="envelope"></div>
+                  <strong>Mở vào năm thứ tư</strong>
+                  <span class="micro">Một lời hẹn cho chương sau.</span>
+                  <div class="state-tag">Đang khóa</div>
+                </div>
+              </div>
+              <nav class="tabbar">
+                <div class="tab"><span class="tab-dot"></span>Home</div>
+                <div class="tab"><span class="tab-dot"></span>Time</div>
+                <div class="tab"><span class="tab-dot"></span>Map</div>
+                <div class="tab active"><span class="tab-dot"></span>Thư</div>
+              </nav>
+            </div>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label"><div><strong>06 · Letter Detail</strong><span>Opened letter</span></div><span>Reader</span></div>
+          <div class="frame">
+            <div class="app-content" style="padding-bottom:34px">
+              <div class="status-bar">
+                <span>20:26</span>
+                <span class="status-icons"><span class="sig"><i></i><i></i><i></i></span><span class="battery"></span></span>
+              </div>
+              <div class="topbar">
+                <div class="icon-btn"><span class="glyph back"></span></div>
+                <div class="micro">Mở vào hôm nay</div>
+                <div class="icon-btn"><span class="glyph heart"></span></div>
+              </div>
+              <div class="letter-detail">
+                <div class="large-envelope"></div>
+                <div class="micro">Ngày mình tròn ba năm</div>
+                <div class="screen-title medium" style="margin-top:8px">Gửi em, người anh thương</div>
+                <div class="letter-paper">Có những ngày anh tưởng mình sẽ quên, nhưng hóa ra chỉ cần nhìn lại một tấm ảnh là mọi thứ quay về rất rõ. Cảm ơn em vì đã ở đó, trong những chuyến đi lớn và cả những buổi tối rất bình thường.</div>
+                <button class="btn primary" style="width:100%;margin-top:28px">Đọc tiếp</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label"><div><strong>07 · Three-Year Recap</strong><span>Finale moment</span></div><span>Shareable later</span></div>
+          <div class="frame">
+            <div class="app-content" style="padding-bottom:34px">
+              <div class="status-bar">
+                <span>20:26</span>
+                <span class="status-icons"><span class="sig"><i></i><i></i><i></i></span><span class="battery"></span></span>
+              </div>
+              <div class="recap-hero">
+                <span class="micro" style="color:rgba(255,255,255,.76)">Kỷ niệm 3 năm</span>
+                <h3>Mình đã đi qua thật nhiều.</h3>
+                <span class="micro" style="color:rgba(255,255,255,.78)">Và anh vẫn muốn đi tiếp cùng em.</span>
+              </div>
+              <div class="recap-grid">
+                <div class="recap-cell"><b>1,095</b><span class="micro">ngày yêu</span></div>
+                <div class="recap-cell"><b>9</b><span class="micro">thành phố</span></div>
+                <div class="recap-cell"><b>132</b><span class="micro">tấm ảnh</span></div>
+                <div class="recap-cell"><b>3</b><span class="micro">lá thư</span></div>
+              </div>
+              <div class="quote-block" style="margin-top:14px">Ba năm không phải là điểm kết. Nó là bằng chứng rằng mình đã chọn nhau, rất nhiều lần.</div>
+              <button class="btn primary" style="width:100%;margin-top:14px">Cùng anh viết tiếp nhé?</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label"><div><strong>08 · Add Memory</strong><span>Productization flow</span></div><span>Post-MVP</span></div>
+          <div class="frame">
+            <div class="app-content" style="padding-bottom:34px">
+              <div class="status-bar">
+                <span>20:26</span>
+                <span class="status-icons"><span class="sig"><i></i><i></i><i></i></span><span class="battery"></span></span>
+              </div>
+              <div class="topbar">
+                <div class="icon-btn"><span class="glyph back"></span></div>
+                <div><div class="micro">Viết lại một ngày</div><div class="screen-title medium">Thêm kỷ niệm</div></div>
+                <div class="icon-btn"><span class="glyph plus"></span></div>
+              </div>
+              <div class="form-card">
+                <div class="photo-upload">Thêm ảnh hoặc video<br><span class="micro">Tối đa 12 media</span></div>
+                <div class="field"><label>Tiêu đề</label><div class="control">Một chiều mình đi thật chậm</div></div>
+                <div class="two-col">
+                  <div class="field"><label>Ngày</label><div class="control">12.08.2024</div></div>
+                  <div class="field"><label>Loại</label><div class="control">Chuyến đi</div></div>
+                </div>
+                <div class="field"><label>Địa điểm</label><div class="control">Đà Lạt</div></div>
+                <div class="field"><label>Câu chuyện</label><div class="control textarea">Hôm đó trời lạnh vừa đủ...</div></div>
+              </div>
+              <button class="btn primary" style="width:100%">Lưu kỷ niệm</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Component library</div>
+          <h2>Components để triển khai nhất quán.</h2>
+        </div>
+        <p class="section-note">Các component này là mức tối thiểu cần có trong app. Khi build, hãy tạo component trước rồi ghép screen, thay vì code từng màn riêng lẻ.</p>
+      </div>
+
+      <div class="component-board">
+        <div class="panel">
+          <h3>Color palette</h3>
+          <div class="palette">
+            <div class="swatch light" style="background:#fff8f2">Paper<br>#FFF8F2</div>
+            <div class="swatch light" style="background:#ffffff">Surface<br>#FFFFFF</div>
+            <div class="swatch" style="background:#bf5363">Rose<br>#BF5363</div>
+            <div class="swatch" style="background:#923b4a">Rose Dark<br>#923B4A</div>
+            <div class="swatch" style="background:#3f7b84">Teal<br>#3F7B84</div>
+            <div class="swatch" style="background:#20191d">Ink<br>#20191D</div>
+          </div>
+          <table class="token-table" style="margin-top:18px">
+            <tr><th>Token</th><th>Value</th><th>Usage</th></tr>
+            <tr><td>Screen padding</td><td>20px</td><td>Horizontal layout margin</td></tr>
+            <tr><td>Card radius</td><td>8px</td><td>Memory, stat, letter, form card</td></tr>
+            <tr><td>Button height</td><td>52px</td><td>Primary CTA</td></tr>
+            <tr><td>Tab bar</td><td>64px</td><td>Bottom navigation</td></tr>
+            <tr><td>Safe bottom</td><td>34px</td><td>iOS home indicator area</td></tr>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h3>Core set</h3>
+          <div class="component-set">
+            <div class="component-cell"><strong>Primary Button</strong><button class="btn primary">Mở kỷ niệm</button><span class="micro">Height 52 · radius pill</span></div>
+            <div class="component-cell"><strong>Secondary Button</strong><button class="btn secondary">Lưu thư</button><span class="micro">Height 44 · border line</span></div>
+            <div class="component-cell"><strong>Filter Chips</strong><div><span class="chip active">Tất cả</span> <span class="chip">Chuyến đi</span></div><span class="micro">Active, default, disabled</span></div>
+            <div class="component-cell"><strong>Icon Button</strong><div class="icon-btn"><span class="glyph heart"></span></div><span class="micro">40 x 40 · circular</span></div>
+            <div class="component-cell"><strong>Memory Card</strong><div class="memory-card" style="box-shadow:none"><div class="memory-thumb"></div><div><strong>Một chiều thật chậm</strong><span class="micro">Đà Lạt · 2024</span></div></div><span class="micro">List item variant</span></div>
+            <div class="component-cell"><strong>Letter Card</strong><div class="letter-card" style="min-height:96px;box-shadow:none"><div class="envelope"></div><strong>Lá thư hôm nay</strong><span class="micro">Đã sẵn sàng</span></div><span class="micro">Open, locked, opened</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Dev handoff</div>
+          <h2>Screen behavior và data contract.</h2>
+        </div>
+        <p class="section-note">Đây là phần chuyển từ design sang implementation. Nếu dùng Flutter, mỗi màn map thành một route. Nếu dùng React Native, mỗi màn map thành stack/tab screen.</p>
+      </div>
+
+      <div class="spec-grid">
+        <article class="spec-card">
+          <b>Navigation</b>
+          <h3>Route map</h3>
+          <ul>
+            <li>OpeningGift: first launch hoặc replay.</li>
+            <li>MainTabs: Home, Timeline, Map, Letters.</li>
+            <li>MemoryDetail(memoryId): push từ Home/Timeline/Map.</li>
+            <li>LetterDetail(letterId): push từ Letters/Home.</li>
+            <li>Recap: deep link từ Home hoặc Opening finale.</li>
+            <li>AddMemory: post-MVP hoặc dev/admin mode.</li>
+          </ul>
+        </article>
+        <article class="spec-card">
+          <b>Data</b>
+          <h3>Memory model</h3>
+          <ul>
+            <li>id, title, date, category, phase.</li>
+            <li>locationName, lat, lng, placeId.</li>
+            <li>media[], coverMediaId, story.</li>
+            <li>favoriteMoment, messageForHer.</li>
+            <li>voiceNoteUrl optional.</li>
+            <li>createdAt, updatedAt, isFeatured.</li>
+          </ul>
+        </article>
+        <article class="spec-card">
+          <b>Data</b>
+          <h3>Letter model</h3>
+          <ul>
+            <li>id, title, body, unlockAt.</li>
+            <li>status: open, locked, opened.</li>
+            <li>occasion, preview, coverStyle.</li>
+            <li>openedAt optional.</li>
+            <li>pinToHome boolean.</li>
+            <li>future product: authorId, recipientId.</li>
+          </ul>
+        </article>
+        <article class="spec-card">
+          <b>Motion</b>
+          <h3>Transitions</h3>
+          <ul>
+            <li>Opening: image zoom 900ms, text stagger 120ms.</li>
+            <li>Timeline item: fade + translateY 8px.</li>
+            <li>Memory detail: shared cover transition if possible.</li>
+            <li>Map pin: route draw 700ms, pin pop 160ms.</li>
+            <li>Letter: envelope unfold, then paper reveal.</li>
+            <li>Respect reduced motion setting.</li>
+          </ul>
+        </article>
+        <article class="spec-card">
+          <b>Accessibility</b>
+          <h3>Quality bar</h3>
+          <ul>
+            <li>Touch target tối thiểu 40 x 40.</li>
+            <li>Body text tối thiểu 12px, chính 14-16px.</li>
+            <li>Ảnh nền luôn có overlay để text đủ tương phản.</li>
+            <li>Không dùng màu làm tín hiệu duy nhất.</li>
+            <li>Locked letter cần label rõ bằng text.</li>
+            <li>Voice note có duration và transcript optional.</li>
+          </ul>
+        </article>
+        <article class="spec-card">
+          <b>MVP</b>
+          <h3>Build order</h3>
+          <ul>
+            <li>1. Tokens, assets, navigation shell.</li>
+            <li>2. Opening, Home, Timeline.</li>
+            <li>3. Memory detail và Letters.</li>
+            <li>4. Recap và Map.</li>
+            <li>5. Motion polish, app icon, local storage.</li>
+            <li>6. AddMemory khi chuyển sang product.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">States</div>
+          <h2>Đừng bỏ quên trạng thái.</h2>
+        </div>
+        <p class="section-note">Một app tình cảm vẫn cần product discipline: empty, loading, error, locked, offline. Những state này giúp app trông hoàn chỉnh ngay cả khi dữ liệu chưa đầy.</p>
+      </div>
+
+      <div class="state-matrix">
+        <article class="state-card">
+          <h3>Empty timeline</h3>
+          <p>Hiển thị một card nhẹ: “Chưa có kỷ niệm nào được viết”. CTA: “Thêm kỷ niệm đầu tiên”. Với bản gift MVP, state này không xuất hiện.</p>
+        </article>
+        <article class="state-card">
+          <h3>Locked letter</h3>
+          <p>Không lộ body. Chỉ hiển thị title, occasion, countdown. Tap vào thì mở bottom sheet giải thích ngày mở.</p>
+        </article>
+        <article class="state-card">
+          <h3>Offline media</h3>
+          <p>Nếu ảnh chưa tải được, dùng surface warm, icon ảnh, và retry. Với local-first MVP, ưu tiên bundle asset để tránh lỗi ngày tặng.</p>
+        </article>
+        <article class="state-card">
+          <h3>Privacy lock</h3>
+          <p>Post-MVP: app resume sau 30 giây background thì yêu cầu Face ID/PIN. Đây là tính năng quan trọng nếu publish.</p>
+        </article>
+      </div>
+    </section>
+
+    <footer class="handoff-footer">
+      <div>
+        <h2>Ready for implementation.</h2>
+        <p>Board này là source of truth cho UI/UX. File token JSON đi kèm có thể được map sang theme. File spec chi tiết sẽ ghi rõ component tree, data model và checklist build.</p>
+      </div>
+      <div class="meta-pill">v1.0 handoff</div>
+    </footer>
+  </main>
+</body>
+</html>

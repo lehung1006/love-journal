@@ -1,0 +1,189 @@
+{
+  "meta": {
+    "name": "Minh & Em Design Tokens",
+    "version": "1.0.0",
+    "platformTarget": ["Flutter", "React Native"],
+    "baseFrame": {
+      "name": "iPhone 15 Pro",
+      "width": 393,
+      "height": 852,
+      "safeAreaTop": 59,
+      "safeAreaBottom": 34
+    }
+  },
+  "color": {
+    "paper": "#FFF8F2",
+    "paperMuted": "#F4EBE4",
+    "surface": "#FFFFFF",
+    "surfaceWarm": "#FFF4EE",
+    "ink": "#20191D",
+    "inkSoft": "#3A3036",
+    "muted": "#75686F",
+    "mutedLight": "#9B8D93",
+    "line": "#E7D9CF",
+    "rose": "#BF5363",
+    "roseDark": "#923B4A",
+    "wine": "#5F2634",
+    "teal": "#3F7B84",
+    "moss": "#687F6F",
+    "amber": "#C5964F",
+    "lavender": "#87779D",
+    "night": "#19151D",
+    "success": "#5E8C73",
+    "warning": "#C5964F",
+    "danger": "#B84A52",
+    "overlayStrong": "rgba(25, 21, 29, 0.72)",
+    "overlaySoft": "rgba(25, 21, 29, 0.36)"
+  },
+  "gradient": {
+    "photoOverlay": "linear-gradient(180deg, rgba(25,21,29,0.02) 0%, rgba(25,21,29,0.30) 46%, rgba(25,21,29,0.88) 100%)",
+    "warmPage": "linear-gradient(180deg, #FFF8F2 0%, #F7EEE8 100%)",
+    "mapWash": "linear-gradient(145deg, rgba(255,248,242,0.96), rgba(239,229,219,0.96))"
+  },
+  "typography": {
+    "fontFamily": {
+      "display": "Georgia",
+      "body": "Inter"
+    },
+    "displayXL": {
+      "fontSize": 44,
+      "lineHeight": 44,
+      "fontWeight": 560,
+      "letterSpacing": 0
+    },
+    "displayL": {
+      "fontSize": 34,
+      "lineHeight": 36,
+      "fontWeight": 560,
+      "letterSpacing": 0
+    },
+    "titleL": {
+      "fontSize": 26,
+      "lineHeight": 29,
+      "fontWeight": 560,
+      "letterSpacing": 0
+    },
+    "titleM": {
+      "fontSize": 20,
+      "lineHeight": 24,
+      "fontWeight": 700,
+      "letterSpacing": 0
+    },
+    "bodyL": {
+      "fontSize": 16,
+      "lineHeight": 24,
+      "fontWeight": 400,
+      "letterSpacing": 0
+    },
+    "bodyM": {
+      "fontSize": 14,
+      "lineHeight": 21,
+      "fontWeight": 400,
+      "letterSpacing": 0
+    },
+    "bodyS": {
+      "fontSize": 12,
+      "lineHeight": 16,
+      "fontWeight": 500,
+      "letterSpacing": 0
+    },
+    "label": {
+      "fontSize": 11,
+      "lineHeight": 14,
+      "fontWeight": 800,
+      "letterSpacing": 0.8,
+      "textTransform": "uppercase"
+    }
+  },
+  "spacing": {
+    "xxs": 4,
+    "xs": 8,
+    "s": 12,
+    "m": 16,
+    "l": 20,
+    "xl": 24,
+    "xxl": 32,
+    "screenX": 20,
+    "screenTop": 16,
+    "sectionGap": 24,
+    "cardGap": 12
+  },
+  "radius": {
+    "xs": 6,
+    "s": 8,
+    "m": 12,
+    "l": 18,
+    "xl": 26,
+    "pill": 999
+  },
+  "shadow": {
+    "card": {
+      "x": 0,
+      "y": 12,
+      "blur": 28,
+      "spread": 0,
+      "color": "rgba(56, 34, 42, 0.08)"
+    },
+    "floating": {
+      "x": 0,
+      "y": 18,
+      "blur": 48,
+      "spread": 0,
+      "color": "rgba(35, 24, 31, 0.18)"
+    },
+    "hero": {
+      "x": 0,
+      "y": 26,
+      "blur": 72,
+      "spread": 0,
+      "color": "rgba(35, 24, 31, 0.22)"
+    }
+  },
+  "component": {
+    "buttonPrimary": {
+      "height": 52,
+      "radius": 999,
+      "paddingX": 18,
+      "background": "#BF5363",
+      "foreground": "#FFFFFF"
+    },
+    "buttonSecondary": {
+      "height": 44,
+      "radius": 999,
+      "paddingX": 16,
+      "background": "#FFFFFF",
+      "foreground": "#923B4A",
+      "border": "#E7D9CF"
+    },
+    "tabBar": {
+      "height": 64,
+      "bottom": 12,
+      "horizontalInset": 16,
+      "radius": 999,
+      "background": "rgba(255,255,255,0.90)"
+    },
+    "memoryCard": {
+      "radius": 12,
+      "padding": 10,
+      "thumbSize": 84,
+      "minHeight": 104
+    },
+    "chip": {
+      "height": 34,
+      "paddingX": 12,
+      "radius": 999
+    },
+    "iconButton": {
+      "size": 40,
+      "radius": 999
+    }
+  },
+  "motion": {
+    "durationFast": 160,
+    "durationBase": 260,
+    "durationSlow": 520,
+    "durationRitual": 900,
+    "curveStandard": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+    "curveSoft": "cubic-bezier(0.16, 1, 0.3, 1)"
+  }
+}

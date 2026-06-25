@@ -1,0 +1,38 @@
+[
+  {
+    "id": "place_saigon",
+    "name": "Sài Gòn",
+    "latitude": 10.7769,
+    "longitude": 106.7009,
+    "memoryIds": ["mem_first_coffee", "mem_birthday_cake", "mem_three_years"],
+    "coverMediaId": "media_three_years_cover",
+    "shortNote": "Nơi những ngày rất nhỏ của mình bắt đầu thành một câu chuyện dài."
+  },
+  {
+    "id": "place_dalat",
+    "name": "Đà Lạt",
+    "latitude": 11.9404,
+    "longitude": 108.4583,
+    "memoryIds": ["mem_anniversary_walk"],
+    "coverMediaId": "media_walk_cover",
+    "shortNote": "Nơi mình học cách đi chậm hơn một chút."
+  },
+  {
+    "id": "place_home",
+    "name": "Nhà",
+    "latitude": 10.7626,
+    "longitude": 106.6602,
+    "memoryIds": ["mem_rainy_movie"],
+    "coverMediaId": "media_movie_cover",
+    "shortNote": "Không phải địa điểm xa, nhưng là nơi nhiều bình yên nhất."
+  },
+  {
+    "id": "place_danang",
+    "name": "Đà Nẵng",
+    "latitude": 16.0544,
+    "longitude": 108.2022,
+    "memoryIds": ["mem_sea_morning"],
+    "coverMediaId": "media_sea_cover",
+    "shortNote": "Một buổi sáng có biển và một lời hứa rất nhẹ."
+  }
+]

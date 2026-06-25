@@ -1,0 +1,43 @@
+[
+  {
+    "id": "letter_anniversary_today",
+    "title": "Gửi em, người anh thương",
+    "occasion": "Ngày mình tròn ba năm",
+    "preview": "Lá thư cho ngày mình tròn ba năm.",
+    "body": "Có những ngày anh tưởng mình sẽ quên, nhưng hóa ra chỉ cần nhìn lại một tấm ảnh là mọi thứ quay về rất rõ.\n\nCảm ơn em vì đã ở đó, trong những chuyến đi lớn và cả những buổi tối rất bình thường. Cảm ơn em vì đã kiên nhẫn với anh, vì đã cười, đã giận, đã nắm tay, đã ở lại.\n\nBa năm không phải là điểm kết. Nó là bằng chứng rằng mình đã chọn nhau, rất nhiều lần. Và hôm nay anh vẫn muốn nói điều cũ bằng một trái tim mới: anh thương em.",
+    "unlockAt": "2026-06-23",
+    "status": "open",
+    "pinToHome": true,
+    "coverStyle": "rose"
+  },
+  {
+    "id": "letter_birthday",
+    "title": "Mở vào sinh nhật em",
+    "occasion": "Sinh nhật em",
+    "body": "Có một điều anh muốn để dành cho đúng ngày em thổi nến.",
+    "unlockAt": "2026-12-12",
+    "status": "locked",
+    "pinToHome": false,
+    "coverStyle": "paper"
+  },
+  {
+    "id": "letter_fourth_year",
+    "title": "Mở vào năm thứ tư",
+    "occasion": "Chương tiếp theo",
+    "body": "Một lời hẹn cho chương sau của tụi mình.",
+    "unlockAt": "2027-06-23",
+    "status": "locked",
+    "pinToHome": false,
+    "coverStyle": "night"
+  },
+  {
+    "id": "letter_when_tired",
+    "title": "Khi em thấy mệt",
+    "occasion": "Một ngày cần được ôm",
+    "preview": "Một lá thư nhỏ cho những ngày lòng mình hơi nặng.",
+    "body": "Nếu hôm nay là một ngày khó, em không cần phải mạnh ngay lập tức.\n\nAnh chỉ muốn nhắc em rằng có một người vẫn ở đây, sẵn sàng nghe em kể cả những điều lộn xộn nhất. Mình cứ thở chậm lại một chút. Rồi ngày mai, nếu cần, anh sẽ cùng em bắt đầu lại.",
+    "status": "open",
+    "pinToHome": false,
+    "coverStyle": "paper"
+  }
+]

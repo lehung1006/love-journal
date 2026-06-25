@@ -1,0 +1,55 @@
+# Codex Cloud Setup
+
+Use this checklist after the project is pushed to GitHub.
+
+## 1. Push The Repository
+
+Create a GitHub repository, then push this project. Codex Cloud needs access to the GitHub repository because cloud tasks run from a remote checkout.
+
+## 2. Create The Codex Environment
+
+Open:
+
+https://chatgpt.com/codex/settings/environments
+
+Create a new environment for this repository. Use the setup script from `.codex/cloud-setup.sh`.
+
+## 3. Recommended Environment Settings
+
+- Setup script: contents of `.codex/cloud-setup.sh`
+- Agent internet access: off by default; enable only if a task needs live internet
+- Dependency/network allowlist during setup: allow GitHub and package dependency hosts as needed
+- Branch: use `main` or the active feature branch
+
+## 4. Start A Cloud Task
+
+From the Codex app, create a new thread and choose `Cloud`, then select this environment.
+
+From the CLI:
+
+```bash
+codex login
+codex cloud
+```
+
+Or run a direct task:
+
+```bash
+codex cloud exec --env ENV_ID "Run flutter analyze and fix any issues."
+```
+
+## 5. Validation Commands
+
+Ask Codex Cloud to run:
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+```
+
+For a lightweight build check:
+
+```bash
+flutter build web
+```
