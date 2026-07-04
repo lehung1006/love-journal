@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_tokens.dart';
-import '../../domain/journal_models.dart';
+import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
 import '../journal_formatters.dart';
 
@@ -131,7 +131,26 @@ class MemoryDetailScreen extends StatelessWidget {
                           const SizedBox(height: AppSpacing.m),
                           QuoteBlock(quote: memory.favoriteMoment!),
                         ],
-                        if (memory.voiceNoteUrl != null) ...[
+                        if (memory.voiceMessages.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.m),
+                          Text(
+                            'Lời nhắn cho khoảnh khắc này',
+                            style: AppTextStyles.bodyS.copyWith(
+                              color: AppColors.roseDark,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.m),
+                          for (final message in memory.voiceMessages) ...[
+                            VoiceNotePlayer(
+                              duration: _formatDuration(
+                                message.durationSeconds ?? 34,
+                              ),
+                            ),
+                            if (message != memory.voiceMessages.last)
+                              const SizedBox(height: AppSpacing.xs),
+                          ],
+                        ] else if (memory.voiceNoteUrl != null) ...[
                           const SizedBox(height: AppSpacing.m),
                           const VoiceNotePlayer(),
                         ],
@@ -154,7 +173,10 @@ class MemoryDetailScreen extends StatelessWidget {
                       QuoteBlock(quote: memory.messageForHer!),
                       const SizedBox(height: AppSpacing.m),
                     ],
-                    MediaCarousel(media: memory.media),
+                    if (memory.mediaGroups.isNotEmpty)
+                      _MemoryMediaGroups(groups: memory.mediaGroups)
+                    else
+                      MediaCarousel(media: memory.media),
                   ],
                 ),
               ),
@@ -163,6 +185,12 @@ class MemoryDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remaining = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$remaining';
   }
 
   List<String> _splitStory(String story) {
@@ -189,5 +217,41 @@ class MemoryDetailScreen extends StatelessWidget {
     }
 
     return blocks;
+  }
+}
+
+class _MemoryMediaGroups extends StatelessWidget {
+  const _MemoryMediaGroups({required this.groups});
+
+  final List<MemoryMediaGroup> groups;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleGroups = groups
+        .where(
+          (group) =>
+              group.items.isNotEmpty || (group.note?.isNotEmpty ?? false),
+        )
+        .toList(growable: false);
+    if (visibleGroups.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final group in visibleGroups) ...[
+          if (group.note != null && group.note!.isNotEmpty) ...[
+            Text(
+              group.note!,
+              style: AppTextStyles.bodyM.copyWith(color: AppColors.muted),
+            ),
+            const SizedBox(height: AppSpacing.s),
+          ],
+          MediaCarousel(media: group.items),
+          if (group != visibleGroups.last) const SizedBox(height: AppSpacing.m),
+        ],
+      ],
+    );
   }
 }

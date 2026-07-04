@@ -1,4 +1,4 @@
-import '../domain/journal_models.dart';
+import '../domain/entities/journal_entities.dart';
 
 String formatDate(DateTime date) {
   final day = date.day.toString().padLeft(2, '0');

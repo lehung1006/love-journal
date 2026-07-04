@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/journal_app_config.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../domain/journal_models.dart';
+import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
 import '../journal_formatters.dart';
 
@@ -15,7 +15,8 @@ class RecapScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loveDays = dayDifference(JournalAppConfig.loveStartedAt, now);
-    final photoCount = data.memories.fold<int>(
+    final featured = data.featuredMemoryOrNull;
+    final photoCount = data.visibleMemories.fold<int>(
       0,
       (count, memory) => count + memory.media.length,
     );
@@ -41,8 +42,7 @@ class RecapScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.m),
             HeroMemoryCard(
-              imagePath:
-                  data.featuredMemory.coverMedia?.uri ?? AppAssets.heroImage,
+              imagePath: featured?.coverMedia?.uri ?? AppAssets.heroImage,
               kicker: 'Kỷ niệm 3 năm',
               title: 'Mình đã đi qua thật nhiều.',
               subtitle: 'Và anh vẫn muốn đi tiếp cùng em.',

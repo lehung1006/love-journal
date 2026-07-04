@@ -36,8 +36,14 @@ abstract final class AppTheme {
         labelSmall: AppTextStyles.label.copyWith(color: AppColors.roseDark),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.paper,
         surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.l),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
       ),
       dividerTheme: const DividerThemeData(color: AppColors.line),
     );

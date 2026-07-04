@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_tokens.dart';
-import '../../domain/journal_models.dart';
+import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
 import '../journal_formatters.dart';
 

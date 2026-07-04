@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/journal_app_config.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../domain/journal_models.dart';
+import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
 import '../journal_formatters.dart';
 
@@ -27,8 +27,9 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loveDays = dayDifference(JournalAppConfig.loveStartedAt, now);
-    final featured = data.featuredMemory;
+    final featured = data.featuredMemoryOrNull;
     final nextLetter = data.nextHomeLetter(now);
+    final memoryCount = data.visibleMemories.length;
 
     return AppScaffold(
       safeBottom: false,
@@ -53,7 +54,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.m),
           HeroMemoryCard(
-            imagePath: featured.coverMedia?.uri ?? AppAssets.heroImage,
+            imagePath: featured?.coverMedia?.uri ?? AppAssets.heroImage,
             kicker: 'Kỷ niệm của tụi mình',
             title: '${formatNumber(loveDays)} ngày yêu',
             subtitle: 'Và anh vẫn muốn đi tiếp cùng em.',
@@ -64,7 +65,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: StatCard(
-                  value: formatNumber(data.memories.length),
+                  value: formatNumber(memoryCount),
                   label: 'kỷ niệm đã viết',
                 ),
               ),
@@ -81,7 +82,17 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.l),
           const SectionHeader(title: 'Kỷ niệm nổi bật'),
           const SizedBox(height: AppSpacing.s),
-          MemoryListCard(memory: featured, onTap: () => onMemoryTap(featured)),
+          if (featured == null)
+            const EmptyStateCard(
+              title: 'Chưa có kỷ niệm nổi bật',
+              body:
+                  'Khi thêm kỷ niệm đầu tiên, Home sẽ giữ lại khoảnh khắc đáng nhớ nhất ở đây.',
+            )
+          else
+            MemoryListCard(
+              memory: featured,
+              onTap: () => onMemoryTap(featured),
+            ),
           const SizedBox(height: AppSpacing.l),
           const SectionHeader(title: 'Lá thư tiếp theo'),
           const SizedBox(height: AppSpacing.s),

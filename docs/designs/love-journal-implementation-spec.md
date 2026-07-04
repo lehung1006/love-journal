@@ -3,9 +3,13 @@
 Version: 1.0  
 Target: Flutter or React Native  
 Design board: `love-journal-figma-handoff.html`  
+Time management extension: `love-journal-time-management-handoff.html`  
+Current UI/UX source of truth: `love-journal-current-ui-ux.md`  
 Token file: `love-journal-design-tokens.json`
 
 ## Product Intent
+
+Important: this file contains the product and implementation spec across MVP and product-extension phases. For the UI/UX that is currently implemented in the Flutter app, read `love-journal-current-ui-ux.md` first.
 
 `Mình & Em` is a private memory journal for a couple. The first release is a local-first anniversary gift app. The product direction later is a shared couple journal with sync, private letters, timeline, maps, reminders, and recap generation.
 
@@ -32,6 +36,14 @@ Post-MVP:
 4. Privacy lock
 5. AI recap/export
 
+Current product milestone:
+
+1. Upgrade Timeline/Time into a memory management tab.
+2. Add empty state for couples that have not written any memories yet.
+3. Add create, edit, soft-delete flows for memories.
+4. Replace fixed memory categories with data-driven tags.
+5. Support moment voice messages and grouped image/video sections per memory.
+
 ## Navigation
 
 Recommended structure:
@@ -48,6 +60,8 @@ AppRoot
     TimelineTab
       TimelineScreen
       MemoryDetailScreen
+      AddMemoryScreen
+      EditMemoryScreen
     MapTab
       MapScreen
       PlaceDetailSheet
@@ -55,7 +69,8 @@ AppRoot
     LettersTab
       LettersScreen
       LetterDetailScreen
-  AddMemoryScreen post-MVP
+  AddMemoryScreen
+  EditMemoryScreen
 ```
 
 Opening logic:
@@ -142,6 +157,67 @@ type MemoryMedia = {
 };
 ```
 
+### Memory Management Extension
+
+For the editable product version, do not keep `MemoryCategory` as a fixed enum in the core domain model. Keep the seed JSON compatible during migration, but introduce data-driven tags for user-created labels.
+
+```ts
+type MemoryTag = {
+  id: string;
+  name: string;
+  color?: "rose" | "teal" | "moss" | "amber" | "lavender";
+  isSystem?: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type EditableMemory = {
+  id: string;
+  title: string;
+  description: string;
+  occurredAt: string;
+  locationName?: string;
+  latitude?: number;
+  longitude?: number;
+  placeId?: string;
+  note?: string;
+  primaryTagId?: string;
+  voiceMessages: MemoryVoiceMessage[];
+  mediaGroups: MemoryMediaGroup[];
+  coverMediaId?: string;
+  isFeatured?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+};
+
+type MemoryVoiceMessage = {
+  id: string;
+  uri: string;
+  source: "imported" | "recorded";
+  fileName?: string;
+  title?: string;
+  durationSeconds?: number;
+  waveform?: number[];
+  createdAt: string;
+};
+
+type MemoryMediaGroup = {
+  id: string;
+  note?: string;
+  items: MemoryMedia[];
+  sortOrder: number;
+};
+```
+
+Rules:
+
+- `Tất cả` is not stored as a tag. It is a default UI filter.
+- System tags can seed `Chuyến đi`, `Sinh nhật`, `Đời thường`, `Dấu mốc`, `Kỷ niệm`.
+- Custom tags are created by the user and appear as new chips in Time.
+- Start with one primary tag per memory for a simpler MVP. Multi-tag can be added later without changing the screen layout.
+- Use soft delete with `deletedAt` first. Hard delete can be a later storage cleanup action.
+
 ### Letter
 
 ```ts
@@ -198,8 +274,19 @@ PlacePreviewSheet
 VoiceNotePlayer
 MediaCarousel
 QuoteBlock
-PhotoUploadField post-MVP
-TextField post-MVP
+MemoryEmptyState
+MemoryActionMenu
+MemoryFormField
+MemoryTagSelector
+MomentMessageField
+VoiceMessageSourceSheet
+VoiceRecorderSheet
+VoiceMessageListItem
+MediaGroupEditor
+MediaAddSourceSheet
+MediaItemMenu
+PhotoUploadField
+TextField
 ```
 
 ## Screen Specs
@@ -259,6 +346,139 @@ Behavior:
 - Filter chips update list in place.
 - Memory tap pushes `MemoryDetailScreen`.
 - Scroll reveal: opacity 0 to 1, translateY 8px to 0.
+
+Current product extension:
+
+- Rename visible tab title to `Time` while keeping the kicker `Theo dòng thời gian`.
+- Add search and add actions in the header.
+- `Tất cả` is always the first chip.
+- All other chips come from `MemoryTag` data, including user-created custom tags.
+- Empty state when there are no memories at all:
+  - Title: `Chưa có kỷ niệm nào được viết`
+  - Body: `Bắt đầu bằng một khoảnh khắc nhỏ. Một buổi tối bình thường cũng xứng đáng được giữ lại.`
+  - CTA: `Thêm kỷ niệm đầu tiên`
+- Empty filtered state when the selected tag has no memory:
+  - Title: `Chưa có kỷ niệm trong nhãn này`
+  - Body: `Bạn có thể thêm một kỷ niệm mới vào nhãn đang chọn.`
+  - CTA: `Thêm vào nhãn này`
+- Memory card should show cover thumbnail, title, date/place, short description, primary tag, media summary, and overflow action menu.
+- Overflow action menu should include edit, feature/unfeature, and soft delete.
+
+### Add/Edit Memory
+
+Purpose: create or update one curated memory without making the app feel like a generic gallery manager.
+
+Route:
+
+- `AddMemoryScreen`: pushed from Time header and empty state CTA.
+- `EditMemoryScreen(memoryId)`: pushed from memory overflow menu.
+- These routes should not show the bottom tab bar.
+
+Sections:
+
+- App bar with back action, title, and save action.
+- Main detail sheet, visually related to `MemoryDetail`:
+  - Title.
+  - Description.
+  - Time.
+  - Location.
+  - Private note.
+  - `Lời nhắn cho khoảnh khắc này` area with empty state, imported audio, and recorded voice states.
+- Tag selector:
+  - Existing system/custom tags as chips.
+  - Inline action to create a new tag.
+  - MVP should allow one primary tag.
+- Media groups:
+  - User can add groups dynamically.
+  - MVP maximum is 3 groups per memory.
+  - Each group has an optional note at the top.
+  - Each group can contain images and videos mixed together.
+  - Each group preserves sort order.
+- Sticky save bar:
+  - Primary CTA: `Lưu kỷ niệm`.
+  - Show loading state when saving or uploading.
+
+Lời nhắn UX:
+
+- Do not render a separate `Audio` field. The feature label is always `Lời nhắn cho khoảnh khắc này`.
+- This section can attach audio from the device or record a new voice message.
+- The field must not render a fake fixed player when there is no message.
+- Empty state:
+  - Title: `Chưa có lời nhắn`
+  - Helper: `Ghi âm mới hoặc chọn một đoạn audio có sẵn trong máy.`
+  - Actions: `Chọn từ máy`, `Ghi âm`
+- `Chọn từ máy` opens a bottom sheet first, then a system file picker.
+  - Supported formats for MVP: mp3, m4a, wav.
+  - After import, show a message row with play action, title/file name, waveform placeholder, duration, and overflow menu.
+- `Ghi âm` opens an in-app recorder screen or bottom sheet.
+  - States: idle, recording, paused, preview, saving, error.
+  - Recording UI should show timer, live waveform/progress, pause/resume, cancel, and save.
+  - After recording, user can preview and optionally rename before saving into the memory.
+- Multiple voice messages are allowed. MVP should limit to 3 messages per memory.
+- Voice message item menu:
+  - Rename.
+  - Replace file.
+  - Delete from this memory.
+- Permission states:
+  - If microphone permission is denied, show explanation and a settings CTA.
+  - If file picker is unavailable, show a retry/error state.
+
+Media group UX:
+
+- Media groups are not a plain gallery grid. Each group is a story segment.
+- Media groups are created by user action, not fixed in the UI.
+- Empty state:
+  - Title: `Chưa có nhóm media`
+  - Helper: `Tạo nhóm đầu tiên rồi thêm ảnh/video vào đoạn câu chuyện đó.`
+  - CTA: `Thêm nhóm media`
+- Show a group counter such as `0/3 nhóm`, `1/3 nhóm`, `3/3 nhóm`.
+- When the memory reaches 3 groups, disable or hide the add-group CTA.
+- Every group card should include:
+  - Drag handle or reorder affordance.
+  - Runtime group label, for example `Nhóm media · 1/3`.
+  - Optional note field at the top.
+  - Mixed image/video grid.
+  - Add media tile.
+  - Group actions menu.
+  - Small footer with item count and reorder hint.
+- Add media tile opens a source menu:
+  - `Thêm ảnh từ thư viện`.
+  - `Thêm video từ thư viện`.
+  - `Chụp hoặc quay mới`.
+- Each media item should have an overflow menu:
+  - Move to cover.
+  - Move to another group.
+  - Delete from group.
+- Group action menu:
+  - Rename group label later if needed.
+  - Duplicate group later if needed.
+  - Delete group.
+- Reorder rules:
+  - Items can be reordered inside one group.
+  - Groups can be reordered relative to each other.
+  - `sortOrder` must be persisted for both groups and items.
+- Empty group rules:
+  - Empty groups can exist during editing.
+  - Empty groups are not saved unless they contain a note.
+  - If a group contains only a note, it can be saved as a story break.
+  - User cannot create a fourth group in MVP.
+
+Validation:
+
+- Title is required.
+- Date/time is required.
+- At least one of description, note, voice message, image, or video should exist.
+- Media group can be empty only while the user is editing; empty groups should not be saved.
+- New custom tag names should be trimmed and de-duplicated case-insensitively.
+- Imported voice message must have a readable local URI or uploaded remote URI before final save.
+- Recorded voice message must be saved to local app storage before being attached to the memory.
+
+Deletion:
+
+- Use an action menu or confirmation sheet, not a bare destructive icon.
+- First implementation should soft delete with `deletedAt`.
+- Show a clear destructive label: `Xóa kỷ niệm`.
+- Later product can add undo or trash recovery.
 
 ### MemoryDetail
 
