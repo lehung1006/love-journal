@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/ui/modal_bottom_sheet.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
 import '../journal_formatters.dart';
@@ -70,7 +71,7 @@ class LettersScreen extends StatelessWidget {
   }
 
   void _showLockedLetterSheet(BuildContext context, Letter letter) {
-    showModalBottomSheet<void>(
+    showUnfocusedModalBottomSheet<void>(
       context: context,
       builder: (context) {
         final unlockAt = letter.unlockAt;

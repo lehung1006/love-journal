@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/ui/modal_bottom_sheet.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
 import '../journal_localizations.dart';
@@ -128,7 +129,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   void _showMemoryActions(Memory memory) {
-    showModalBottomSheet<void>(
+    showUnfocusedModalBottomSheet<void>(
       context: context,
       builder: (context) {
         return Padding(

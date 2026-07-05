@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/ui/modal_bottom_sheet.dart';
 import '../../application/providers/journal_providers.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
@@ -208,7 +209,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   }
 
   Future<void> _showCreateTagSheet() async {
-    final created = await showModalBottomSheet<MemoryTag>(
+    final created = await showUnfocusedModalBottomSheet<MemoryTag>(
       context: context,
       isScrollControlled: true,
       builder: (context) {
@@ -228,7 +229,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
 
   void _showVoiceSourceSheet() {
     final l10n = context.l10n;
-    showModalBottomSheet<void>(
+    showUnfocusedModalBottomSheet<void>(
       context: context,
       builder: (context) {
         return Padding(
@@ -281,7 +282,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
 
   void _showRecorderSheet() {
     final l10n = context.l10n;
-    showModalBottomSheet<void>(
+    showUnfocusedModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (context) {
@@ -430,7 +431,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
 
   void _showMediaSourceSheet(MemoryMediaGroup group) {
     final l10n = context.l10n;
-    showModalBottomSheet<void>(
+    showUnfocusedModalBottomSheet<void>(
       context: context,
       builder: (context) {
         return Padding(
