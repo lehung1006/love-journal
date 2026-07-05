@@ -43,6 +43,7 @@ Current product milestone:
 3. Add create, edit, soft-delete flows for memories.
 4. Replace fixed memory categories with data-driven tags.
 5. Support moment voice messages and grouped image/video sections per memory.
+6. Route user-facing app copy through localization resources.
 
 ## Navigation
 
@@ -108,6 +109,24 @@ Title L: 26 / 29
 Body M: 14 / 21
 Body S: 12 / 16
 ```
+
+## Localization
+
+For the Flutter implementation, user-facing app copy should live in gen-l10n ARB resources instead of being hardcoded in widgets.
+
+Current setup:
+
+- `flutter_localizations` and `intl`.
+- `l10n.yaml`.
+- `lib/l10n/app_vi.arb` as the Vietnamese template locale.
+- Generated `AppLocalizations` imported by the app.
+- `context.l10n` extension for presentation widgets.
+
+Rules:
+
+- Keep route names, storage keys, JSON field names, asset paths, mock URIs, and other data contracts outside localization.
+- Keep system tag labels localized in presentation from stable `MemoryTag.systemIdForCategory(...)` IDs.
+- Custom tag names are user data and should be displayed as entered.
 
 ## Data Models
 
@@ -388,6 +407,9 @@ Sections:
   - Existing system/custom tags as chips.
   - Inline action to create a new tag.
   - MVP should allow one primary tag.
+  - Chips should behave like flexbox row items: size to content, flow horizontally, and wrap to the next line.
+  - Chips must not stretch into equal full-width rows.
+  - The create-tag bottom sheet should own its text controller inside the sheet lifecycle so dismissing it cannot use a disposed controller.
 - Media groups:
   - User can add groups dynamically.
   - MVP maximum is 3 groups per memory.

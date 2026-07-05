@@ -38,17 +38,3 @@ int daysUntil(DateTime target, DateTime now) {
   final today = DateTime(now.year, now.month, now.day);
   return targetDay.difference(today).inDays;
 }
-
-String letterStateLabel(Letter letter, DateTime now, bool opened) {
-  if (opened || letter.status == LetterStatus.opened) {
-    return 'Đã mở';
-  }
-  if (letter.isLocked(now)) {
-    final remaining = daysUntil(letter.unlockAt ?? now, now);
-    if (remaining <= 0) {
-      return 'Đã sẵn sàng';
-    }
-    return 'Còn $remaining ngày';
-  }
-  return 'Đã sẵn sàng';
-}

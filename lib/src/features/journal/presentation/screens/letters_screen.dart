@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
@@ -21,6 +22,7 @@ class LettersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AppScaffold(
       safeBottom: false,
       padding: EdgeInsets.zero,
@@ -38,11 +40,11 @@ class LettersScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index == 0) {
             return TopBar(
-              kicker: 'Dành cho em',
-              title: 'Những lá thư',
+              kicker: l10n.lettersKicker,
+              title: l10n.lettersTitle,
               trailing: AppCircleButton(
                 icon: Icons.mail_rounded,
-                tooltip: 'Thư',
+                tooltip: l10n.lettersTooltip,
                 onPressed: () {},
               ),
             );
@@ -73,7 +75,7 @@ class LettersScreen extends StatelessWidget {
       builder: (context) {
         final unlockAt = letter.unlockAt;
         final unlockText = unlockAt == null
-            ? 'Một ngày được để dành'
+            ? context.l10n.letterReservedDay
             : formatDate(unlockAt);
         final remaining = unlockAt == null ? null : daysUntil(unlockAt, now);
 
@@ -116,7 +118,7 @@ class LettersScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: AppSpacing.xxs),
                           Text(
-                            'Mở vào $unlockText',
+                            context.l10n.letterOpensOn(unlockText),
                             style: AppTextStyles.bodyS.copyWith(
                               color: AppColors.muted,
                             ),
@@ -129,13 +131,13 @@ class LettersScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.m),
                 Text(
                   remaining == null
-                      ? 'Lá thư này đang được giữ lại cho đúng khoảnh khắc.'
-                      : 'Còn $remaining ngày nữa lá thư này mới mở được.',
+                      ? context.l10n.letterLockedNoDateBody
+                      : context.l10n.letterLockedRemainingBody(remaining),
                   style: AppTextStyles.bodyM.copyWith(color: AppColors.muted),
                 ),
                 const SizedBox(height: AppSpacing.l),
                 PrimaryButton(
-                  label: 'Đã hiểu',
+                  label: context.l10n.understoodAction,
                   icon: Icons.lock_rounded,
                   onPressed: () => Navigator.of(context).pop(),
                 ),

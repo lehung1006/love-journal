@@ -135,9 +135,12 @@ class AppFilterChip extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s),
-            child: Center(
+            child: Align(
+              widthFactor: 1,
               child: Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodyS.copyWith(
                   color: selected ? Colors.white : AppColors.muted,
                   fontWeight: FontWeight.w800,

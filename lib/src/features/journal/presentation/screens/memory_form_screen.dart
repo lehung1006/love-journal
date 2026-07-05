@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../application/providers/journal_providers.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
 import '../journal_formatters.dart';
+import '../journal_localizations.dart';
 
 class MemoryFormScreen extends StatefulWidget {
   const MemoryFormScreen({
@@ -76,6 +78,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       body: AppScaffold(
         safeBottom: false,
@@ -94,7 +97,9 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
                   ),
                   children: [
                     _FormTopBar(
-                      title: _isEditing ? 'Sửa kỷ niệm' : 'Kỷ niệm mới',
+                      title: _isEditing
+                          ? l10n.memoryFormEditTitle
+                          : l10n.memoryFormNewTitle,
                       saving: _saving,
                       onBack: () => Navigator.of(context).pop(),
                       onSave: _submit,
@@ -155,7 +160,9 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
                 child: Padding(
                   padding: const EdgeInsets.only(top: AppSpacing.m),
                   child: PrimaryButton(
-                    label: _saving ? 'Đang lưu...' : 'Lưu kỷ niệm',
+                    label: _saving
+                        ? l10n.memoryFormSaving
+                        : l10n.memoryFormSave,
                     icon: Icons.check_rounded,
                     onPressed: _saving ? null : _submit,
                   ),
@@ -201,56 +208,14 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   }
 
   Future<void> _showCreateTagSheet() async {
-    final controller = TextEditingController();
     final created = await showModalBottomSheet<MemoryTag>(
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.screenX,
-            right: AppSpacing.screenX,
-            top: AppSpacing.m,
-            bottom: MediaQuery.viewInsetsOf(context).bottom + AppSpacing.m,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _SheetHandle(),
-              Text(
-                'Tạo nhãn mới',
-                style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
-              ),
-              const SizedBox(height: AppSpacing.s),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(hintText: 'Ví dụ: Cafe tối'),
-              ),
-              const SizedBox(height: AppSpacing.m),
-              PrimaryButton(
-                label: 'Lưu nhãn',
-                icon: Icons.sell_rounded,
-                onPressed: () async {
-                  final name = controller.text.trim();
-                  if (name.isEmpty) {
-                    return;
-                  }
-                  final tag = await widget.onCreateTag(name);
-                  if (context.mounted) {
-                    Navigator.of(context).pop(tag);
-                  }
-                },
-              ),
-            ],
-          ),
-        );
+        return _CreateTagSheet(onCreateTag: widget.onCreateTag);
       },
     );
-    controller.dispose();
-    if (created == null) {
+    if (created == null || !mounted) {
       return;
     }
     setState(() {
@@ -262,6 +227,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   }
 
   void _showVoiceSourceSheet() {
+    final l10n = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       builder: (context) {
@@ -278,19 +244,19 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
             children: [
               const _SheetHandle(),
               Text(
-                'Thêm lời nhắn',
+                l10n.memoryFormAddVoiceTitle,
                 style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Chọn một file có sẵn hoặc ghi âm ngay trong app.',
+                l10n.memoryFormAddVoiceHelper,
                 style: AppTextStyles.bodyM.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: AppSpacing.m),
               _SourceOption(
                 icon: Icons.audio_file_rounded,
-                title: 'Chọn từ máy',
-                subtitle: 'MVP sẽ thay mock này bằng file picker native.',
+                title: l10n.memoryFormPickFromDevice,
+                subtitle: l10n.memoryFormPickAudioSubtitle,
                 onTap: () {
                   Navigator.of(context).pop();
                   _addMockVoiceMessage(MemoryVoiceMessageSource.imported);
@@ -299,8 +265,8 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
               const SizedBox(height: AppSpacing.s),
               _SourceOption(
                 icon: Icons.mic_rounded,
-                title: 'Ghi âm mới',
-                subtitle: 'Mở giao diện recorder trước khi lưu lời nhắn.',
+                title: l10n.memoryFormRecordNew,
+                subtitle: l10n.memoryFormRecordSubtitle,
                 onTap: () {
                   Navigator.of(context).pop();
                   _showRecorderSheet();
@@ -314,6 +280,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   }
 
   void _showRecorderSheet() {
+    final l10n = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -330,7 +297,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
             children: [
               const _SheetHandle(),
               Text(
-                'Lời nhắn cho khoảnh khắc này',
+                l10n.memoryDetailMomentMessage,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
               ),
@@ -364,7 +331,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
                 children: [
                   Expanded(
                     child: SecondaryButton(
-                      label: 'Hủy ghi âm',
+                      label: l10n.memoryFormCancelRecording,
                       icon: Icons.close_rounded,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
@@ -372,7 +339,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
                   const SizedBox(width: AppSpacing.s),
                   Expanded(
                     child: SecondaryButton(
-                      label: 'Lưu lời nhắn',
+                      label: l10n.memoryFormSaveVoice,
                       icon: Icons.check_rounded,
                       onPressed: () {
                         Navigator.of(context).pop();
@@ -406,8 +373,8 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
               ? 'loi-nhan-$number.m4a'
               : null,
           title: source == MemoryVoiceMessageSource.imported
-              ? 'Audio từ máy $number'
-              : 'Lời nhắn ghi âm $number',
+              ? context.l10n.memoryFormImportedAudioTitle(number)
+              : context.l10n.memoryFormRecordedVoiceTitle(number),
           durationSeconds: source == MemoryVoiceMessageSource.imported
               ? 42
               : 34,
@@ -462,6 +429,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   }
 
   void _showMediaSourceSheet(MemoryMediaGroup group) {
+    final l10n = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       builder: (context) {
@@ -478,14 +446,14 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
             children: [
               const _SheetHandle(),
               Text(
-                'Thêm media',
+                l10n.memoryFormAddMediaTitle,
                 style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
               ),
               const SizedBox(height: AppSpacing.m),
               _SourceOption(
                 icon: Icons.photo_library_rounded,
-                title: 'Thêm ảnh từ thư viện',
-                subtitle: 'Mock bằng ảnh hero, sau này nối image picker.',
+                title: l10n.memoryFormAddPhoto,
+                subtitle: l10n.memoryFormAddPhotoSubtitle,
                 onTap: () {
                   Navigator.of(context).pop();
                   _addMockMedia(group, MemoryMediaType.image);
@@ -494,8 +462,8 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
               const SizedBox(height: AppSpacing.s),
               _SourceOption(
                 icon: Icons.video_library_rounded,
-                title: 'Thêm video từ thư viện',
-                subtitle: 'Mock bằng thumbnail hero, sau này nối video picker.',
+                title: l10n.memoryFormAddVideo,
+                subtitle: l10n.memoryFormAddVideoSubtitle,
                 onTap: () {
                   Navigator.of(context).pop();
                   _addMockMedia(group, MemoryMediaType.video);
@@ -504,8 +472,8 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
               const SizedBox(height: AppSpacing.s),
               _SourceOption(
                 icon: Icons.photo_camera_rounded,
-                title: 'Chụp hoặc quay mới',
-                subtitle: 'Sẽ mở camera khi có permission native.',
+                title: l10n.memoryFormCamera,
+                subtitle: l10n.memoryFormCameraSubtitle,
                 onTap: () {
                   Navigator.of(context).pop();
                   _addMockMedia(group, MemoryMediaType.image);
@@ -524,7 +492,9 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
       id: 'media-${now.microsecondsSinceEpoch}',
       type: type,
       uri: AppAssets.heroImage,
-      alt: type == MemoryMediaType.video ? 'Video mock' : 'Ảnh mock',
+      alt: type == MemoryMediaType.video
+          ? context.l10n.memoryFormVideoMockAlt
+          : context.l10n.memoryFormImageMockAlt,
     );
 
     setState(() {
@@ -614,9 +584,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
         _voiceMessages.isNotEmpty ||
         normalizedGroups.any((group) => group.items.isNotEmpty);
     if (!hasBody) {
-      _showMessage(
-        'Hãy thêm mô tả, ghi chú, lời nhắn hoặc ít nhất một ảnh/video.',
-      );
+      _showMessage(context.l10n.memoryFormBodyRequired);
       return;
     }
 
@@ -652,6 +620,82 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   }
 }
 
+class _CreateTagSheet extends StatefulWidget {
+  const _CreateTagSheet({required this.onCreateTag});
+
+  final Future<MemoryTag> Function(String name) onCreateTag;
+
+  @override
+  State<_CreateTagSheet> createState() => _CreateTagSheetState();
+}
+
+class _CreateTagSheetState extends State<_CreateTagSheet> {
+  final _controller = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.screenX,
+        right: AppSpacing.screenX,
+        top: AppSpacing.m,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + AppSpacing.m,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SheetHandle(),
+          Text(
+            l10n.memoryFormCreateTagTitle,
+            style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
+          ),
+          const SizedBox(height: AppSpacing.s),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(hintText: l10n.memoryFormCreateTagHint),
+            onSubmitted: (_) => _save(),
+          ),
+          const SizedBox(height: AppSpacing.m),
+          PrimaryButton(
+            label: l10n.memoryFormSaveTag,
+            icon: _saving ? Icons.hourglass_top_rounded : Icons.sell_rounded,
+            onPressed: _saving ? null : _save,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    final name = _controller.text.trim();
+    if (name.isEmpty || _saving) {
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final tag = await widget.onCreateTag(name);
+      if (mounted) {
+        Navigator.of(context).pop(tag);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
+}
+
 class _FormTopBar extends StatelessWidget {
   const _FormTopBar({
     required this.title,
@@ -671,7 +715,7 @@ class _FormTopBar extends StatelessWidget {
       children: [
         AppCircleButton(
           icon: Icons.arrow_back_rounded,
-          tooltip: 'Quay lại',
+          tooltip: context.l10n.backTooltip,
           onPressed: onBack,
         ),
         const SizedBox(width: AppSpacing.s),
@@ -685,7 +729,7 @@ class _FormTopBar extends StatelessWidget {
         const SizedBox(width: AppSpacing.s),
         AppCircleButton(
           icon: saving ? Icons.hourglass_top_rounded : Icons.check_rounded,
-          tooltip: 'Lưu',
+          tooltip: context.l10n.saveTooltip,
           isActive: true,
           onPressed: saving ? null : onSave,
         ),
@@ -719,42 +763,43 @@ class _MainInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return _SurfaceCard(
       floating: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _LabeledTextField(
-            label: 'Tiêu đề',
-            hint: 'Đặt tên cho khoảnh khắc này',
+            label: l10n.memoryFormTitleLabel,
+            hint: l10n.memoryFormTitleHint,
             controller: titleController,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Tiêu đề là bắt buộc';
+                return l10n.memoryFormTitleRequired;
               }
               return null;
             },
           ),
           _LabeledTextField(
-            label: 'Mô tả',
-            hint: 'Viết ngắn về điều đã xảy ra...',
+            label: l10n.memoryFormDescriptionLabel,
+            hint: l10n.memoryFormDescriptionHint,
             controller: storyController,
             maxLines: 3,
           ),
           _FieldButton(
-            label: 'Thời gian',
+            label: l10n.memoryFormDateLabel,
             value: formatDate(selectedDate),
             icon: Icons.calendar_month_rounded,
             onTap: onPickDate,
           ),
           _LabeledTextField(
-            label: 'Địa điểm',
-            hint: 'Thêm nơi hai đứa đã đi qua',
+            label: l10n.memoryFormLocationLabel,
+            hint: l10n.memoryFormLocationHint,
             controller: locationController,
           ),
           _LabeledTextField(
-            label: 'Ghi chú',
-            hint: 'Một điều nhỏ muốn nhớ riêng',
+            label: l10n.memoryFormNoteLabel,
+            hint: l10n.memoryFormNoteHint,
             controller: noteController,
             maxLines: 2,
             isLast: false,
@@ -783,16 +828,17 @@ class _VoiceMessageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return _FieldBlock(
-      label: 'Lời nhắn cho khoảnh khắc này',
+      label: l10n.memoryDetailMomentMessage,
       isLast: true,
       child: Column(
         children: [
           if (messages.isEmpty)
             _EmptyInlinePanel(
-              title: 'Chưa có lời nhắn',
-              body: 'Ghi âm mới hoặc chọn một đoạn audio có sẵn trong máy.',
-              primaryLabel: 'Thêm lời nhắn',
+              title: l10n.memoryFormNoVoiceTitle,
+              body: l10n.memoryFormNoVoiceBody,
+              primaryLabel: l10n.memoryFormAddVoiceCta,
               icon: Icons.mic_rounded,
               onPressed: onAdd,
             )
@@ -808,8 +854,8 @@ class _VoiceMessageSection extends StatelessWidget {
             const SizedBox(height: AppSpacing.s),
             SecondaryButton(
               label: onAdd == null
-                  ? 'Đã đạt giới hạn lời nhắn'
-                  : 'Thêm lời nhắn',
+                  ? l10n.memoryFormVoiceLimitReached
+                  : l10n.memoryFormAddVoiceCta,
               icon: Icons.add_rounded,
               onPressed: onAdd,
             ),
@@ -828,6 +874,10 @@ class _VoiceMessageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final source = message.source == MemoryVoiceMessageSource.recorded
+        ? l10n.memoryFormRecordedSource
+        : l10n.memoryFormImportedSource;
     return Container(
       constraints: const BoxConstraints(minHeight: 58),
       padding: const EdgeInsets.all(AppSpacing.xs),
@@ -853,7 +903,9 @@ class _VoiceMessageTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  message.title ?? message.fileName ?? 'Lời nhắn',
+                  message.title ??
+                      message.fileName ??
+                      l10n.memoryFormVoiceFallbackTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodyS.copyWith(
@@ -863,14 +915,17 @@ class _VoiceMessageTile extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
-                  '${message.source == MemoryVoiceMessageSource.recorded ? 'Ghi âm' : 'Từ máy'} · ${_formatDuration(message.durationSeconds)}',
+                  l10n.memoryFormVoiceSourceAndDuration(
+                    source,
+                    _formatDuration(message.durationSeconds),
+                  ),
                   style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
           ),
           IconButton(
-            tooltip: 'Xóa lời nhắn',
+            tooltip: l10n.memoryFormDeleteVoiceTooltip,
             onPressed: onRemove,
             icon: const Icon(
               Icons.delete_outline_rounded,
@@ -905,11 +960,12 @@ class _TagSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return _SurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionLabel('Nhãn kỷ niệm'),
+          _SectionLabel(l10n.memoryFormTagSection),
           const SizedBox(height: AppSpacing.s),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -926,7 +982,7 @@ class _TagSelector extends StatelessWidget {
                         maxWidth: constraints.maxWidth,
                       ),
                       child: AppFilterChip(
-                        label: tag.name,
+                        label: memoryTagLabel(l10n, tag),
                         selected: selectedTagId == tag.id,
                         onTap: () => onSelected(tag),
                       ),
@@ -934,7 +990,7 @@ class _TagSelector extends StatelessWidget {
                   ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: constraints.maxWidth),
                     child: AppFilterChip(
-                      label: '+ Tạo nhãn',
+                      label: l10n.memoryFormCreateTagChip,
                       selected: false,
                       onTap: onCreateTag,
                     ),
@@ -972,28 +1028,28 @@ class _MediaGroupsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return _SurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Expanded(child: _SectionLabel('Nhóm media')),
-              _LimitPill('${groups.length}/$maxGroups nhóm'),
+              Expanded(child: _SectionLabel(l10n.memoryFormMediaGroupsSection)),
+              _LimitPill(l10n.memoryFormGroupLimit(groups.length, maxGroups)),
             ],
           ),
           const SizedBox(height: AppSpacing.xxs),
           Text(
-            'Tạo tối đa 3 nhóm để kể chuyện theo từng đoạn.',
+            l10n.memoryFormMediaGroupsHelper,
             style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSpacing.s),
           if (groups.isEmpty)
             _EmptyInlinePanel(
-              title: 'Chưa có nhóm media',
-              body:
-                  'Tạo nhóm đầu tiên rồi thêm ảnh/video vào đoạn câu chuyện đó.',
-              primaryLabel: 'Thêm nhóm media',
+              title: l10n.memoryFormNoMediaGroupTitle,
+              body: l10n.memoryFormNoMediaGroupBody,
+              primaryLabel: l10n.memoryFormAddMediaGroup,
               icon: Icons.perm_media_rounded,
               onPressed: onAddGroup,
             )
@@ -1056,6 +1112,7 @@ class _MediaGroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s),
       decoration: BoxDecoration(
@@ -1078,14 +1135,14 @@ class _MediaGroupCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Nhóm media · ${index + 1}/$maxGroups',
+                      l10n.memoryFormMediaGroupTitle(index + 1, maxGroups),
                       style: AppTextStyles.bodyS.copyWith(
                         color: AppColors.roseDark,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     Text(
-                      'Ảnh và video cùng một đoạn câu chuyện',
+                      l10n.memoryFormMediaGroupHelper,
                       style: AppTextStyles.bodyS.copyWith(
                         color: AppColors.muted,
                       ),
@@ -1111,18 +1168,24 @@ class _MediaGroupCard extends StatelessWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'add', child: Text('Thêm media')),
+                  PopupMenuItem(
+                    value: 'add',
+                    child: Text(l10n.memoryFormAddMediaTitle),
+                  ),
                   PopupMenuItem(
                     value: 'up',
                     enabled: onMoveUp != null,
-                    child: const Text('Đưa lên trên'),
+                    child: Text(l10n.memoryFormMoveUp),
                   ),
                   PopupMenuItem(
                     value: 'down',
                     enabled: onMoveDown != null,
-                    child: const Text('Đưa xuống dưới'),
+                    child: Text(l10n.memoryFormMoveDown),
                   ),
-                  const PopupMenuItem(value: 'delete', child: Text('Xóa nhóm')),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text(l10n.memoryFormDeleteGroup),
+                  ),
                 ],
               ),
             ],
@@ -1132,9 +1195,7 @@ class _MediaGroupCard extends StatelessWidget {
             initialValue: group.note,
             maxLines: 2,
             onChanged: onNoteChanged,
-            decoration: const InputDecoration(
-              hintText: 'Note cho nhóm này, có thể bỏ trống',
-            ),
+            decoration: InputDecoration(hintText: l10n.memoryFormGroupNoteHint),
           ),
           const SizedBox(height: AppSpacing.s),
           GridView.count(
@@ -1157,12 +1218,14 @@ class _MediaGroupCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${group.items.length} mục',
+                  l10n.memoryFormItemCount(group.items.length),
                   style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
                 ),
               ),
               Text(
-                total > 1 ? 'Có thể sắp xếp nhóm' : 'Thêm nhóm để kể tiếp',
+                total > 1
+                    ? l10n.memoryFormGroupsReorderHint
+                    : l10n.memoryFormAddGroupToContinue,
                 style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
               ),
             ],
@@ -1268,13 +1331,18 @@ class _AddGroupPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final reachedLimit = groups >= maxGroups;
     return _EmptyInlinePanel(
-      title: reachedLimit ? 'Đã đạt giới hạn nhóm' : 'Thêm một nhóm media khác',
+      title: reachedLimit
+          ? l10n.memoryFormGroupLimitReachedTitle
+          : l10n.memoryFormAddAnotherMediaGroupTitle,
       body: reachedLimit
-          ? 'Bạn có thể xóa một nhóm để tạo lại.'
-          : 'Mỗi nhóm có note riêng và có thể chứa ảnh/video hỗn hợp.',
-      primaryLabel: reachedLimit ? 'Đã đạt giới hạn nhóm' : 'Thêm nhóm media',
+          ? l10n.memoryFormGroupLimitReachedBody
+          : l10n.memoryFormAddAnotherMediaGroupBody,
+      primaryLabel: reachedLimit
+          ? l10n.memoryFormGroupLimitReachedCta
+          : l10n.memoryFormAddMediaGroup,
       icon: reachedLimit
           ? Icons.lock_rounded
           : Icons.add_photo_alternate_rounded,

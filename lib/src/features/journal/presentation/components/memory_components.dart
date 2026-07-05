@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../journal_formatters.dart';
@@ -148,7 +149,7 @@ class MemoryListCard extends StatelessWidget {
             if (onMore != null) ...[
               const SizedBox(width: AppSpacing.xs),
               IconButton(
-                tooltip: 'Tùy chọn kỷ niệm',
+                tooltip: context.l10n.memoryOptionsTooltip,
                 onPressed: onMore,
                 icon: const Icon(Icons.more_horiz_rounded),
                 color: AppColors.mutedLight,
@@ -215,9 +216,10 @@ class TimelineSpine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (memories.isEmpty) {
-      return const EmptyStateCard(
-        title: 'Chưa có kỷ niệm nào được viết',
-        body: 'Khi có dữ liệu, timeline sẽ hiện theo thứ tự thời gian.',
+      final l10n = context.l10n;
+      return EmptyStateCard(
+        title: l10n.timelineEmptyTitle,
+        body: l10n.timelineFallbackEmptyBody,
       );
     }
 

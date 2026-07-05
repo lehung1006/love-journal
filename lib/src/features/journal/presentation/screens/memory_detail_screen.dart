@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
@@ -19,6 +20,7 @@ class MemoryDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final imagePath = memory.coverMedia?.uri ?? AppAssets.heroImage;
     final storyBlocks = _splitStory(memory.story);
 
@@ -65,7 +67,7 @@ class MemoryDetailScreen extends StatelessWidget {
                           children: [
                             AppCircleButton(
                               icon: Icons.arrow_back_rounded,
-                              tooltip: 'Quay lại',
+                              tooltip: l10n.backTooltip,
                               onPressed: () => Navigator.of(context).pop(),
                             ),
                             const Spacer(),
@@ -73,7 +75,7 @@ class MemoryDetailScreen extends StatelessWidget {
                               icon: isFavorite
                                   ? Icons.favorite_rounded
                                   : Icons.favorite_border_rounded,
-                              tooltip: 'Yêu thích',
+                              tooltip: l10n.favoriteTooltip,
                               isActive: isFavorite,
                               onPressed: onToggleFavorite,
                             ),
@@ -134,7 +136,7 @@ class MemoryDetailScreen extends StatelessWidget {
                         if (memory.voiceMessages.isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.m),
                           Text(
-                            'Lời nhắn cho khoảnh khắc này',
+                            l10n.memoryDetailMomentMessage,
                             style: AppTextStyles.bodyS.copyWith(
                               color: AppColors.roseDark,
                               fontWeight: FontWeight.w800,

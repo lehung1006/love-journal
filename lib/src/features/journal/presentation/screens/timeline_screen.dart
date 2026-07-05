@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
+import '../journal_localizations.dart';
 
 class TimelineScreen extends StatefulWidget {
   const TimelineScreen({
@@ -33,6 +35,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final visibleMemories = widget.memories
         .where((memory) => !memory.isDeleted)
         .toList(growable: false);
@@ -43,8 +46,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
               .toList(growable: false);
 
     final phaseLabel = filtered.isEmpty
-        ? 'Tất cả năm'
-        : filtered.first.phase.label;
+        ? l10n.timelineAllYears
+        : relationshipPhaseLabel(l10n, filtered.first.phase);
 
     return AppScaffold(
       safeBottom: false,
@@ -58,20 +61,20 @@ class _TimelineScreenState extends State<TimelineScreen> {
         ),
         children: [
           TopBar(
-            kicker: 'Theo dòng thời gian',
-            title: 'Time',
+            kicker: l10n.timelineKicker,
+            title: l10n.timelineTitle,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppCircleButton(
                   icon: Icons.search_rounded,
-                  tooltip: 'Tìm kỷ niệm',
+                  tooltip: l10n.timelineSearchTooltip,
                   onPressed: () {},
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 AppCircleButton(
                   icon: Icons.add_rounded,
-                  tooltip: 'Thêm kỷ niệm',
+                  tooltip: l10n.timelineAddMemoryTooltip,
                   isActive: true,
                   onPressed: widget.onAddMemory,
                 ),
@@ -97,60 +100,31 @@ class _TimelineScreenState extends State<TimelineScreen> {
           const SizedBox(height: AppSpacing.s),
           if (visibleMemories.isEmpty)
             _TimelineEmptyState(
-              title: 'Chưa có kỷ niệm nào được viết',
-              body:
-                  'Bắt đầu bằng một khoảnh khắc nhỏ. Một buổi tối bình thường cũng xứng đáng được giữ lại.',
-              cta: 'Thêm kỷ niệm đầu tiên',
+              title: l10n.timelineEmptyTitle,
+              body: l10n.timelineEmptyBody,
+              cta: l10n.timelineEmptyCta,
               onPressed: widget.onAddMemory,
             )
           else if (filtered.isEmpty)
             _TimelineEmptyState(
-              title: 'Chưa có kỷ niệm trong nhãn này',
-              body: 'Bạn có thể thêm một kỷ niệm mới vào nhãn đang chọn.',
-              cta: 'Thêm vào nhãn này',
+              title: l10n.timelineFilteredEmptyTitle,
+              body: l10n.timelineFilteredEmptyBody,
+              cta: l10n.timelineFilteredEmptyCta,
               onPressed: widget.onAddMemory,
             )
           else
             TimelineSpine(
               memories: filtered,
               onMemoryTap: widget.onMemoryTap,
-              tagLabelForMemory: _tagLabel,
-              mediaSummaryForMemory: _mediaSummary,
+              tagLabelForMemory: (memory) =>
+                  memoryTagLabelById(l10n, widget.tags, memory),
+              mediaSummaryForMemory: (memory) =>
+                  memoryMediaSummary(l10n, memory),
               onMemoryMore: _showMemoryActions,
             ),
         ],
       ),
     );
-  }
-
-  String _tagLabel(Memory memory) {
-    for (final tag in widget.tags) {
-      if (tag.id == memory.effectiveTagId) {
-        return tag.name;
-      }
-    }
-    return memory.category.label;
-  }
-
-  String _mediaSummary(Memory memory) {
-    final images = memory.media
-        .where((item) => item.type == MemoryMediaType.image)
-        .length;
-    final videos = memory.media
-        .where((item) => item.type == MemoryMediaType.video)
-        .length;
-    final messages = memory.voiceMessages.length;
-    final parts = <String>[];
-    if (images > 0) {
-      parts.add('$images ảnh');
-    }
-    if (videos > 0) {
-      parts.add('$videos video');
-    }
-    if (messages > 0) {
-      parts.add('$messages lời nhắn');
-    }
-    return parts.isEmpty ? 'Chưa có media' : parts.join(' · ');
   }
 
   void _showMemoryActions(Memory memory) {
@@ -185,13 +159,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Chọn cách chỉnh sửa kỷ niệm này.',
+                context.l10n.timelineMemoryActionHelper,
                 style: AppTextStyles.bodyM.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: AppSpacing.m),
               _ActionTile(
                 icon: Icons.edit_rounded,
-                title: 'Sửa kỷ niệm',
+                title: context.l10n.timelineEditMemory,
                 onTap: () {
                   Navigator.of(context).pop();
                   widget.onEditMemory(memory);
@@ -199,7 +173,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ),
               _ActionTile(
                 icon: Icons.favorite_rounded,
-                title: 'Đặt làm kỷ niệm nổi bật',
+                title: context.l10n.timelineFeatureMemory,
                 onTap: () {
                   Navigator.of(context).pop();
                   widget.onFeatureMemory(memory);
@@ -207,7 +181,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ),
               _ActionTile(
                 icon: Icons.delete_outline_rounded,
-                title: 'Xóa kỷ niệm',
+                title: context.l10n.timelineDeleteMemory,
                 danger: true,
                 onTap: () {
                   Navigator.of(context).pop();
@@ -226,21 +200,19 @@ class _TimelineScreenState extends State<TimelineScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Xóa kỷ niệm?'),
-          content: Text(
-            '“${memory.title}” sẽ được ẩn khỏi Time. Sau này có thể thêm thùng khôi phục khi có tài khoản/sync.',
-          ),
+          title: Text(context.l10n.timelineDeleteTitle),
+          content: Text(context.l10n.timelineDeleteBody(memory.title)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Hủy'),
+              child: Text(context.l10n.cancelAction),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 widget.onDeleteMemory(memory);
               },
-              child: const Text('Xóa'),
+              child: Text(context.l10n.deleteAction),
             ),
           ],
         );
@@ -262,19 +234,20 @@ class _TagChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
           AppFilterChip(
-            label: 'Tất cả',
+            label: l10n.timelineAllFilter,
             selected: selectedTagId == null,
             onTap: () => onSelected(null),
           ),
           for (final tag in tags) ...[
             const SizedBox(width: AppSpacing.xs),
             AppFilterChip(
-              label: tag.name,
+              label: memoryTagLabel(l10n, tag),
               selected: selectedTagId == tag.id,
               onTap: () => onSelected(tag.id),
             ),

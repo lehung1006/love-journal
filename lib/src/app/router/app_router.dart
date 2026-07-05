@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_tokens.dart';
+import '../../core/localization/app_localizations_extension.dart';
 import '../../features/journal/application/providers/journal_providers.dart';
 import '../../features/journal/application/state/journal_session_controller.dart';
 import '../../features/journal/domain/entities/journal_entities.dart';
@@ -527,13 +528,13 @@ class _RouterErrorScreen extends ConsumerWidget {
         error ??
         ref.watch(journalDataProvider).error ??
         ref.watch(journalSessionControllerProvider).error ??
-        'Unknown error';
+        context.l10n.routerUnknownError;
 
     return Scaffold(
       body: AppScaffold(
         child: Center(
           child: EmptyStateCard(
-            title: 'Chưa mở được nhật ký',
+            title: context.l10n.routerErrorTitle,
             body: '$routeError',
           ),
         ),

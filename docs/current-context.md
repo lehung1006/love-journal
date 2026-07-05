@@ -1,6 +1,6 @@
 # Current Context - Flutter Love Journal
 
-Last updated: 2026-07-04
+Last updated: 2026-07-05
 
 ## Project Intent
 
@@ -21,6 +21,7 @@ The app has moved beyond the original static gift MVP. It now has the foundation
 - Repository/data-source separation.
 - API client abstraction, currently reading bundled JSON assets.
 - GoRouter navigation with tab shell.
+- Flutter gen-l10n localization for user-facing app copy.
 - Local-first persistence for app session and editable journal draft.
 - A redesigned and partially implemented Time module with add/edit/delete memory flow.
 
@@ -46,6 +47,9 @@ Main Flutter app:
 - `lib/src/app/navigation/main_navigation_shell.dart`
 - `lib/src/core/theme/app_theme.dart`
 - `lib/src/core/theme/app_tokens.dart`
+- `lib/src/core/localization/app_localizations_extension.dart`
+- `lib/l10n/app_vi.arb`
+- `l10n.yaml`
 
 Journal feature:
 
@@ -86,6 +90,8 @@ core/
     apiClientProvider
     sharedPreferencesProvider
     keyValueStoreProvider
+  localization/
+    app_localizations_extension.dart
   theme/
     app_tokens.dart
     app_theme.dart
@@ -193,6 +199,8 @@ Important recent UI fix:
 
 - Bottom sheets now use `AppColors.paper` background with rounded top corners through `bottomSheetTheme`.
 - Previously they were transparent.
+- User-facing UI copy is routed through Flutter gen-l10n with Vietnamese ARB as the current template.
+- `AppFilterChip` shrink-wraps to text, so tag chips behave like flexbox items instead of stretching full width.
 
 ## Current Screens
 
@@ -217,6 +225,7 @@ Current Time capabilities:
 - Shows visible memories only.
 - Supports dynamic tags.
 - Always has `Tất cả` filter.
+- Tag chips size to their content and wrap horizontally like a flexbox row.
 - Memory cards show:
   - Cover thumbnail.
   - Title.
@@ -253,6 +262,7 @@ Main sections:
   - Each chip sizes to text.
   - Chips flow horizontally and wrap to the next line.
   - Supports creating custom tag.
+  - The create-tag bottom sheet owns its `TextEditingController` inside a stateful sheet to avoid controller-after-dispose errors when dismissed.
 
 - Media groups:
   - Dynamic groups.
@@ -374,8 +384,10 @@ Decisions already made:
 - Keep API/repository abstraction even while data comes from JSON.
 - Use soft delete for memories.
 - Use dynamic tags instead of relying only on enum categories.
+- Keep system tag labels localized at the presentation layer; domain/data keeps stable enum/tag IDs.
 - Limit media groups to 3 per memory for MVP.
 - Use `Lời nhắn cho khoảnh khắc này` instead of a separate generic `Audio` field.
+- Keep user-facing UI copy in localization resources instead of hardcoded widget strings.
 - Keep design aligned with `docs/designs`, not generic mobile mockups.
 
 ## Quality/Verification Status
@@ -389,6 +401,12 @@ Recent checks after implementing the Time editable module:
 After bottom sheet/theme and tag selector tweaks:
 
 - `flutter analyze`: passed.
+
+After adding Flutter localization, flex-style tag chips, and fixing create-tag sheet controller lifecycle:
+
+- `flutter pub get`: passed.
+- `flutter analyze`: passed.
+- `flutter test`: passed.
 
 ## Environment Notes
 
@@ -460,7 +478,8 @@ Short-term:
    - Add memory.
    - Create custom tag.
    - Soft delete memory.
-4. Replace mock media/audio with native picker/recorder behind small service abstractions.
+4. Add a localization coverage pass for any newly added screens/copy.
+5. Replace mock media/audio with native picker/recorder behind small service abstractions.
 
 Medium-term:
 

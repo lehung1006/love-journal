@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
-import '../journal_formatters.dart';
+import '../journal_localizations.dart';
 import '_pressable_scale.dart';
 
 class LetterCard extends StatelessWidget {
@@ -85,7 +86,12 @@ class LetterCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.s),
                   LockedLetterBadge(
-                    label: letterStateLabel(letter, now, opened),
+                    label: localizedLetterStateLabel(
+                      context.l10n,
+                      letter,
+                      now,
+                      opened,
+                    ),
                     locked: locked,
                   ),
                 ],

@@ -1,0 +1,287 @@
+{
+  "@@locale": "vi",
+  "appTitle": "Mình & Em",
+  "navHome": "Home",
+  "navTime": "Time",
+  "navMap": "Map",
+  "navLetters": "Thư",
+  "backTooltip": "Quay lại",
+  "saveTooltip": "Lưu",
+  "favoriteTooltip": "Yêu thích",
+  "cancelAction": "Hủy",
+  "deleteAction": "Xóa",
+  "understoodAction": "Đã hiểu",
+  "openingKicker": "Gửi riêng em",
+  "openingTitle": "Ba năm, mình vẫn ở đây.",
+  "openingBody": "Anh gói lại vài nơi mình đã đi qua, vài ngày mình đã thương nhau, và một lời hẹn thật nhỏ cho chặng sau.",
+  "openingCta": "Mở món quà",
+  "homeKicker": "Chào em",
+  "homeRecapTooltip": "Kỷ niệm 3 năm",
+  "homeHeroKicker": "Kỷ niệm của tụi mình",
+  "homeLoveDays": "{days} ngày yêu",
+  "@homeLoveDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "homeHeroSubtitle": "Và anh vẫn muốn đi tiếp cùng em.",
+  "homeMemoriesWritten": "kỷ niệm đã viết",
+  "homePlacesVisited": "nơi mình đã qua",
+  "homeFeaturedMemory": "Kỷ niệm nổi bật",
+  "homeNoFeaturedTitle": "Chưa có kỷ niệm nổi bật",
+  "homeNoFeaturedBody": "Khi thêm kỷ niệm đầu tiên, Home sẽ giữ lại khoảnh khắc đáng nhớ nhất ở đây.",
+  "homeNextLetter": "Lá thư tiếp theo",
+  "homeNoLettersTitle": "Chưa có lá thư nào",
+  "homeNoLettersBody": "Khi có thư mới, Home sẽ luôn giữ một lời nhắn gần nhất.",
+  "homeRecapCta": "Xem recap ba năm",
+  "timelineKicker": "Theo dòng thời gian",
+  "timelineTitle": "Time",
+  "timelineSearchTooltip": "Tìm kỷ niệm",
+  "timelineAddMemoryTooltip": "Thêm kỷ niệm",
+  "timelineAllYears": "Tất cả năm",
+  "timelineAllFilter": "Tất cả",
+  "timelineEmptyTitle": "Chưa có kỷ niệm nào được viết",
+  "timelineEmptyBody": "Bắt đầu bằng một khoảnh khắc nhỏ. Một buổi tối bình thường cũng xứng đáng được giữ lại.",
+  "timelineEmptyCta": "Thêm kỷ niệm đầu tiên",
+  "timelineFilteredEmptyTitle": "Chưa có kỷ niệm trong nhãn này",
+  "timelineFilteredEmptyBody": "Bạn có thể thêm một kỷ niệm mới vào nhãn đang chọn.",
+  "timelineFilteredEmptyCta": "Thêm vào nhãn này",
+  "timelineMemoryActionHelper": "Chọn cách chỉnh sửa kỷ niệm này.",
+  "timelineEditMemory": "Sửa kỷ niệm",
+  "timelineFeatureMemory": "Đặt làm kỷ niệm nổi bật",
+  "timelineDeleteMemory": "Xóa kỷ niệm",
+  "timelineDeleteTitle": "Xóa kỷ niệm?",
+  "timelineDeleteBody": "“{title}” sẽ được ẩn khỏi Time. Sau này có thể thêm thùng khôi phục khi có tài khoản/sync.",
+  "@timelineDeleteBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "memoryOptionsTooltip": "Tùy chọn kỷ niệm",
+  "timelineFallbackEmptyBody": "Khi có dữ liệu, timeline sẽ hiện theo thứ tự thời gian.",
+  "mediaSummaryImages": "{count} ảnh",
+  "@mediaSummaryImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaSummaryVideos": "{count} video",
+  "@mediaSummaryVideos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaSummaryVoiceMessages": "{count} lời nhắn",
+  "@mediaSummaryVoiceMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaSummaryEmpty": "Chưa có media",
+  "categoryTrip": "Chuyến đi",
+  "categoryBirthday": "Sinh nhật",
+  "categoryDaily": "Đời thường",
+  "categoryMilestone": "Dấu mốc",
+  "categoryAnniversary": "Kỷ niệm",
+  "phaseYear1": "Năm đầu tiên",
+  "phaseYear2": "Năm thứ hai",
+  "phaseYear3": "Năm thứ ba",
+  "mapKicker": "Những nơi mình qua",
+  "mapTitle": "Bản đồ",
+  "mapLocationTooltip": "Địa điểm",
+  "placeMemorySummary": "{count} kỷ niệm · {note}",
+  "@placeMemorySummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "placeOpenMemories": "Xem kỷ niệm",
+  "lettersKicker": "Dành cho em",
+  "lettersTitle": "Những lá thư",
+  "lettersTooltip": "Thư",
+  "letterReservedDay": "Một ngày được để dành",
+  "letterOpensOn": "Mở vào {date}",
+  "@letterOpensOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "letterLockedNoDateBody": "Lá thư này đang được giữ lại cho đúng khoảnh khắc.",
+  "letterLockedRemainingBody": "Còn {days} ngày nữa lá thư này mới mở được.",
+  "@letterLockedRemainingBody": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "letterOpened": "Đã mở",
+  "letterReady": "Đã sẵn sàng",
+  "letterDaysRemaining": "Còn {days} ngày",
+  "@letterDaysRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "letterDetailToday": "Mở vào hôm nay",
+  "letterKeepTooltip": "Giữ lá thư",
+  "letterKeepCta": "Giữ lá thư này",
+  "memoryDetailMomentMessage": "Lời nhắn cho khoảnh khắc này",
+  "recapKicker": "Kỷ niệm 3 năm",
+  "recapTitle": "Mình đã đi qua thật nhiều.",
+  "recapSubtitle": "Và anh vẫn muốn đi tiếp cùng em.",
+  "recapDaysLoved": "ngày yêu",
+  "recapPlacesVisited": "nơi đã qua",
+  "recapPhotos": "tấm ảnh",
+  "recapLetters": "lá thư",
+  "recapQuote": "Ba năm không phải là điểm kết. Nó là bằng chứng rằng mình đã chọn nhau, rất nhiều lần.",
+  "recapCta": "Cùng anh viết tiếp nhé?",
+  "routerUnknownError": "Unknown error",
+  "routerMissingParam": "Missing route parameter: {name}",
+  "@routerMissingParam": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routerErrorTitle": "Chưa mở được nhật ký",
+  "memoryFormNewTitle": "Kỷ niệm mới",
+  "memoryFormEditTitle": "Sửa kỷ niệm",
+  "memoryFormSave": "Lưu kỷ niệm",
+  "memoryFormSaving": "Đang lưu...",
+  "memoryFormCreateTagTitle": "Tạo nhãn mới",
+  "memoryFormCreateTagHint": "Ví dụ: Cafe tối",
+  "memoryFormSaveTag": "Lưu nhãn",
+  "memoryFormAddVoiceTitle": "Thêm lời nhắn",
+  "memoryFormAddVoiceHelper": "Chọn một file có sẵn hoặc ghi âm ngay trong app.",
+  "memoryFormPickFromDevice": "Chọn từ máy",
+  "memoryFormPickAudioSubtitle": "MVP sẽ thay mock này bằng file picker native.",
+  "memoryFormRecordNew": "Ghi âm mới",
+  "memoryFormRecordSubtitle": "Mở giao diện recorder trước khi lưu lời nhắn.",
+  "memoryFormCancelRecording": "Hủy ghi âm",
+  "memoryFormSaveVoice": "Lưu lời nhắn",
+  "memoryFormImportedAudioTitle": "Audio từ máy {number}",
+  "@memoryFormImportedAudioTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryFormRecordedVoiceTitle": "Lời nhắn ghi âm {number}",
+  "@memoryFormRecordedVoiceTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryFormAddMediaTitle": "Thêm media",
+  "memoryFormAddPhoto": "Thêm ảnh từ thư viện",
+  "memoryFormAddPhotoSubtitle": "Mock bằng ảnh hero, sau này nối image picker.",
+  "memoryFormAddVideo": "Thêm video từ thư viện",
+  "memoryFormAddVideoSubtitle": "Mock bằng thumbnail hero, sau này nối video picker.",
+  "memoryFormCamera": "Chụp hoặc quay mới",
+  "memoryFormCameraSubtitle": "Sẽ mở camera khi có permission native.",
+  "memoryFormVideoMockAlt": "Video mock",
+  "memoryFormImageMockAlt": "Ảnh mock",
+  "memoryFormBodyRequired": "Hãy thêm mô tả, ghi chú, lời nhắn hoặc ít nhất một ảnh/video.",
+  "memoryFormTitleLabel": "Tiêu đề",
+  "memoryFormTitleHint": "Đặt tên cho khoảnh khắc này",
+  "memoryFormTitleRequired": "Tiêu đề là bắt buộc",
+  "memoryFormDescriptionLabel": "Mô tả",
+  "memoryFormDescriptionHint": "Viết ngắn về điều đã xảy ra...",
+  "memoryFormDateLabel": "Thời gian",
+  "memoryFormLocationLabel": "Địa điểm",
+  "memoryFormLocationHint": "Thêm nơi hai đứa đã đi qua",
+  "memoryFormNoteLabel": "Ghi chú",
+  "memoryFormNoteHint": "Một điều nhỏ muốn nhớ riêng",
+  "memoryFormNoVoiceTitle": "Chưa có lời nhắn",
+  "memoryFormNoVoiceBody": "Ghi âm mới hoặc chọn một đoạn audio có sẵn trong máy.",
+  "memoryFormAddVoiceCta": "Thêm lời nhắn",
+  "memoryFormVoiceLimitReached": "Đã đạt giới hạn lời nhắn",
+  "memoryFormVoiceFallbackTitle": "Lời nhắn",
+  "memoryFormRecordedSource": "Ghi âm",
+  "memoryFormImportedSource": "Từ máy",
+  "memoryFormVoiceSourceAndDuration": "{source} · {duration}",
+  "@memoryFormVoiceSourceAndDuration": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "memoryFormDeleteVoiceTooltip": "Xóa lời nhắn",
+  "memoryFormTagSection": "Nhãn kỷ niệm",
+  "memoryFormCreateTagChip": "+ Tạo nhãn",
+  "memoryFormMediaGroupsSection": "Nhóm media",
+  "memoryFormGroupLimit": "{current}/{max} nhóm",
+  "@memoryFormGroupLimit": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryFormMediaGroupsHelper": "Tạo tối đa 3 nhóm để kể chuyện theo từng đoạn.",
+  "memoryFormNoMediaGroupTitle": "Chưa có nhóm media",
+  "memoryFormNoMediaGroupBody": "Tạo nhóm đầu tiên rồi thêm ảnh/video vào đoạn câu chuyện đó.",
+  "memoryFormAddMediaGroup": "Thêm nhóm media",
+  "memoryFormMediaGroupTitle": "Nhóm media · {current}/{max}",
+  "@memoryFormMediaGroupTitle": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryFormMediaGroupHelper": "Ảnh và video cùng một đoạn câu chuyện",
+  "memoryFormMoveUp": "Đưa lên trên",
+  "memoryFormMoveDown": "Đưa xuống dưới",
+  "memoryFormDeleteGroup": "Xóa nhóm",
+  "memoryFormGroupNoteHint": "Note cho nhóm này, có thể bỏ trống",
+  "memoryFormItemCount": "{count} mục",
+  "@memoryFormItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryFormGroupsReorderHint": "Có thể sắp xếp nhóm",
+  "memoryFormAddGroupToContinue": "Thêm nhóm để kể tiếp",
+  "memoryFormGroupLimitReachedTitle": "Đã đạt giới hạn nhóm",
+  "memoryFormAddAnotherMediaGroupTitle": "Thêm một nhóm media khác",
+  "memoryFormGroupLimitReachedBody": "Bạn có thể xóa một nhóm để tạo lại.",
+  "memoryFormAddAnotherMediaGroupBody": "Mỗi nhóm có note riêng và có thể chứa ảnh/video hỗn hợp.",
+  "memoryFormGroupLimitReachedCta": "Đã đạt giới hạn nhóm"
+}

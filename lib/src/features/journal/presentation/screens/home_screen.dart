@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/journal_app_config.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
@@ -26,6 +27,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final loveDays = dayDifference(JournalAppConfig.loveStartedAt, now);
     final featured = data.featuredMemoryOrNull;
     final nextLetter = data.nextHomeLetter(now);
@@ -43,21 +45,21 @@ class HomeScreen extends StatelessWidget {
         ),
         children: [
           TopBar(
-            kicker: 'Chào em',
-            title: JournalAppConfig.title,
+            kicker: l10n.homeKicker,
+            title: l10n.appTitle,
             large: true,
             trailing: AppCircleButton(
               icon: Icons.favorite_rounded,
-              tooltip: 'Kỷ niệm 3 năm',
+              tooltip: l10n.homeRecapTooltip,
               onPressed: onRecapTap,
             ),
           ),
           const SizedBox(height: AppSpacing.m),
           HeroMemoryCard(
             imagePath: featured?.coverMedia?.uri ?? AppAssets.heroImage,
-            kicker: 'Kỷ niệm của tụi mình',
-            title: '${formatNumber(loveDays)} ngày yêu',
-            subtitle: 'Và anh vẫn muốn đi tiếp cùng em.',
+            kicker: l10n.homeHeroKicker,
+            title: l10n.homeLoveDays(formatNumber(loveDays)),
+            subtitle: l10n.homeHeroSubtitle,
             onTap: onRecapTap,
           ),
           const SizedBox(height: AppSpacing.m),
@@ -66,27 +68,26 @@ class HomeScreen extends StatelessWidget {
               Expanded(
                 child: StatCard(
                   value: formatNumber(memoryCount),
-                  label: 'kỷ niệm đã viết',
+                  label: l10n.homeMemoriesWritten,
                 ),
               ),
               const SizedBox(width: AppSpacing.s),
               Expanded(
                 child: StatCard(
                   value: formatNumber(data.places.length),
-                  label: 'nơi mình đã qua',
+                  label: l10n.homePlacesVisited,
                   accentColor: AppColors.teal,
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.l),
-          const SectionHeader(title: 'Kỷ niệm nổi bật'),
+          SectionHeader(title: l10n.homeFeaturedMemory),
           const SizedBox(height: AppSpacing.s),
           if (featured == null)
-            const EmptyStateCard(
-              title: 'Chưa có kỷ niệm nổi bật',
-              body:
-                  'Khi thêm kỷ niệm đầu tiên, Home sẽ giữ lại khoảnh khắc đáng nhớ nhất ở đây.',
+            EmptyStateCard(
+              title: l10n.homeNoFeaturedTitle,
+              body: l10n.homeNoFeaturedBody,
             )
           else
             MemoryListCard(
@@ -94,12 +95,12 @@ class HomeScreen extends StatelessWidget {
               onTap: () => onMemoryTap(featured),
             ),
           const SizedBox(height: AppSpacing.l),
-          const SectionHeader(title: 'Lá thư tiếp theo'),
+          SectionHeader(title: l10n.homeNextLetter),
           const SizedBox(height: AppSpacing.s),
           if (nextLetter == null)
-            const EmptyStateCard(
-              title: 'Chưa có lá thư nào',
-              body: 'Khi có thư mới, Home sẽ luôn giữ một lời nhắn gần nhất.',
+            EmptyStateCard(
+              title: l10n.homeNoLettersTitle,
+              body: l10n.homeNoLettersBody,
             )
           else
             LetterCard(
@@ -110,7 +111,7 @@ class HomeScreen extends StatelessWidget {
             ),
           const SizedBox(height: AppSpacing.l),
           PrimaryButton(
-            label: 'Xem recap ba năm',
+            label: l10n.homeRecapCta,
             icon: Icons.auto_stories_rounded,
             onPressed: onRecapTap,
           ),

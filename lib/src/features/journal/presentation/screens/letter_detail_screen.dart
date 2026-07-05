@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
@@ -32,6 +33,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final disableMotion = MediaQuery.disableAnimationsOf(context);
 
     return Scaffold(
@@ -54,20 +56,20 @@ class _LetterDetailScreenState extends State<LetterDetailScreen>
                   children: [
                     AppCircleButton(
                       icon: Icons.arrow_back_rounded,
-                      tooltip: 'Quay lại',
+                      tooltip: l10n.backTooltip,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Center(
                         child: Text(
-                          'Mở vào hôm nay',
+                          l10n.letterDetailToday,
                           style: AppTextStyles.bodyS,
                         ),
                       ),
                     ),
                     AppCircleButton(
                       icon: Icons.favorite_border_rounded,
-                      tooltip: 'Giữ lá thư',
+                      tooltip: l10n.letterKeepTooltip,
                       onPressed: () {},
                     ),
                   ],
@@ -118,7 +120,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen>
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 PrimaryButton(
-                  label: 'Giữ lá thư này',
+                  label: l10n.letterKeepCta,
                   icon: Icons.bookmark_rounded,
                   onPressed: () => Navigator.of(context).pop(),
                 ),

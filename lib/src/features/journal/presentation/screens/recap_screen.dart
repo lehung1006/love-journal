@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/journal_app_config.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
@@ -14,6 +15,7 @@ class RecapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final loveDays = dayDifference(JournalAppConfig.loveStartedAt, now);
     final featured = data.featuredMemoryOrNull;
     final photoCount = data.visibleMemories.fold<int>(
@@ -35,7 +37,7 @@ class RecapScreen extends StatelessWidget {
               children: [
                 AppCircleButton(
                   icon: Icons.arrow_back_rounded,
-                  tooltip: 'Quay lại',
+                  tooltip: l10n.backTooltip,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -43,9 +45,9 @@ class RecapScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.m),
             HeroMemoryCard(
               imagePath: featured?.coverMedia?.uri ?? AppAssets.heroImage,
-              kicker: 'Kỷ niệm 3 năm',
-              title: 'Mình đã đi qua thật nhiều.',
-              subtitle: 'Và anh vẫn muốn đi tiếp cùng em.',
+              kicker: l10n.recapKicker,
+              title: l10n.recapTitle,
+              subtitle: l10n.recapSubtitle,
               height: 300,
             ),
             const SizedBox(height: AppSpacing.m),
@@ -57,32 +59,32 @@ class RecapScreen extends StatelessWidget {
               mainAxisSpacing: AppSpacing.s,
               childAspectRatio: 1.45,
               children: [
-                StatCard(value: formatNumber(loveDays), label: 'ngày yêu'),
+                StatCard(
+                  value: formatNumber(loveDays),
+                  label: l10n.recapDaysLoved,
+                ),
                 StatCard(
                   value: formatNumber(data.places.length),
-                  label: 'nơi đã qua',
+                  label: l10n.recapPlacesVisited,
                   accentColor: AppColors.teal,
                 ),
                 StatCard(
                   value: formatNumber(photoCount),
-                  label: 'tấm ảnh',
+                  label: l10n.recapPhotos,
                   accentColor: AppColors.amber,
                 ),
                 StatCard(
                   value: formatNumber(data.letters.length),
-                  label: 'lá thư',
+                  label: l10n.recapLetters,
                   accentColor: AppColors.lavender,
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.m),
-            const QuoteBlock(
-              quote:
-                  'Ba năm không phải là điểm kết. Nó là bằng chứng rằng mình đã chọn nhau, rất nhiều lần.',
-            ),
+            QuoteBlock(quote: l10n.recapQuote),
             const SizedBox(height: AppSpacing.m),
             PrimaryButton(
-              label: 'Cùng anh viết tiếp nhé?',
+              label: l10n.recapCta,
               icon: Icons.favorite_rounded,
               onPressed: () => Navigator.of(context).pop(),
             ),

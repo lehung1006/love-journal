@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
@@ -12,6 +13,7 @@ class MapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AppScaffold(
       safeBottom: false,
       padding: EdgeInsets.zero,
@@ -24,11 +26,11 @@ class MapScreen extends StatelessWidget {
         ),
         children: [
           TopBar(
-            kicker: 'Những nơi mình qua',
-            title: 'Bản đồ',
+            kicker: l10n.mapKicker,
+            title: l10n.mapTitle,
             trailing: AppCircleButton(
               icon: Icons.location_pin,
-              tooltip: 'Địa điểm',
+              tooltip: l10n.mapLocationTooltip,
               onPressed: () {},
             ),
           ),

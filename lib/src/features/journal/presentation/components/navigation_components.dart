@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 
 class AppBottomTabBar extends StatelessWidget {
@@ -16,11 +17,12 @@ class AppBottomTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const items = [
-      _TabSpec(Icons.home_rounded, 'Home'),
-      _TabSpec(Icons.timeline_rounded, 'Time'),
-      _TabSpec(Icons.map_rounded, 'Map'),
-      _TabSpec(Icons.mail_rounded, 'Thư'),
+    final l10n = context.l10n;
+    final items = [
+      _TabSpec(Icons.home_rounded, l10n.navHome),
+      _TabSpec(Icons.timeline_rounded, l10n.navTime),
+      _TabSpec(Icons.map_rounded, l10n.navMap),
+      _TabSpec(Icons.mail_rounded, l10n.navLetters),
     ];
 
     return Padding(

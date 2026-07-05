@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import 'buttons_and_chips.dart';
@@ -19,6 +20,7 @@ class PlacePreviewSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final cover = memories.isEmpty ? null : memories.first.coverMedia?.uri;
 
     return Container(
@@ -57,7 +59,10 @@ class PlacePreviewSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.xxs),
                       Text(
-                        '${memories.length} kỷ niệm · ${place.shortNote ?? ''}',
+                        l10n.placeMemorySummary(
+                          memories.length,
+                          place.shortNote ?? '',
+                        ),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodyS.copyWith(
@@ -71,7 +76,7 @@ class PlacePreviewSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.m),
             PrimaryButton(
-              label: 'Xem kỷ niệm',
+              label: l10n.placeOpenMemories,
               icon: Icons.arrow_forward_rounded,
               onPressed: onOpen,
             ),

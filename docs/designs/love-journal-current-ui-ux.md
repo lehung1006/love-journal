@@ -1,7 +1,7 @@
 # Mình & Em - Current UI/UX Source Of Truth
 
-Last updated: 2026-07-04  
-Implementation status: reflects the current Flutter app after Riverpod, GoRouter, and editable Time module work.
+Last updated: 2026-07-05  
+Implementation status: reflects the current Flutter app after Riverpod, GoRouter, editable Time module work, and Flutter localization setup.
 
 ## Purpose
 
@@ -51,6 +51,7 @@ Current visual language comes from `love-journal-design-tokens.json` and is impl
 
 - `lib/src/core/theme/app_tokens.dart`
 - `lib/src/core/theme/app_theme.dart`
+- `lib/l10n/app_vi.arb` for user-facing copy
 
 Core values:
 
@@ -105,8 +106,15 @@ Current common styling:
 - Subtle border using `AppColors.line`.
 - Soft shadows for cards and floating sheets.
 - Pill buttons and filter chips.
+- Filter chips shrink-wrap to their text and wrap like flexbox items when used in forms.
 - Circular icon buttons.
 - Bottom sheets with `AppColors.paper` background and rounded top corners.
+
+Localization:
+
+- User-facing app copy is routed through Flutter gen-l10n.
+- Vietnamese is the current template locale in `lib/l10n/app_vi.arb`.
+- Domain/data IDs, route names, JSON keys, asset paths, and mock URIs remain technical strings outside localization.
 
 ## Navigation UX
 
@@ -307,6 +315,7 @@ Tag filter UX:
 - `Tất cả` is always first.
 - Other tags come from `MemoryTag` data.
 - Tags are dynamic, including user-created custom tags.
+- System tag labels are localized in presentation based on stable system tag IDs.
 - Selecting a chip filters the timeline in place.
 
 List UX:
@@ -486,6 +495,7 @@ Current behavior:
 - uses wrap/flex layout;
 - each chip sizes to its text;
 - chips flow horizontally and wrap to next line;
+- chips must not stretch to full row width;
 - custom tag names should not overflow the parent;
 - selected tag is highlighted using `AppFilterChip`.
 
@@ -497,6 +507,11 @@ Actions:
 - enter custom tag name;
 - save tag;
 - new tag is selected.
+
+Implementation note:
+
+- The create-tag bottom sheet owns its text controller inside the sheet widget lifecycle.
+- Dismissing the sheet must not throw `TextEditingController was used after being disposed`.
 
 Important rule:
 
@@ -832,10 +847,12 @@ Current mock limitations:
 4. Media groups are dynamic and limited to 3 for MVP.
 5. `Tất cả` is a UI filter, not stored as a tag.
 6. Custom tags must appear as Time filter chips.
-7. Bottom sheets must have visible warm background.
-8. Empty states should be emotional and actionable.
-9. Soft delete should hide memories without destroying data.
-10. Keep the app local-first until auth/sync is intentionally designed.
+7. Tag chips should shrink-wrap to their text and wrap like flexbox items.
+8. Bottom sheets must have visible warm background.
+9. Empty states should be emotional and actionable.
+10. Soft delete should hide memories without destroying data.
+11. Keep user-facing copy in localization resources.
+12. Keep the app local-first until auth/sync is intentionally designed.
 
 ## UI/UX Verification Checklist
 
@@ -853,6 +870,8 @@ Use this checklist after major UI changes:
 - Add Memory hides bottom tab bar.
 - Edit Memory hides bottom tab bar.
 - Tag selector wraps chips to next line.
+- Tag selector chips size to text, not equal full-width rows.
+- Create-tag bottom sheet can be dismissed without controller lifecycle exceptions.
 - Custom tag appears in form and Time filter.
 - Voice message section is named `Lời nhắn cho khoảnh khắc này`.
 - No separate generic `Audio` field appears.

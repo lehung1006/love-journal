@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../components/journal_components.dart';
 
@@ -31,6 +32,7 @@ class _OpeningGiftScreenState extends State<OpeningGiftScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final disableMotion = MediaQuery.disableAnimationsOf(context);
 
     return Scaffold(
@@ -66,7 +68,7 @@ class _OpeningGiftScreenState extends State<OpeningGiftScreen>
                         value: value,
                         interval: const Interval(0, .55),
                         child: Text(
-                          'Gửi riêng em',
+                          l10n.openingKicker,
                           style: AppTextStyles.label.copyWith(
                             color: Colors.white.withValues(alpha: .8),
                           ),
@@ -77,7 +79,7 @@ class _OpeningGiftScreenState extends State<OpeningGiftScreen>
                         value: value,
                         interval: const Interval(.12, .72),
                         child: Text(
-                          'Ba năm, mình vẫn ở đây.',
+                          l10n.openingTitle,
                           style: AppTextStyles.displayXL.copyWith(
                             color: Colors.white,
                             fontSize: 46,
@@ -97,7 +99,7 @@ class _OpeningGiftScreenState extends State<OpeningGiftScreen>
                         value: value,
                         interval: const Interval(.24, .84),
                         child: Text(
-                          'Anh gói lại vài nơi mình đã đi qua, vài ngày mình đã thương nhau, và một lời hẹn thật nhỏ cho chặng sau.',
+                          l10n.openingBody,
                           style: AppTextStyles.bodyM.copyWith(
                             color: Colors.white.withValues(alpha: .8),
                           ),
@@ -108,7 +110,7 @@ class _OpeningGiftScreenState extends State<OpeningGiftScreen>
                         value: value,
                         interval: const Interval(.42, 1),
                         child: PrimaryButton(
-                          label: 'Mở món quà',
+                          label: l10n.openingCta,
                           icon: Icons.favorite_rounded,
                           onPressed: widget.onOpenGift,
                         ),

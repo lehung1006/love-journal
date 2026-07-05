@@ -57,7 +57,7 @@ class JournalRepositoryImpl implements JournalRepository {
         .map((category) {
           return MemoryTag(
             id: MemoryTag.systemIdForCategory(category),
-            name: category.label,
+            name: category.name,
             colorKey: colors[category] ?? 'rose',
             isSystem: true,
             createdAt: now,
