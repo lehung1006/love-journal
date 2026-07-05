@@ -478,6 +478,114 @@ abstract class AppLocalizations {
   /// **'Địa điểm'**
   String get mapLocationTooltip;
 
+  /// No description provided for @mapRecenterTooltip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đưa về những nơi đã lưu'**
+  String get mapRecenterTooltip;
+
+  /// No description provided for @mapSearchHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm địa điểm'**
+  String get mapSearchHint;
+
+  /// No description provided for @mapSearchDisabledHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm API key để tìm địa điểm'**
+  String get mapSearchDisabledHint;
+
+  /// No description provided for @mapSearchClearTooltip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xóa tìm kiếm'**
+  String get mapSearchClearTooltip;
+
+  /// No description provided for @mapSearchLoading.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang tìm nơi này...'**
+  String get mapSearchLoading;
+
+  /// No description provided for @mapSearchEmpty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không tìm thấy địa điểm phù hợp'**
+  String get mapSearchEmpty;
+
+  /// No description provided for @mapSearchError.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa tìm được địa điểm. Thử lại sau nhé.'**
+  String get mapSearchError;
+
+  /// No description provided for @mapSearchPoweredByGoogle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kết quả từ Google Places'**
+  String get mapSearchPoweredByGoogle;
+
+  /// No description provided for @mapApiKeyMissingTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa cấu hình Google Maps'**
+  String get mapApiKeyMissingTitle;
+
+  /// No description provided for @mapApiKeyMissingBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm GOOGLE_MAPS_API_KEY cho Android/iOS và dart-define để bật bản đồ thật cùng tìm địa điểm.'**
+  String get mapApiKeyMissingBody;
+
+  /// No description provided for @mapSavedPlacesTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Những nơi đã lưu'**
+  String get mapSavedPlacesTitle;
+
+  /// No description provided for @mapSavedPlaceMemoryCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} kỷ niệm'**
+  String mapSavedPlaceMemoryCount(int count);
+
+  /// No description provided for @mapSelectedPlaceTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Địa điểm tìm thấy'**
+  String get mapSelectedPlaceTitle;
+
+  /// No description provided for @mapSelectedPlaceBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sau này có thể gắn nơi này vào kỷ niệm mới hoặc thêm ghi chú riêng.'**
+  String get mapSelectedPlaceBody;
+
+  /// No description provided for @mapSelectedPlaceAddressFallback.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có địa chỉ chi tiết'**
+  String get mapSelectedPlaceAddressFallback;
+
+  /// No description provided for @mapSelectedPlaceCloseTooltip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đóng địa điểm đang chọn'**
+  String get mapSelectedPlaceCloseTooltip;
+
+  /// No description provided for @mapNoPlacesTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có nơi nào được lưu'**
+  String get mapNoPlacesTitle;
+
+  /// No description provided for @mapNoPlacesBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khi kỷ niệm có địa điểm, Map sẽ gom chúng thành những dấu mốc trên hành trình.'**
+  String get mapNoPlacesBody;
+
   /// No description provided for @placeMemorySummary.
   ///
   /// In vi, this message translates to:

@@ -653,22 +653,31 @@ Current UI:
 - top bar:
   - kicker: `Những nơi mình qua`;
   - title: `Bản đồ`;
-  - location pin icon;
-- static stylized map canvas;
-- route-like painted lines;
-- place pins;
-- place labels.
+  - recenter icon;
+- real Google Map surface when `GOOGLE_MAPS_API_KEY` is configured;
+- warm static fallback canvas when the API key is missing;
+- saved place markers from `assets/data/places.json`;
+- floating search field for Google Places Autocomplete;
+- autocomplete result list with loading, empty, and error states;
+- saved places rail above the bottom tab bar;
+- selected search result card with address and future note/attach hint.
 
 Interaction:
 
-- tap pin opens `PlacePreviewSheet`;
+- tap saved marker opens `PlacePreviewSheet`;
 - bottom sheet shows place preview;
 - opening a place opens first memory for that place if available.
+- tap saved place chip recenters the map and opens the same preview;
+- type at least 2 characters to search Google Places;
+- tap a suggestion to fetch Place Details, drop a temporary marker, and animate the camera to that result;
+- clearing search removes the temporary result marker/card.
 
 Implementation note:
 
-- This is not a real map SDK yet.
-- Google Maps or Mapbox can be added later.
+- The current implementation uses `google_maps_flutter` and Google Places Web Service.
+- API keys are supplied by environment/build configuration, never committed.
+- Search result selection is exploratory for now; searched places and notes are not persisted yet.
+- If the API key is absent, the app keeps a static fallback surface so local development and tests do not crash.
 
 ## Screen: Letters
 
@@ -836,6 +845,7 @@ Current mock limitations:
 - video playback is mocked;
 - voice playback is mocked;
 - Time search is not implemented;
+- Map searched places/place notes are not persisted yet;
 - no undo/trash UI for soft delete;
 - no account/cloud sync.
 
@@ -853,6 +863,7 @@ Current mock limitations:
 10. Soft delete should hide memories without destroying data.
 11. Keep user-facing copy in localization resources.
 12. Keep the app local-first until auth/sync is intentionally designed.
+13. Keep Google Maps API keys outside Git and preserve the no-key fallback for local development.
 
 ## UI/UX Verification Checklist
 
@@ -880,6 +891,9 @@ Use this checklist after major UI changes:
 - Memory Detail shows voice messages and media groups.
 - Locked letters do not expose body content.
 - Map bottom sheet has visible background.
+- Map shows a real Google Map when `GOOGLE_MAPS_API_KEY` is configured.
+- Map shows a clear API-key fallback state when the key is absent.
+- Map search suggestions can be selected without persisting accidental place data.
 - Recap works even with no featured memory.
 
 ## Next UI/UX Work

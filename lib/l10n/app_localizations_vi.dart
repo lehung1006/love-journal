@@ -217,6 +217,65 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mapLocationTooltip => 'Địa điểm';
 
   @override
+  String get mapRecenterTooltip => 'Đưa về những nơi đã lưu';
+
+  @override
+  String get mapSearchHint => 'Tìm địa điểm';
+
+  @override
+  String get mapSearchDisabledHint => 'Thêm API key để tìm địa điểm';
+
+  @override
+  String get mapSearchClearTooltip => 'Xóa tìm kiếm';
+
+  @override
+  String get mapSearchLoading => 'Đang tìm nơi này...';
+
+  @override
+  String get mapSearchEmpty => 'Không tìm thấy địa điểm phù hợp';
+
+  @override
+  String get mapSearchError => 'Chưa tìm được địa điểm. Thử lại sau nhé.';
+
+  @override
+  String get mapSearchPoweredByGoogle => 'Kết quả từ Google Places';
+
+  @override
+  String get mapApiKeyMissingTitle => 'Chưa cấu hình Google Maps';
+
+  @override
+  String get mapApiKeyMissingBody =>
+      'Thêm GOOGLE_MAPS_API_KEY cho Android/iOS và dart-define để bật bản đồ thật cùng tìm địa điểm.';
+
+  @override
+  String get mapSavedPlacesTitle => 'Những nơi đã lưu';
+
+  @override
+  String mapSavedPlaceMemoryCount(int count) {
+    return '$count kỷ niệm';
+  }
+
+  @override
+  String get mapSelectedPlaceTitle => 'Địa điểm tìm thấy';
+
+  @override
+  String get mapSelectedPlaceBody =>
+      'Sau này có thể gắn nơi này vào kỷ niệm mới hoặc thêm ghi chú riêng.';
+
+  @override
+  String get mapSelectedPlaceAddressFallback => 'Chưa có địa chỉ chi tiết';
+
+  @override
+  String get mapSelectedPlaceCloseTooltip => 'Đóng địa điểm đang chọn';
+
+  @override
+  String get mapNoPlacesTitle => 'Chưa có nơi nào được lưu';
+
+  @override
+  String get mapNoPlacesBody =>
+      'Khi kỷ niệm có địa điểm, Map sẽ gom chúng thành những dấu mốc trên hành trình.';
+
+  @override
   String placeMemorySummary(int count, String note) {
     return '$count kỷ niệm · $note';
   }

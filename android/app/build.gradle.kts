@@ -8,6 +8,9 @@ android {
     namespace = "com.example.flutter_love_journal"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    val googleMapsApiKey = providers.gradleProperty("GOOGLE_MAPS_API_KEY")
+        .orElse(providers.environmentVariable("GOOGLE_MAPS_API_KEY"))
+        .orElse("")
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -23,6 +26,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsApiKey.get()
     }
 
     buildTypes {

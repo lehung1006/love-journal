@@ -270,6 +270,34 @@ type Place = {
 };
 ```
 
+### Place Search
+
+The current Flutter implementation uses Google Places as an external search source, separate from persisted journal `Place` data.
+
+```ts
+type PlaceSearchSuggestion = {
+  placeId: string;
+  primaryText: string;
+  secondaryText?: string;
+  fullText: string;
+};
+
+type PlaceSearchResult = {
+  placeId: string;
+  name: string;
+  formattedAddress?: string;
+  latitude: number;
+  longitude: number;
+};
+```
+
+Rules:
+
+- Search suggestions are exploratory until the user explicitly attaches/saves a place in a later flow.
+- Do not commit Google Maps API keys.
+- For production, consider routing Places Web Service calls through a backend/proxy if mobile key restrictions are not enough.
+- The app must keep a no-key fallback state so local development and automated tests can run without secrets.
+
 ## Components
 
 Create these before composing screens:
@@ -525,16 +553,27 @@ Rules:
 
 Purpose: turn memories into a journey.
 
-MVP options:
+Current implementation:
 
-- Static stylized map view with approximate pins.
-- Real map SDK later: Google Maps or Mapbox.
+- Real map surface uses `google_maps_flutter`.
+- Place search uses Google Places Web Service through a repository/data-source boundary.
+- Saved places from bundled JSON render as map markers.
+- A warm static canvas remains as a fallback when `GOOGLE_MAPS_API_KEY` is not configured.
 
 Behavior:
 
-- Pin tap opens place preview bottom sheet.
+- Saved marker tap opens place preview bottom sheet.
 - Place preview shows cover image, place name, memory count, short note.
 - CTA opens filtered timeline or place detail.
+- Search field calls Places Autocomplete after a short debounce.
+- Selecting a suggestion fetches Place Details, moves the camera, and shows a temporary selected-place card.
+- Selected search results are not persisted until a later attach/save flow is designed.
+
+Configuration:
+
+- Dart/Places calls read `GOOGLE_MAPS_API_KEY` from `--dart-define`.
+- Android injects the same key through a manifest placeholder.
+- iOS reads the same key from `Info.plist`/build settings.
 
 ### Letters
 

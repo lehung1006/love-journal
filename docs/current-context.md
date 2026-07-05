@@ -24,6 +24,7 @@ The app has moved beyond the original static gift MVP. It now has the foundation
 - Flutter gen-l10n localization for user-facing app copy.
 - Local-first persistence for app session and editable journal draft.
 - A redesigned and partially implemented Time module with add/edit/delete memory flow.
+- A real Map module using Google Maps plus Google Places search when an API key is configured.
 
 The current codebase is still local-first. There is no auth, partner invite, cloud sync, real media picker, real audio recorder, or backend yet.
 
@@ -92,6 +93,8 @@ core/
     keyValueStoreProvider
   localization/
     app_localizations_extension.dart
+  config/
+    map_service_config.dart
   theme/
     app_tokens.dart
     app_theme.dart
@@ -143,6 +146,15 @@ Current key providers:
 
 - `journalRepositoryProvider`
   - Reads seed journal data through `JournalAssetApiDataSource`.
+
+- `mapServiceConfigProvider`
+  - Reads the Google Maps API key from `--dart-define=GOOGLE_MAPS_API_KEY=...`.
+
+- `placeSearchRepositoryProvider`
+  - Calls the Google Places Web Service through a data source/repository boundary.
+
+- `mapSearchControllerProvider`
+  - Holds Map search query state, autocomplete suggestions, selected search result, and loading/error states.
 
 ## Navigation Snapshot
 
@@ -285,6 +297,41 @@ Validation:
   - image,
   - video.
 
+## Map Module Current State
+
+The Map tab has been upgraded from a static stylized canvas into a real map surface.
+
+Current Map capabilities:
+
+- Uses `google_maps_flutter` for the map SDK.
+- Uses Google Places Web Service through `http` for place search.
+- Keeps map/search infrastructure layered:
+  - `core/config/MapServiceConfig`
+  - `domain/entities/place_search.dart`
+  - `domain/repositories/place_search_repository.dart`
+  - `data/data_sources/google_places_data_source.dart`
+  - `data/repositories/place_search_repository_impl.dart`
+  - `application/providers/map_providers.dart`
+  - `application/state/map_search_controller.dart`
+- Shows saved places from `assets/data/places.json` as map markers.
+- Tapping a saved marker opens the existing `PlacePreviewSheet`.
+- The saved places rail can recenter the map and open a place preview.
+- Search uses Places Autocomplete with a session token and a bias around the saved places.
+- Selecting a search suggestion fetches Place Details, drops a temporary marker, and moves the camera to the result.
+- Search result selection is currently exploratory only; it is not yet persisted as a `Place` or attached to a memory.
+
+Map API key configuration:
+
+- Dart/Places search reads `GOOGLE_MAPS_API_KEY` from `--dart-define`.
+- Android reads `GOOGLE_MAPS_API_KEY` from a Gradle property or environment variable and injects it into the manifest placeholder.
+- iOS reads `GoogleMapsApiKey` from `Info.plist`, backed by `$(GOOGLE_MAPS_API_KEY)`.
+- Do not commit real API keys.
+
+Fallback behavior:
+
+- If `GOOGLE_MAPS_API_KEY` is not configured in Dart, Map shows the warm static fallback canvas plus an API-key empty state.
+- This keeps local tests and development builds from crashing before secrets are configured.
+
 ## Important Data Model Decisions
 
 `MemoryCategory` still exists for backward compatibility with seed JSON.
@@ -359,6 +406,7 @@ The following UI flows exist but are not native-real yet:
 - Real media playback.
 - Real video thumbnails.
 - Search in Time.
+- Persisting searched Map places or place notes into the journal draft.
 
 Current behavior:
 
@@ -372,6 +420,7 @@ Future native plugins likely needed:
 - `record` or similar for audio recording.
 - `image_picker` or `photo_manager` for image/video picking.
 - Permission handling for microphone, photos, camera.
+- A backend/proxy for production-grade Google Places calls if API key protection becomes stricter than mobile key restrictions.
 
 ## Known Product Decisions
 
@@ -389,6 +438,7 @@ Decisions already made:
 - Use `Lời nhắn cho khoảnh khắc này` instead of a separate generic `Audio` field.
 - Keep user-facing UI copy in localization resources instead of hardcoded widget strings.
 - Keep design aligned with `docs/designs`, not generic mobile mockups.
+- Use Google Maps + Google Places for the first real Map implementation; keep the API key out of Git and provide a static fallback when the key is absent.
 
 ## Quality/Verification Status
 
@@ -405,6 +455,12 @@ After bottom sheet/theme and tag selector tweaks:
 After adding Flutter localization, flex-style tag chips, and fixing create-tag sheet controller lifecycle:
 
 - `flutter pub get`: passed.
+- `flutter analyze`: passed.
+- `flutter test`: passed.
+
+After implementing real Map + Places search:
+
+- `flutter pub get`: dependency resolution and l10n generation completed, but the command exited with a Windows symlink/Developer Mode warning while creating plugin symlinks.
 - `flutter analyze`: passed.
 - `flutter test`: passed.
 
@@ -440,6 +496,19 @@ $env:PUB_CACHE='D:\Flutter\pub-cache'
 ```
 
 Flutter commands may need elevated access because the Flutter SDK lockfile is outside the workspace.
+
+Google Maps plugin note on Windows:
+
+- Running `flutter pub get` after adding Flutter plugins may require Windows Developer Mode for symlink support.
+- If `flutter pub get` exits with `Building with plugins requires symlink support`, enable Developer Mode in Windows Settings, then run `flutter pub get` again.
+
+Map API key examples:
+
+```powershell
+flutter run --dart-define=GOOGLE_MAPS_API_KEY=your_key
+```
+
+For Android native map rendering, also provide `GOOGLE_MAPS_API_KEY` as a Gradle property or environment variable. For iOS, provide the `GOOGLE_MAPS_API_KEY` build setting so `Info.plist` resolves `$(GOOGLE_MAPS_API_KEY)`.
 
 ## Commands
 
@@ -480,6 +549,7 @@ Short-term:
    - Soft delete memory.
 4. Add a localization coverage pass for any newly added screens/copy.
 5. Replace mock media/audio with native picker/recorder behind small service abstractions.
+6. Run Map on a real Android/iOS target with `GOOGLE_MAPS_API_KEY` configured and verify tiles, markers, Places autocomplete, and selected-place camera movement.
 
 Medium-term:
 
@@ -488,6 +558,7 @@ Medium-term:
 3. Add undo or trash for soft-deleted memories.
 4. Add real media preview/playback.
 5. Add permission handling UX.
+6. Persist searched Map places/place notes and connect selected places to Add/Edit Memory.
 
 Long-term:
 

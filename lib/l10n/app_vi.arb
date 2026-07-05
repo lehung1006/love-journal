@@ -99,6 +99,31 @@
   "mapKicker": "Những nơi mình qua",
   "mapTitle": "Bản đồ",
   "mapLocationTooltip": "Địa điểm",
+  "mapRecenterTooltip": "Đưa về những nơi đã lưu",
+  "mapSearchHint": "Tìm địa điểm",
+  "mapSearchDisabledHint": "Thêm API key để tìm địa điểm",
+  "mapSearchClearTooltip": "Xóa tìm kiếm",
+  "mapSearchLoading": "Đang tìm nơi này...",
+  "mapSearchEmpty": "Không tìm thấy địa điểm phù hợp",
+  "mapSearchError": "Chưa tìm được địa điểm. Thử lại sau nhé.",
+  "mapSearchPoweredByGoogle": "Kết quả từ Google Places",
+  "mapApiKeyMissingTitle": "Chưa cấu hình Google Maps",
+  "mapApiKeyMissingBody": "Thêm GOOGLE_MAPS_API_KEY cho Android/iOS và dart-define để bật bản đồ thật cùng tìm địa điểm.",
+  "mapSavedPlacesTitle": "Những nơi đã lưu",
+  "mapSavedPlaceMemoryCount": "{count} kỷ niệm",
+  "@mapSavedPlaceMemoryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapSelectedPlaceTitle": "Địa điểm tìm thấy",
+  "mapSelectedPlaceBody": "Sau này có thể gắn nơi này vào kỷ niệm mới hoặc thêm ghi chú riêng.",
+  "mapSelectedPlaceAddressFallback": "Chưa có địa chỉ chi tiết",
+  "mapSelectedPlaceCloseTooltip": "Đóng địa điểm đang chọn",
+  "mapNoPlacesTitle": "Chưa có nơi nào được lưu",
+  "mapNoPlacesBody": "Khi kỷ niệm có địa điểm, Map sẽ gom chúng thành những dấu mốc trên hành trình.",
   "placeMemorySummary": "{count} kỷ niệm · {note}",
   "@placeMemorySummary": {
     "placeholders": {

@@ -4,3 +4,4 @@ export 'journal_preferences.dart';
 export 'letter.dart';
 export 'memory.dart';
 export 'place.dart';
+export 'place_search.dart';
