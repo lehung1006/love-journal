@@ -13,7 +13,7 @@ abstract interface class GooglePlacesDataSource {
   });
 
   Future<Map<String, dynamic>> fetchPlaceDetails({
-    required String placeId,
+    required String googlePlaceId,
     required String sessionToken,
   });
 }
@@ -80,14 +80,15 @@ class GooglePlacesApiDataSource implements GooglePlacesDataSource {
 
   @override
   Future<Map<String, dynamic>> fetchPlaceDetails({
-    required String placeId,
+    required String googlePlaceId,
     required String sessionToken,
   }) async {
     _assertConfigured();
-    final uri = Uri.https('places.googleapis.com', '/v1/places/$placeId', {
-      'sessionToken': sessionToken,
-      'languageCode': 'vi',
-    });
+    final uri = Uri.https(
+      'places.googleapis.com',
+      '/v1/places/$googlePlaceId',
+      {'sessionToken': sessionToken, 'languageCode': 'vi'},
+    );
     final response = await _client.get(
       uri,
       headers: _headers(
@@ -108,6 +109,12 @@ class GooglePlacesApiDataSource implements GooglePlacesDataSource {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': _config.googleMapsApiKey,
       'X-Goog-FieldMask': fieldMask,
+      if (_config.androidPackageName.isNotEmpty)
+        'X-Android-Package': _config.androidPackageName,
+      if (_config.androidCertificateSha1.isNotEmpty)
+        'X-Android-Cert': _config.androidCertificateSha1,
+      if (_config.iosBundleIdentifier.isNotEmpty)
+        'X-Ios-Bundle-Identifier': _config.iosBundleIdentifier,
     };
   }
 
@@ -132,7 +139,7 @@ class GooglePlacesApiDataSource implements GooglePlacesDataSource {
     if (!_config.hasGoogleMapsApiKey) {
       throw const GooglePlacesException(
         statusCode: 0,
-        body: 'GOOGLE_MAPS_API_KEY is not configured.',
+        body: 'A platform Google Maps API key is not configured.',
       );
     }
   }
@@ -146,6 +153,15 @@ class GooglePlacesException implements Exception {
 
   @override
   String toString() {
-    return 'GooglePlacesException(statusCode: $statusCode, body: $body)';
+    String? message;
+    if (body case final Map<String, dynamic> responseBody) {
+      final error = responseBody['error'];
+      if (error is Map<String, dynamic>) {
+        message = error['message'] as String?;
+      }
+    }
+    return message != null && message.isNotEmpty
+        ? message
+        : 'Google Places request failed ($statusCode).';
   }
 }

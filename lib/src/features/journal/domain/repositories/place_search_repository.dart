@@ -8,7 +8,7 @@ abstract interface class PlaceSearchRepository {
   });
 
   Future<PlaceSearchResult> fetchPlaceDetails({
-    required String placeId,
+    required String googlePlaceId,
     required String sessionToken,
   });
 }

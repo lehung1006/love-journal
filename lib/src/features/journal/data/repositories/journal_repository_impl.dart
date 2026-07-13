@@ -1,6 +1,4 @@
-import '../../domain/entities/journal_data.dart';
-import '../../domain/entities/journal_enums.dart';
-import '../../domain/entities/memory.dart';
+import '../../domain/entities/journal_entities.dart';
 import '../../domain/repositories/journal_repository.dart';
 import '../data_sources/journal_api_data_source.dart';
 import '../dtos/letter_dto.dart';
@@ -34,12 +32,27 @@ class JournalRepositoryImpl implements JournalRepository {
         .map(PlaceDto.fromJson)
         .map((dto) => dto.toDomain())
         .toList(growable: false);
+    final seedTimestamp = DateTime(2026);
+    final locations = places
+        .map(
+          (place) => MemoryLocation(
+            id: place.id,
+            displayName: place.name,
+            latitude: place.latitude,
+            longitude: place.longitude,
+            source: MemoryLocationSource.manual,
+            createdAt: seedTimestamp,
+            updatedAt: seedTimestamp,
+          ),
+        )
+        .toList(growable: false);
 
     return JournalData(
       memories: List.unmodifiable(memories),
       letters: List.unmodifiable(letters),
       places: List.unmodifiable(places),
       tags: _systemTags(),
+      locations: List.unmodifiable(locations),
     );
   }
 

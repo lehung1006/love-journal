@@ -1,5 +1,6 @@
 import 'letter.dart';
 import 'memory.dart';
+import 'memory_location.dart';
 import 'place.dart';
 
 class JournalData {
@@ -8,12 +9,14 @@ class JournalData {
     required this.letters,
     required this.places,
     this.tags = const [],
+    this.locations = const [],
   });
 
   final List<Memory> memories;
   final List<Letter> letters;
   final List<Place> places;
   final List<MemoryTag> tags;
+  final List<MemoryLocation> locations;
 
   List<Memory> get visibleMemories {
     return memories
@@ -33,6 +36,42 @@ class JournalData {
     return visibleMemories
         .where((memory) => place.memoryIds.contains(memory.id))
         .toList(growable: false);
+  }
+
+  MemoryLocation? locationByIdOrNull(String? id) {
+    if (id == null) {
+      return null;
+    }
+    for (final location in locations) {
+      if (location.id == id) {
+        return location;
+      }
+    }
+    return null;
+  }
+
+  MemoryLocation? locationForMemory(Memory memory) {
+    return locationByIdOrNull(memory.locationId);
+  }
+
+  List<MemoryLocationGroup> get mapLocationGroups {
+    final grouped = <String, List<Memory>>{};
+    for (final memory in visibleMemories) {
+      final location = locationForMemory(memory);
+      if (location == null || !location.hasValidCoordinate) {
+        continue;
+      }
+      grouped.putIfAbsent(location.id, () => []).add(memory);
+    }
+
+    return [
+      for (final location in locations)
+        if (grouped[location.id] case final memories?)
+          MemoryLocationGroup(
+            location: location,
+            memories: List.unmodifiable(memories),
+          ),
+    ];
   }
 
   Memory? get featuredMemoryOrNull {
@@ -83,12 +122,14 @@ class JournalData {
     List<Letter>? letters,
     List<Place>? places,
     List<MemoryTag>? tags,
+    List<MemoryLocation>? locations,
   }) {
     return JournalData(
       memories: memories ?? this.memories,
       letters: letters ?? this.letters,
       places: places ?? this.places,
       tags: tags ?? this.tags,
+      locations: locations ?? this.locations,
     );
   }
 }

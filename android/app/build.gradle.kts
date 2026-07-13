@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -5,12 +7,17 @@ plugins {
 }
 
 android {
-    namespace = "com.example.flutter_love_journal"
+    namespace = "vn.hung.le.lovejournal"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
-    val googleMapsApiKey = providers.gradleProperty("GOOGLE_MAPS_API_KEY")
-        .orElse(providers.environmentVariable("GOOGLE_MAPS_API_KEY"))
-        .orElse("")
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
+    val googleMapsAndroidApiKey = providers.gradleProperty("GOOGLE_MAPS_ANDROID_API_KEY")
+        .orElse(providers.environmentVariable("GOOGLE_MAPS_ANDROID_API_KEY"))
+        .orElse(localProperties.getProperty("GOOGLE_MAPS_ANDROID_API_KEY") ?: "")
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -19,14 +26,14 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.flutter_love_journal"
+        applicationId = "vn.hung.le.lovejournal"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsApiKey.get()
+        manifestPlaceholders["GOOGLE_MAPS_ANDROID_API_KEY"] = googleMapsAndroidApiKey.get()
     }
 
     buildTypes {

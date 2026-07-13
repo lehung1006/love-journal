@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/place_search.dart';
 import '../providers/map_providers.dart';
 
-final mapSearchControllerProvider =
-    NotifierProvider<MapSearchController, MapSearchState>(
-      MapSearchController.new,
+final locationSearchControllerProvider =
+    NotifierProvider<LocationSearchController, LocationSearchState>(
+      LocationSearchController.new,
     );
 
-class MapSearchState {
-  const MapSearchState({
+class LocationSearchState {
+  const LocationSearchState({
     this.query = '',
     this.suggestions = const [],
     this.selectedPlace,
@@ -25,7 +25,7 @@ class MapSearchState {
   final bool isResolving;
   final String? errorMessage;
 
-  MapSearchState copyWith({
+  LocationSearchState copyWith({
     String? query,
     List<PlaceSearchSuggestion>? suggestions,
     PlaceSearchResult? selectedPlace,
@@ -35,7 +35,7 @@ class MapSearchState {
     String? errorMessage,
     bool clearError = false,
   }) {
-    return MapSearchState(
+    return LocationSearchState(
       query: query ?? this.query,
       suggestions: suggestions ?? this.suggestions,
       selectedPlace: clearSelectedPlace
@@ -48,12 +48,12 @@ class MapSearchState {
   }
 }
 
-class MapSearchController extends Notifier<MapSearchState> {
+class LocationSearchController extends Notifier<LocationSearchState> {
   String _sessionToken = _newSessionToken();
 
   @override
-  MapSearchState build() {
-    return const MapSearchState();
+  LocationSearchState build() {
+    return const LocationSearchState();
   }
 
   Future<void> search(String query, {GeoCoordinate? locationBias}) async {
@@ -77,7 +77,7 @@ class MapSearchController extends Notifier<MapSearchState> {
     );
 
     try {
-      final repository = ref.read(placeSearchRepositoryProvider);
+      final repository = await ref.read(placeSearchRepositoryProvider.future);
       final suggestions = await repository.autocompletePlaces(
         input: trimmed,
         sessionToken: _sessionToken,
@@ -108,9 +108,9 @@ class MapSearchController extends Notifier<MapSearchState> {
   ) async {
     state = state.copyWith(isResolving: true, clearError: true);
     try {
-      final repository = ref.read(placeSearchRepositoryProvider);
+      final repository = await ref.read(placeSearchRepositoryProvider.future);
       final place = await repository.fetchPlaceDetails(
-        placeId: suggestion.placeId,
+        googlePlaceId: suggestion.googlePlaceId,
         sessionToken: _sessionToken,
       );
       _sessionToken = _newSessionToken();
@@ -129,7 +129,7 @@ class MapSearchController extends Notifier<MapSearchState> {
   }
 
   void clear() {
-    state = const MapSearchState();
+    state = const LocationSearchState();
     _sessionToken = _newSessionToken();
   }
 

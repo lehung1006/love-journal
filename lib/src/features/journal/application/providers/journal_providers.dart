@@ -36,7 +36,8 @@ class MemoryDraft {
     required this.primaryTagId,
     required this.voiceMessages,
     required this.mediaGroups,
-    this.locationName,
+    this.locationId,
+    this.newLocation,
     this.note,
     this.category = MemoryCategory.daily,
     this.phase = RelationshipPhase.year3,
@@ -46,7 +47,8 @@ class MemoryDraft {
   final String story;
   final DateTime date;
   final String primaryTagId;
-  final String? locationName;
+  final String? locationId;
+  final MemoryLocationDraft? newLocation;
   final String? note;
   final List<MemoryVoiceMessage> voiceMessages;
   final List<MemoryMediaGroup> mediaGroups;
@@ -59,7 +61,7 @@ class MemoryDraft {
       story: memory.story,
       date: memory.date,
       primaryTagId: memory.effectiveTagId,
-      locationName: memory.locationName,
+      locationId: memory.locationId,
       note: memory.note,
       voiceMessages: memory.voiceMessages,
       mediaGroups: memory.mediaGroups,
@@ -70,7 +72,7 @@ class MemoryDraft {
 }
 
 class JournalDataController extends AsyncNotifier<JournalData> {
-  static const _draftKey = 'journalDataDraft.v1';
+  static const _draftKey = 'journalDataDraft.v2';
 
   @override
   Future<JournalData> build() async {
@@ -86,15 +88,20 @@ class JournalDataController extends AsyncNotifier<JournalData> {
   Future<Memory> createMemory(MemoryDraft draft) async {
     final current = await future;
     final now = DateTime.now();
+    final resolvedLocation = _resolveLocation(current, draft, now);
     final memory = _memoryFromDraft(
       id: _newId('memory', now),
       draft: draft,
       createdAt: now,
       updatedAt: now,
       isFeatured: current.visibleMemories.isEmpty,
+      location: resolvedLocation.location,
     );
     final updated = _sortMemories(
-      current.copyWith(memories: [...current.memories, memory]),
+      current.copyWith(
+        memories: [...current.memories, memory],
+        locations: resolvedLocation.locations,
+      ),
     );
     await _setData(updated);
     return memory;
@@ -104,6 +111,7 @@ class JournalDataController extends AsyncNotifier<JournalData> {
     final current = await future;
     final existing = current.memoryById(memoryId);
     final now = DateTime.now();
+    final resolvedLocation = _resolveLocation(current, draft, now);
     final updatedMemory = _memoryFromDraft(
       id: existing.id,
       draft: draft,
@@ -111,6 +119,7 @@ class JournalDataController extends AsyncNotifier<JournalData> {
       updatedAt: now,
       isFeatured: existing.isFeatured,
       coverMediaId: existing.coverMediaId,
+      location: resolvedLocation.location,
     );
     final updated = _sortMemories(
       current.copyWith(
@@ -118,6 +127,7 @@ class JournalDataController extends AsyncNotifier<JournalData> {
           for (final memory in current.memories)
             if (memory.id == memoryId) updatedMemory else memory,
         ],
+        locations: resolvedLocation.locations,
       ),
     );
     await _setData(updated);
@@ -198,6 +208,7 @@ class JournalDataController extends AsyncNotifier<JournalData> {
     required DateTime createdAt,
     required DateTime updatedAt,
     required bool isFeatured,
+    required MemoryLocation? location,
     String? coverMediaId,
   }) {
     final media = draft.mediaGroups
@@ -212,7 +223,10 @@ class JournalDataController extends AsyncNotifier<JournalData> {
       category: category,
       phase: draft.phase,
       primaryTagId: draft.primaryTagId,
-      locationName: _blankToNull(draft.locationName),
+      locationId: location?.id,
+      locationName: location?.displayName,
+      latitude: location?.latitude,
+      longitude: location?.longitude,
       media: media,
       coverMediaId: coverMediaId ?? (media.isEmpty ? null : media.first.id),
       story: draft.story.trim(),
@@ -223,6 +237,61 @@ class JournalDataController extends AsyncNotifier<JournalData> {
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
+  }
+
+  _ResolvedLocation _resolveLocation(
+    JournalData current,
+    MemoryDraft draft,
+    DateTime now,
+  ) {
+    final locationDraft = draft.newLocation;
+    if (locationDraft != null) {
+      final displayName = locationDraft.displayName.trim();
+      if (displayName.isEmpty || !locationDraft.hasValidCoordinate) {
+        throw ArgumentError(
+          'A valid location name and coordinate are required.',
+        );
+      }
+
+      final googlePlaceId = _blankToNull(locationDraft.googlePlaceId);
+      if (googlePlaceId != null) {
+        for (final existing in current.locations) {
+          if (existing.googlePlaceId == googlePlaceId) {
+            return _ResolvedLocation(
+              location: existing,
+              locations: current.locations,
+            );
+          }
+        }
+      }
+
+      final location = MemoryLocation(
+        id: _newId('location', now),
+        displayName: displayName,
+        formattedAddress: _blankToNull(locationDraft.formattedAddress),
+        latitude: locationDraft.latitude,
+        longitude: locationDraft.longitude,
+        googlePlaceId: googlePlaceId,
+        source: locationDraft.source,
+        createdAt: now,
+        updatedAt: now,
+      );
+      return _ResolvedLocation(
+        location: location,
+        locations: List.unmodifiable([...current.locations, location]),
+      );
+    }
+
+    final locationId = _blankToNull(draft.locationId);
+    if (locationId == null) {
+      return _ResolvedLocation(location: null, locations: current.locations);
+    }
+
+    final location = current.locationByIdOrNull(locationId);
+    if (location == null) {
+      throw StateError('Unknown memory location: $locationId');
+    }
+    return _ResolvedLocation(location: location, locations: current.locations);
   }
 
   MemoryCategory? _categoryForTagId(String tagId) {
@@ -263,4 +332,11 @@ class JournalDataController extends AsyncNotifier<JournalData> {
     const colors = ['rose', 'teal', 'moss', 'amber', 'lavender'];
     return colors[index % colors.length];
   }
+}
+
+class _ResolvedLocation {
+  const _ResolvedLocation({required this.location, required this.locations});
+
+  final MemoryLocation? location;
+  final List<MemoryLocation> locations;
 }

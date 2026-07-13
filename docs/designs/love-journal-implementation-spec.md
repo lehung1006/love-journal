@@ -1,9 +1,11 @@
 # Mình & Em - Mobile App Implementation Spec
 
-Version: 1.0  
-Target: Flutter or React Native  
-Design board: `love-journal-figma-handoff.html`  
-Time management extension: `love-journal-time-management-handoff.html`  
+Version: 1.1
+Target: Flutter
+Last updated: 2026-07-13
+Design board: `love-journal-figma-handoff.html`
+Time management extension: `love-journal-time-management-handoff.html`
+Map/Memory Location design: [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC)
 Current UI/UX source of truth: `love-journal-current-ui-ux.md`  
 Token file: `love-journal-design-tokens.json`
 
@@ -44,6 +46,13 @@ Current product milestone:
 4. Replace fixed memory categories with data-driven tags.
 5. Support moment voice messages and grouped image/video sections per memory.
 6. Route user-facing app copy through localization resources.
+7. Make Memory the owner of location selection and make Map a read-only projection of located memories.
+
+Current implementation note:
+
+- The Flutter codebase has implemented the memory-owned location architecture and read-only Map projection.
+- Bundled `assets/data/memories.json` and `assets/data/places.json` are intentionally empty so new memories/locations are created by the user instead of restored from hardcoded seed data.
+- Google Places Autocomplete is implemented in Location Picker, but the current local Android key still receives HTTP `403 PERMISSION_DENIED` from Google Cloud. Treat this as an API-key/project/restriction/billing blocker or move Places behind a backend/proxy; do not reintroduce Map search or hardcoded places.
 
 ## Navigation
 
@@ -62,10 +71,12 @@ AppRoot
       TimelineScreen
       MemoryDetailScreen
       AddMemoryScreen
+        LocationPickerScreen
       EditMemoryScreen
+        LocationPickerScreen
     MapTab
       MapScreen
-      PlaceDetailSheet
+      LocationMemoryListSheet
       MemoryDetailScreen
     LettersTab
       LettersScreen
@@ -73,6 +84,17 @@ AppRoot
   AddMemoryScreen
   EditMemoryScreen
 ```
+
+Approved Location Picker routes:
+
+```txt
+/timeline/new-memory/location
+/timeline/edit-memory/:memoryId/location
+```
+
+- Location Picker is pushed above Add/Edit Memory and does not show the bottom tab bar.
+- Search, selected-result refinement, manual pinning, and naming are internal states of one picker screen.
+- The picker returns a temporary `MemoryLocationSelection`; the form beneath remains the owner of unsaved memory state.
 
 Opening logic:
 
@@ -130,7 +152,9 @@ Rules:
 
 ## Data Models
 
-### Memory
+### Legacy Seed Memory
+
+The current bundled JSON and Flutter entity use this flat location contract. Keep it readable during migration, but do not use it as the target editable contract.
 
 ```ts
 type MemoryCategory =
@@ -195,10 +219,7 @@ type EditableMemory = {
   title: string;
   description: string;
   occurredAt: string;
-  locationName?: string;
-  latitude?: number;
-  longitude?: number;
-  placeId?: string;
+  locationId?: string;
   note?: string;
   primaryTagId?: string;
   voiceMessages: MemoryVoiceMessage[];
@@ -236,6 +257,7 @@ Rules:
 - Custom tags are created by the user and appear as new chips in Time.
 - Start with one primary tag per memory for a simpler MVP. Multi-tag can be added later without changing the screen layout.
 - Use soft delete with `deletedAt` first. Hard delete can be a later storage cleanup action.
+- Location is optional and does not satisfy the meaningful-body validation by itself.
 
 ### Letter
 
@@ -256,34 +278,55 @@ type Letter = {
 };
 ```
 
-### Place
+### Memory Location
 
 ```ts
-type Place = {
+type MemoryLocationSource = "googlePlaces" | "manual";
+
+type MemoryLocation = {
   id: string;
-  name: string;
+  displayName: string;
+  formattedAddress?: string;
   latitude: number;
   longitude: number;
-  memoryIds: string[];
-  coverMediaId?: string;
-  shortNote?: string;
+  googlePlaceId?: string;
+  source: MemoryLocationSource;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type MemoryLocationSelection = {
+  existingLocationId?: string;
+  draftLocation?: Omit<MemoryLocation, "id" | "createdAt" | "updatedAt">;
 };
 ```
 
-### Place Search
+Rules:
 
-The current Flutter implementation uses Google Places as an external search source, separate from persisted journal `Place` data.
+- `Memory.locationId` is the persisted relationship and Map grouping key.
+- `displayName` is required and controlled by the user. A Google display name may prefill it but must remain editable.
+- `formattedAddress` is optional display metadata.
+- `googlePlaceId` identifies an external result and helps prevent duplicates; it is not the internal relationship key.
+- A manually pinned location has no required `googlePlaceId`.
+- There is no independent location note in this milestone. Private notes remain in `Memory.note`.
+- A newly drafted location is persisted atomically with memory save. Canceling the picker or form persists nothing.
+- If a selected Google result matches an existing `googlePlaceId`, return/reuse the existing location instead of creating a duplicate.
+- Existing locations may be reused from the memory form; they are not created or managed from Map.
+
+### Google Place Search
+
+Google Places is an external discovery service used only by Location Picker. It is not the Map tab's data source and it does not own the user's display name.
 
 ```ts
 type PlaceSearchSuggestion = {
-  placeId: string;
+  googlePlaceId: string;
   primaryText: string;
   secondaryText?: string;
   fullText: string;
 };
 
 type PlaceSearchResult = {
-  placeId: string;
+  googlePlaceId: string;
   name: string;
   formattedAddress?: string;
   latitude: number;
@@ -293,10 +336,35 @@ type PlaceSearchResult = {
 
 Rules:
 
-- Search suggestions are exploratory until the user explicitly attaches/saves a place in a later flow.
+- Autocomplete starts after at least two trimmed characters and a short debounce.
+- Keep one session token from autocomplete through Place Details selection, then rotate it.
+- Fetch Place Details only after a suggestion is selected.
+- Selecting a result creates only a temporary picker draft until the memory is saved.
+- Search failure keeps the query visible and provides retry plus manual pin fallback.
+- Current Flutter search models call the external identifier `placeId`; map or rename it to `googlePlaceId` at the Google Places boundary so it cannot be confused with internal `locationId` or legacy seed `placeId`.
 - Do not commit Google Maps API keys.
 - For production, consider routing Places Web Service calls through a backend/proxy if mobile key restrictions are not enough.
 - The app must keep a no-key fallback state so local development and automated tests can run without secrets.
+
+Current Android diagnostic:
+
+- Package/application id: `vn.hung.le.lovejournal`.
+- Debug SHA-1 used for restriction: `9A:27:5D:11:3E:A1:38:DC:CC:25:39:D8:D3:7E:00:A1:94:34:5F:A0`.
+- A direct Places API (New) autocomplete call using the configured key plus Android package/cert headers returned HTTP `403 PERMISSION_DENIED`.
+- Legacy Places autocomplete returned `REQUEST_DENIED` because the legacy API is not enabled; the app should continue using Places API (New).
+- If the Google Cloud console appears correctly configured, verify billing, project ownership of the key, saved API restrictions, propagation delay, and Android app restriction identity. A backend/proxy is the production direction if mobile REST restrictions remain fragile.
+
+### Legacy Place Compatibility
+
+The current implementation still has `Place`, `PlaceDto`, `JournalData.places`, and `assets/data/places.json` for backward compatibility. `assets/data/places.json` is intentionally empty in the current repo and must not be treated as the product-owned marker source.
+
+Migration rules:
+
+- Continue reading flat `locationName`, `latitude`, `longitude`, and current `placeId` from seed memories.
+- Current `placeId` values identify bundled `Place` records; never assume they are Google Place IDs.
+- Create stable internal `MemoryLocation.id` values for migrated places and update memories with `locationId`.
+- Preserve coordinates and user-visible names while migrating.
+- Map markers now come from visible memories joined to `MemoryLocation`, not directly from `places.json`.
 
 ## Components
 
@@ -419,6 +487,7 @@ Route:
 
 - `AddMemoryScreen`: pushed from Time header and empty state CTA.
 - `EditMemoryScreen(memoryId)`: pushed from memory overflow menu.
+- `LocationPickerScreen`: pushed from the Location field in either form and returns a temporary selection.
 - These routes should not show the bottom tab bar.
 
 Sections:
@@ -447,6 +516,42 @@ Sections:
 - Sticky save bar:
   - Primary CTA: `Lưu kỷ niệm`.
   - Show loading state when saving or uploading.
+
+Location UX:
+
+- Do not keep Location as a plain text field in the target implementation.
+- Empty form state shows location as optional with `Thêm địa điểm`.
+- Selected form state shows `displayName`, optional address, and change/remove actions.
+- Location Picker begins with two choices:
+  - reuse an existing `MemoryLocation`;
+  - find or pin a new location.
+- New location discovery supports:
+  - Google Places Autocomplete suggestions;
+  - Place Details after suggestion selection;
+  - map drag to refine the selected coordinate;
+  - manual pin fallback without using Google search;
+  - required user-confirmed display name.
+- If no Maps key is available, show a stable explanation and allow back/cancel. Do not crash or commit a partial location.
+- Back/cancel returns no result and preserves the form's previous location selection.
+- Remove clears the form's temporary `locationId`/location draft; persistence changes only on memory save.
+
+Location flow:
+
+```mermaid
+flowchart TD
+  A["Add/Edit Memory"] --> B["Open Location Picker"]
+  B --> C{"Choose source"}
+  C -->|"Existing"| D["Select MemoryLocation"]
+  C -->|"Google"| E["Autocomplete suggestions"]
+  E --> F["Fetch Place Details"]
+  F --> G["Refine pin if needed"]
+  C -->|"Manual"| H["Pan map and pin coordinate"]
+  G --> I["Confirm display name"]
+  H --> I
+  D --> J["Return temporary selection"]
+  I --> J
+  J --> K["Save memory + location atomically"]
+```
 
 Lời nhắn UX:
 
@@ -522,6 +627,9 @@ Validation:
 - New custom tag names should be trimmed and de-duplicated case-insensitively.
 - Imported voice message must have a readable local URI or uploaded remote URI before final save.
 - Recorded voice message must be saved to local app storage before being attached to the memory.
+- A new location requires a non-empty trimmed `displayName` and valid finite coordinates.
+- Latitude must be between `-90` and `90`; longitude must be between `-180` and `180`.
+- Existing `locationId` must resolve before memory save; otherwise show an inline error and keep the form open.
 
 Deletion:
 
@@ -553,27 +661,50 @@ Rules:
 
 Purpose: turn memories into a journey.
 
-Current implementation:
+Previous Flutter state (removed):
 
 - Real map surface uses `google_maps_flutter`.
 - Place search uses Google Places Web Service through a repository/data-source boundary.
 - Saved places from bundled JSON render as map markers.
-- A warm static canvas remains as a fallback when `GOOGLE_MAPS_API_KEY` is not configured.
+- A warm static canvas remains as a fallback when no platform Maps key is configured.
 
-Behavior:
+This transitional UI has been removed. Search in Map and bundled JSON marker ownership are not the product model.
 
-- Saved marker tap opens place preview bottom sheet.
-- Place preview shows cover image, place name, memory count, short note.
-- CTA opens filtered timeline or place detail.
-- Search field calls Places Autocomplete after a short debounce.
-- Selecting a suggestion fetches Place Details, moves the camera, and shows a temporary selected-place card.
-- Selected search results are not persisted until a later attach/save flow is designed.
+Current implemented behavior:
+
+- Map has no search, add, edit, or standalone place management controls.
+- Select visible memories where `deletedAt == null` and `locationId != null`.
+- Join those memories to `MemoryLocation` and group by internal `locationId`.
+- Render one marker per group using the location coordinates.
+- Marker tap opens `LocationMemoryListSheet` with the user-defined location name, optional address, and all visible memories in the group.
+- Memory row tap opens Memory Detail through the Map branch.
+- Memories without a resolvable location or valid coordinates do not render.
+- Empty projection shows an emotional empty state with a CTA to Time/Add Memory.
+- Recenter frames all visible markers; for one marker, use a closer zoom.
+- The Map screen watches journal state and does not own a second mutable list of places.
+
+Projection consistency:
+
+- Creating a located memory adds it to a marker group.
+- Changing `locationId` moves it between groups.
+- Clearing `locationId` removes it from Map.
+- Soft delete excludes the memory immediately.
+- A marker disappears when its last visible memory is removed or soft-deleted.
+- Location records with no visible memories may remain in storage for reuse but never render on Map.
 
 Configuration:
 
-- Dart/Places calls read `GOOGLE_MAPS_API_KEY` from `--dart-define`.
-- Android injects the same key through a manifest placeholder.
-- iOS reads the same key from `Info.plist`/build settings.
+- Android injects `GOOGLE_MAPS_ANDROID_API_KEY` through a manifest placeholder. Use a Google Cloud key restricted to package `vn.hung.le.lovejournal` and the signing certificate SHA-1.
+- iOS injects `GOOGLE_MAPS_IOS_API_KEY` through `Info.plist`/build settings. Use a Google Cloud key restricted to bundle id `vn.hung.le.lovejournal`.
+- Dart/Places calls temporarily read the platform key through a native method channel. For production, move Places calls behind a backend/proxy and keep the Places key server-side.
+- Android REST requests send `X-Android-Package` and `X-Android-Cert`; the certificate is the runtime SHA-1 encoded as hexadecimal without delimiters. iOS REST requests send `X-Ios-Bundle-Identifier`.
+- Enable `Places API (New)` and include it in API restrictions in addition to the relevant platform Maps SDK.
+- Places calls are made only by Location Picker. Map rendering uses the Maps SDK key but never calls Autocomplete.
+
+Current local blocker:
+
+- Map and Location Picker can read the Android key from the configured local path, but Google Places Autocomplete still returns `403 PERMISSION_DENIED` for the current key/project setup.
+- The user has already tried uninstalling the app, `flutter clean`, `flutter pub get`, and rebuilding, so future debugging should focus on Google Cloud project/key/billing/restriction state or on moving Places requests behind a backend/proxy.
 
 ### Letters
 
@@ -655,7 +786,7 @@ assets/
   data/
     memories.json
     letters.json
-    places.json
+    places.json # empty legacy-compatible asset
   images/
   audio/
 ```
@@ -667,7 +798,14 @@ hasSeenOpening
 openedLetterIds
 favoriteMemoryIds
 lastViewedMemoryId
+journalDataDraft.v2 # memories, tags, locations, and current editable draft data
 ```
+
+Implemented local-first persistence extension:
+
+- `journalDataDraft.v2` stores `MemoryLocation` records and memory `locationId` references.
+- Legacy seed place links remain readable for migration compatibility, but runtime Map marker ownership no longer depends on `places.json`.
+- One controller/repository save path commits a new location together with the memory.
 
 Later product:
 
@@ -677,7 +815,13 @@ Later product:
 
 ## Seed Data Checklist
 
-For the anniversary gift, prepare:
+Current repo state:
+
+- `assets/data/memories.json` is `[]`.
+- `assets/data/places.json` is `[]`.
+- New memories and locations should be created through the app instead of hardcoded into bundled seeds.
+
+For a later curated anniversary gift content pass, prepare:
 
 - 20-30 memories.
 - 8-12 places.
@@ -692,7 +836,7 @@ Each memory should have:
 ```txt
 title
 date
-locationName
+locationId optional, with a matching `MemoryLocation`
 category
 1-5 photos
 story
@@ -715,6 +859,11 @@ Before giving the app:
 - Text does not overflow on small devices.
 - App icon and name are polished.
 - No accidental private/dev content in release build.
+- Location Picker cancel does not persist a location.
+- Google Places search is visible only in Location Picker.
+- Map has no add/search/edit place controls.
+- Map markers and counts match visible located memories after create, edit, remove-location, and soft-delete actions.
+- Missing Maps key states do not crash Map or Location Picker.
 
 ## Implementation Recommendation
 

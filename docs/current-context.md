@@ -1,6 +1,6 @@
 # Current Context - Flutter Love Journal
 
-Last updated: 2026-07-05
+Last updated: 2026-07-13
 
 ## Project Intent
 
@@ -23,8 +23,10 @@ The app has moved beyond the original static gift MVP. It now has the foundation
 - GoRouter navigation with tab shell.
 - Flutter gen-l10n localization for user-facing app copy.
 - Local-first persistence for app session and editable journal draft.
-- A redesigned and partially implemented Time module with add/edit/delete memory flow.
-- A real Map module using Google Maps plus Google Places search when an API key is configured.
+- A redesigned local-first Time module with add/edit/delete memory flow.
+- A structured Location Picker inside Add/Edit Memory with Google Places search, manual pinning, existing-location reuse, and atomic memory/location save.
+- A read-only Map projection built from visible memories and their `locationId` references.
+- Android application id and iOS bundle id are `vn.hung.le.lovejournal`.
 
 The current codebase is still local-first. There is no auth, partner invite, cloud sync, real media picker, real audio recorder, or backend yet.
 
@@ -38,6 +40,7 @@ Design and product context:
 - `docs/designs/love-journal-figma-handoff.html`
 - `docs/designs/love-journal-time-management-handoff.html`
 - `docs/current-context.md`
+- [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC)
 
 Main Flutter app:
 
@@ -148,13 +151,16 @@ Current key providers:
   - Reads seed journal data through `JournalAssetApiDataSource`.
 
 - `mapServiceConfigProvider`
-  - Reads the Google Maps API key from `--dart-define=GOOGLE_MAPS_API_KEY=...`.
+  - Reads the Google Maps API key from platform-specific config.
+  - Android priority: `GOOGLE_MAPS_ANDROID_API_KEY` dart define, then native manifest value.
+  - iOS priority: `GOOGLE_MAPS_IOS_API_KEY` dart define, then `Info.plist` value.
 
 - `placeSearchRepositoryProvider`
   - Calls the Google Places Web Service through a data source/repository boundary.
+  - It is consumed only by Location Picker.
 
-- `mapSearchControllerProvider`
-  - Holds Map search query state, autocomplete suggestions, selected search result, and loading/error states.
+- `locationSearchControllerProvider`
+  - Holds Location Picker query state, autocomplete suggestions, selected search result, and loading/error states.
 
 ## Navigation Snapshot
 
@@ -178,7 +184,9 @@ Important routes:
 /home/recap
 /timeline
 /timeline/new-memory
+/timeline/new-memory/location
 /timeline/edit-memory/:memoryId
+/timeline/edit-memory/:memoryId/location
 /timeline/memories/:memoryId
 /map
 /map/memories/:memoryId
@@ -265,7 +273,7 @@ Main sections:
   - Title.
   - Description.
   - Date.
-  - Location.
+  - Location as a tappable Location Picker entry, not a free-text field.
   - Private note.
   - `Lời nhắn cho khoảnh khắc này`.
 
@@ -297,11 +305,17 @@ Validation:
   - image,
   - video.
 
+Previous location limitation (resolved):
+
+- `Memory` already has `locationName`, `latitude`, `longitude`, and `placeId` fields.
+- `MemoryDraft` previously carried only `locationName`.
+- Add/Edit Memory now opens Location Picker and carries either an existing `locationId` or a new `MemoryLocationDraft` until memory save.
+
 ## Map Module Current State
 
-The Map tab has been upgraded from a static stylized canvas into a real map surface.
+The approved Map/Memory Location redesign is now implemented. The previous Map search implementation is retained below only as migration history.
 
-Current Map capabilities:
+### Previous Implementation (Removed)
 
 - Uses `google_maps_flutter` for the map SDK.
 - Uses Google Places Web Service through `http` for place search.
@@ -320,16 +334,62 @@ Current Map capabilities:
 - Selecting a search suggestion fetches Place Details, drops a temporary marker, and moves the camera to the result.
 - Search result selection is currently exploratory only; it is not yet persisted as a `Place` or attached to a memory.
 
+This implementation has been removed from the Map UI. `places.json` remains only as an empty legacy-compatible asset.
+
+### Implemented Target
+
+Design source:
+
+- [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC)
+
+Approved behavior:
+
+- Location is optional and is selected while creating or editing a memory.
+- Tapping the Location area opens a dedicated Location Picker.
+- The user can reuse an existing memory location, search a new geographic result with Google Places, or pin a coordinate manually.
+- Selecting a Google suggestion fetches Place Details only at that point.
+- The user can drag the map to refine the coordinate after search or use manual pinning as a fallback.
+- The final display name is user-controlled. The Google place name is only an initial suggestion.
+- A new location is committed together with the memory, not immediately when it is picked.
+- Map tab is read-only: it has no search, add, edit, or standalone place management action.
+- Map markers are projected from visible memories with valid locations.
+- Memories sharing one internal `locationId` are grouped under one marker.
+- Tapping a marker opens a warm bottom sheet listing the visible memories at that location; tapping a memory opens Memory Detail.
+- Memories without location are omitted. Soft-deleted memories do not contribute to markers or counts.
+- If no visible memory has a location, Map shows an emotional, actionable empty state that sends the user to Time/Add Memory.
+- If no platform Maps key is configured, Map keeps a clear non-crashing fallback state.
+
+Synchronization rules:
+
+- Creating a memory with a location adds or updates the corresponding Map marker.
+- Editing a memory location moves the memory between marker groups.
+- Removing a memory location removes that memory from Map.
+- Soft-deleting the last visible memory at a location removes the marker.
+- Canceling Location Picker or abandoning the memory form must not create an orphan location.
+
 Map API key configuration:
 
-- Dart/Places search reads `GOOGLE_MAPS_API_KEY` from `--dart-define`.
-- Android reads `GOOGLE_MAPS_API_KEY` from a Gradle property or environment variable and injects it into the manifest placeholder.
-- iOS reads `GoogleMapsApiKey` from `Info.plist`, backed by `$(GOOGLE_MAPS_API_KEY)`.
+- Android package/application id: `vn.hung.le.lovejournal`.
+- iOS bundle id: `vn.hung.le.lovejournal`.
+- Android native map rendering reads `GOOGLE_MAPS_ANDROID_API_KEY` from a Gradle property, environment variable, or ignored `android/local.properties`, then injects it into the manifest placeholder.
+- iOS native map rendering reads `GOOGLE_MAPS_IOS_API_KEY` from `ios/Flutter/Secrets.xcconfig`, which feeds `Info.plist` through `$(GOOGLE_MAPS_IOS_API_KEY)`.
+- Dart/Places search can read the native key through the `love_journal/maps_config` platform channel as a temporary local-first path. For production, move Places calls behind a backend/proxy and keep the Places key server-side.
+- Direct Android Places REST requests include `X-Android-Package` and the runtime signing certificate SHA-1 in `X-Android-Cert` without delimiters. Direct iOS requests include `X-Ios-Bundle-Identifier`.
+- The Google Cloud project must enable `Places API (New)` and include it in the key's API restrictions; enabling only the platform Maps SDK is not enough for autocomplete.
+- Restrict Android keys in Google Cloud to package `vn.hung.le.lovejournal` plus the signing certificate SHA-1. Restrict iOS keys to bundle id `vn.hung.le.lovejournal`.
 - Do not commit real API keys.
+
+Current Google Places blocker:
+
+- Android Maps rendering can use the configured key path, but Location Picker autocomplete is still blocked by Google Cloud permissions in the current local setup.
+- A direct Places API (New) autocomplete request was tested with the configured Android key, package `vn.hung.le.lovejournal`, and debug signing SHA-1 `9A:27:5D:11:3E:A1:38:DC:CC:25:39:D8:D3:7E:00:A1:94:34:5F:A0`.
+- The direct request returned HTTP `403` / `PERMISSION_DENIED` from Google, which means the app request path reaches Google but the key/project/restriction/billing configuration is still not accepted by Google Cloud.
+- The same key against the legacy Places endpoint returned `REQUEST_DENIED` because the legacy API is not enabled; this is expected because the app uses Places API (New).
+- Do not solve this by moving search back to the Map tab or by hardcoding places. Keep the current Location Picker architecture and resolve the Google Cloud configuration or move Places requests behind a backend/proxy.
 
 Fallback behavior:
 
-- If `GOOGLE_MAPS_API_KEY` is not configured in Dart, Map shows the warm static fallback canvas plus an API-key empty state.
+- If no platform key is configured, Map shows the warm static fallback canvas plus an API-key empty state.
 - This keeps local tests and development builds from crashing before secrets are configured.
 
 ## Important Data Model Decisions
@@ -355,6 +415,27 @@ Newer editable model concepts:
 
 - `deletedAt`
   - Used for soft delete.
+
+Current location model:
+
+- `MemoryLocation`
+  - Immutable location entity/value used by memories.
+  - Has a stable internal `id`, user-controlled `displayName`, optional `formattedAddress`, coordinates, optional `googlePlaceId`, and source `googlePlaces` or `manual`.
+- `Memory.locationId`
+  - References the internal location identity used to group Map markers.
+- `googlePlaceId`
+  - Identifies the external Google result and helps avoid duplicate locations.
+  - It is not the Map grouping key and is optional for manually pinned locations.
+- Location note ownership
+  - There is no separate location note in the approved MVP.
+  - The existing private `Memory.note` stays attached to the memory.
+
+Legacy location compatibility:
+
+- Current flat fields `locationName`, `latitude`, `longitude`, and `placeId` remain readable during migration.
+- Current `placeId` values refer to bundled seed `Place` records and must not be interpreted automatically as Google Place IDs.
+- `JournalData.places`, `Place`, `PlaceDto`, and `assets/data/places.json` remain for legacy compatibility, but `places.json` is now empty.
+- After migration, persisted locations are created/reused through memory editing, while Map derives its visible marker projection from memories plus their referenced locations.
 
 Current `Memory` supports both old and new fields:
 
@@ -384,7 +465,7 @@ Session preferences:
 
 Editable journal draft:
 
-- Key: `journalDataDraft.v1`
+- Key: `journalDataDraft.v2`
 - Codec: `JournalDataDraftCodec`
 - Stores:
   - memories,
@@ -392,6 +473,20 @@ Editable journal draft:
   - soft-deleted state,
   - voice message metadata,
   - media groups.
+  - `MemoryLocation` records and memory `locationId` references.
+
+Current persistence behavior:
+
+- Persist `MemoryLocation` records and each memory's optional `locationId` in draft schema v2.
+- Commit a newly picked location atomically with the memory save.
+- Do not persist temporary autocomplete suggestions or a canceled manual pin.
+
+Bundled editable seed state:
+
+- `assets/data/memories.json` is `[]`.
+- `assets/data/places.json` is `[]`.
+- Memories and locations are created by the user from an empty state.
+- Draft v1 is intentionally ignored so the removed hardcoded seed data does not reappear from SharedPreferences.
 
 This is enough for MVP local-first editing, but should later be replaced by a real local database such as Drift, Isar, or SQLite before cloud sync.
 
@@ -406,7 +501,6 @@ The following UI flows exist but are not native-real yet:
 - Real media playback.
 - Real video thumbnails.
 - Search in Time.
-- Persisting searched Map places or place notes into the journal draft.
 
 Current behavior:
 
@@ -439,6 +533,12 @@ Decisions already made:
 - Keep user-facing UI copy in localization resources instead of hardcoded widget strings.
 - Keep design aligned with `docs/designs`, not generic mobile mockups.
 - Use Google Maps + Google Places for the first real Map implementation; keep the API key out of Git and provide a static fallback when the key is absent.
+- Location is owned by the Add/Edit Memory flow; there is no standalone add-place flow in Map.
+- Google Places Autocomplete exists only in Location Picker.
+- Map is a read-only projection of visible memories with locations.
+- Use an internal `locationId` for memory references and Map grouping; keep `googlePlaceId` optional external metadata.
+- Let users choose the display name even when Google Places supplied the coordinate and address.
+- Keep private notes attached to memories, not locations, for this milestone.
 
 ## Quality/Verification Status
 
@@ -463,6 +563,14 @@ After implementing real Map + Places search:
 - `flutter pub get`: dependency resolution and l10n generation completed, but the command exited with a Windows symlink/Developer Mode warning while creating plugin symlinks.
 - `flutter analyze`: passed.
 - `flutter test`: passed.
+
+After implementing Memory-owned locations and read-only Map projection:
+
+- `flutter analyze`: passed.
+- `flutter test --no-pub`: passed.
+- `flutter build apk --debug --no-pub`: passed.
+- Android debug package/SHA-1 used for API key restriction: `vn.hung.le.lovejournal` / `9A:27:5D:11:3E:A1:38:DC:CC:25:39:D8:D3:7E:00:A1:94:34:5F:A0`.
+- Runtime Places autocomplete remains blocked by Google Cloud with HTTP `403 PERMISSION_DENIED` even after uninstalling the app, `flutter clean`, `flutter pub get`, and rebuilding locally.
 
 ## Environment Notes
 
@@ -505,10 +613,15 @@ Google Maps plugin note on Windows:
 Map API key examples:
 
 ```powershell
-flutter run --dart-define=GOOGLE_MAPS_API_KEY=your_key
+# Android local development: put this in ignored android/local.properties.
+GOOGLE_MAPS_ANDROID_API_KEY=your_android_restricted_key
 ```
 
-For Android native map rendering, also provide `GOOGLE_MAPS_API_KEY` as a Gradle property or environment variable. For iOS, provide the `GOOGLE_MAPS_API_KEY` build setting so `Info.plist` resolves `$(GOOGLE_MAPS_API_KEY)`.
+```text
+// iOS local development: copy ios/Flutter/Secrets.xcconfig.example to
+// ios/Flutter/Secrets.xcconfig, then set:
+GOOGLE_MAPS_IOS_API_KEY=your_ios_restricted_key
+```
 
 ## Commands
 
@@ -540,16 +653,19 @@ flutter build apk --debug
 
 Short-term:
 
-1. Manually run the app and inspect Time/Add/Edit Memory UI on a device/emulator.
-2. Polish form spacing and any overflowing labels.
-3. Add widget tests for:
+1. Resolve Google Cloud Places `403 PERMISSION_DENIED` for the current Android key, or move Places calls to a backend/proxy earlier than planned.
+2. Manually run Time/Add/Edit Memory/Location Picker/Map on Android and iOS with and without a platform Maps key after Places permission is fixed.
+3. Add more widget/controller tests for:
    - Time empty state.
    - Add memory.
    - Create custom tag.
    - Soft delete memory.
-4. Add a localization coverage pass for any newly added screens/copy.
+   - Location Picker cancel does not persist a location.
+   - Reusing a location groups memories under one marker.
+   - Moving/removing/soft-deleting a memory updates Map projection.
+   - Map and Location Picker missing-key states.
+4. Add localization coverage for new Location Picker and Map copy.
 5. Replace mock media/audio with native picker/recorder behind small service abstractions.
-6. Run Map on a real Android/iOS target with `GOOGLE_MAPS_API_KEY` configured and verify tiles, markers, Places autocomplete, and selected-place camera movement.
 
 Medium-term:
 
@@ -558,7 +674,7 @@ Medium-term:
 3. Add undo or trash for soft-deleted memories.
 4. Add real media preview/playback.
 5. Add permission handling UX.
-6. Persist searched Map places/place notes and connect selected places to Add/Edit Memory.
+6. Move Places Web Service calls behind a backend/proxy before production if mobile restrictions are insufficient.
 
 Long-term:
 
@@ -575,3 +691,7 @@ Do not remove the repository/data-source abstraction just because the app curren
 Do not convert the app back to simple `setState`-only architecture. Local widget state is fine for forms, but app/domain state should stay in Riverpod controllers.
 
 Do not treat Time as a photo gallery. The core object is still a written memory with emotional structure; media is supporting material.
+
+Do not add place creation, search, or editing back into the Map tab. The approved ownership flow is Add/Edit Memory -> Location Picker -> saved memory -> read-only Map projection.
+
+Do not treat the current `places.json` list as product-owned location data. It is legacy seed data that must be migrated or replaced without breaking existing memories.

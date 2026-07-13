@@ -245,7 +245,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mapApiKeyMissingBody =>
-      'Thêm GOOGLE_MAPS_API_KEY cho Android/iOS và dart-define để bật bản đồ thật cùng tìm địa điểm.';
+      'Thêm GOOGLE_MAPS_ANDROID_API_KEY hoặc GOOGLE_MAPS_IOS_API_KEY để bật bản đồ thật cùng tìm địa điểm.';
 
   @override
   String get mapSavedPlacesTitle => 'Những nơi đã lưu';
@@ -599,4 +599,148 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get memoryFormGroupLimitReachedCta => 'Đã đạt giới hạn nhóm';
+
+  @override
+  String get memoryFormLocationEmpty => 'Chưa thêm địa điểm';
+
+  @override
+  String get memoryFormLocationOptional => 'Không bắt buộc · Có thể thêm sau';
+
+  @override
+  String get memoryFormLocationAddressFallback =>
+      'Vị trí đã được ghim trên bản đồ';
+
+  @override
+  String get memoryFormLocationChange => 'Đổi địa điểm';
+
+  @override
+  String get memoryFormLocationRemove => 'Bỏ địa điểm';
+
+  @override
+  String get locationPickerKicker => 'Gắn với kỷ niệm';
+
+  @override
+  String get locationPickerTitle => 'Chọn địa điểm';
+
+  @override
+  String get locationPickerBackTooltip => 'Quay lại';
+
+  @override
+  String get locationPickerCurrentTitle => 'Địa điểm đang chọn';
+
+  @override
+  String get locationPickerExistingTitle => 'Dùng lại một nơi đã có';
+
+  @override
+  String get locationPickerExistingBody =>
+      'Những nơi đã xuất hiện trong kỷ niệm sẽ được dùng chung một ghim trên Map.';
+
+  @override
+  String get locationPickerNoExistingTitle => 'Chưa có nơi nào để dùng lại';
+
+  @override
+  String get locationPickerNoExistingBody =>
+      'Hãy tìm một địa điểm hoặc tự ghim vị trí đầu tiên.';
+
+  @override
+  String locationPickerMemoryCount(int count) {
+    return '$count kỷ niệm';
+  }
+
+  @override
+  String get locationPickerNewTitle => 'Tìm hoặc ghim một nơi mới';
+
+  @override
+  String get locationPickerNewBody =>
+      'Tìm đúng vị trí bằng Google Places, rồi kéo bản đồ để tinh chỉnh nếu cần.';
+
+  @override
+  String get locationPickerSearchKicker => 'Địa điểm mới';
+
+  @override
+  String get locationPickerSearchTitle => 'Tìm và ghim';
+
+  @override
+  String get locationPickerSearchHint => 'Tìm địa điểm trên Google';
+
+  @override
+  String get locationPickerSearchClearTooltip => 'Xóa tìm kiếm';
+
+  @override
+  String get locationPickerSearchLoading => 'Đang tìm địa điểm...';
+
+  @override
+  String get locationPickerSearchEmpty => 'Không tìm thấy nơi phù hợp';
+
+  @override
+  String get locationPickerSearchError =>
+      'Chưa tìm được địa điểm. Bạn có thể thử lại hoặc ghim thủ công.';
+
+  @override
+  String get locationPickerSearchPermissionDenied =>
+      'Google Places chưa được cấp quyền cho API key này. Hãy bật Places API (New) và thêm API này vào API restrictions trong Google Cloud.';
+
+  @override
+  String get locationPickerPoweredByGoogle => 'Kết quả từ Google Places';
+
+  @override
+  String get locationPickerManualHelper =>
+      'Không đúng nơi? Kéo bản đồ để tự ghim.';
+
+  @override
+  String get locationPickerPinHelper =>
+      'Kéo bản đồ để đặt ghim vào đúng vị trí.';
+
+  @override
+  String get locationPickerContinueNaming => 'Tiếp tục đặt tên';
+
+  @override
+  String get locationPickerNameKicker => 'Bước cuối';
+
+  @override
+  String get locationPickerNameTitle => 'Đặt tên cho nơi này';
+
+  @override
+  String get locationPickerNameLabel => 'Tên hiển thị';
+
+  @override
+  String get locationPickerNameHint => 'Ví dụ: Quán cà phê đầu tiên';
+
+  @override
+  String get locationPickerNameRequired => 'Hãy đặt tên cho địa điểm';
+
+  @override
+  String get locationPickerAddressLabel => 'Địa chỉ tìm thấy';
+
+  @override
+  String get locationPickerCoordinateLabel => 'Tọa độ ghim';
+
+  @override
+  String get locationPickerSave => 'Dùng địa điểm này';
+
+  @override
+  String get locationPickerMissingKeyTitle => 'Chưa thể mở bản đồ';
+
+  @override
+  String get locationPickerMissingKeyBody =>
+      'Hãy cấu hình Google Maps API key để tìm hoặc ghim nơi mới. Bạn vẫn có thể quay lại và lưu kỷ niệm không có địa điểm.';
+
+  @override
+  String get mapLocatedEmptyTitle => 'Chưa có nơi nào trên hành trình';
+
+  @override
+  String get mapLocatedEmptyBody =>
+      'Khi một kỷ niệm được gắn địa điểm, nơi đó sẽ xuất hiện ở đây.';
+
+  @override
+  String get mapLocatedEmptyCta => 'Thêm kỷ niệm có địa điểm';
+
+  @override
+  String get mapLocationMemoryListTitle => 'Kỷ niệm tại nơi này';
+
+  @override
+  String get mapLocationAddressFallback => 'Một nơi được hai đứa giữ lại';
+
+  @override
+  String get mapOpenMemory => 'Mở kỷ niệm';
 }

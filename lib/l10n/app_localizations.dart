@@ -535,7 +535,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapApiKeyMissingBody.
   ///
   /// In vi, this message translates to:
-  /// **'Thêm GOOGLE_MAPS_API_KEY cho Android/iOS và dart-define để bật bản đồ thật cùng tìm địa điểm.'**
+  /// **'Thêm GOOGLE_MAPS_ANDROID_API_KEY hoặc GOOGLE_MAPS_IOS_API_KEY để bật bản đồ thật cùng tìm địa điểm.'**
   String get mapApiKeyMissingBody;
 
   /// No description provided for @mapSavedPlacesTitle.
@@ -1161,6 +1161,270 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Đã đạt giới hạn nhóm'**
   String get memoryFormGroupLimitReachedCta;
+
+  /// No description provided for @memoryFormLocationEmpty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa thêm địa điểm'**
+  String get memoryFormLocationEmpty;
+
+  /// No description provided for @memoryFormLocationOptional.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không bắt buộc · Có thể thêm sau'**
+  String get memoryFormLocationOptional;
+
+  /// No description provided for @memoryFormLocationAddressFallback.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vị trí đã được ghim trên bản đồ'**
+  String get memoryFormLocationAddressFallback;
+
+  /// No description provided for @memoryFormLocationChange.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi địa điểm'**
+  String get memoryFormLocationChange;
+
+  /// No description provided for @memoryFormLocationRemove.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ địa điểm'**
+  String get memoryFormLocationRemove;
+
+  /// No description provided for @locationPickerKicker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gắn với kỷ niệm'**
+  String get locationPickerKicker;
+
+  /// No description provided for @locationPickerTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn địa điểm'**
+  String get locationPickerTitle;
+
+  /// No description provided for @locationPickerBackTooltip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quay lại'**
+  String get locationPickerBackTooltip;
+
+  /// No description provided for @locationPickerCurrentTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Địa điểm đang chọn'**
+  String get locationPickerCurrentTitle;
+
+  /// No description provided for @locationPickerExistingTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng lại một nơi đã có'**
+  String get locationPickerExistingTitle;
+
+  /// No description provided for @locationPickerExistingBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Những nơi đã xuất hiện trong kỷ niệm sẽ được dùng chung một ghim trên Map.'**
+  String get locationPickerExistingBody;
+
+  /// No description provided for @locationPickerNoExistingTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có nơi nào để dùng lại'**
+  String get locationPickerNoExistingTitle;
+
+  /// No description provided for @locationPickerNoExistingBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hãy tìm một địa điểm hoặc tự ghim vị trí đầu tiên.'**
+  String get locationPickerNoExistingBody;
+
+  /// No description provided for @locationPickerMemoryCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} kỷ niệm'**
+  String locationPickerMemoryCount(int count);
+
+  /// No description provided for @locationPickerNewTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm hoặc ghim một nơi mới'**
+  String get locationPickerNewTitle;
+
+  /// No description provided for @locationPickerNewBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm đúng vị trí bằng Google Places, rồi kéo bản đồ để tinh chỉnh nếu cần.'**
+  String get locationPickerNewBody;
+
+  /// No description provided for @locationPickerSearchKicker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Địa điểm mới'**
+  String get locationPickerSearchKicker;
+
+  /// No description provided for @locationPickerSearchTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm và ghim'**
+  String get locationPickerSearchTitle;
+
+  /// No description provided for @locationPickerSearchHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm địa điểm trên Google'**
+  String get locationPickerSearchHint;
+
+  /// No description provided for @locationPickerSearchClearTooltip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xóa tìm kiếm'**
+  String get locationPickerSearchClearTooltip;
+
+  /// No description provided for @locationPickerSearchLoading.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang tìm địa điểm...'**
+  String get locationPickerSearchLoading;
+
+  /// No description provided for @locationPickerSearchEmpty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không tìm thấy nơi phù hợp'**
+  String get locationPickerSearchEmpty;
+
+  /// No description provided for @locationPickerSearchError.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa tìm được địa điểm. Bạn có thể thử lại hoặc ghim thủ công.'**
+  String get locationPickerSearchError;
+
+  /// No description provided for @locationPickerSearchPermissionDenied.
+  ///
+  /// In vi, this message translates to:
+  /// **'Google Places chưa được cấp quyền cho API key này. Hãy bật Places API (New) và thêm API này vào API restrictions trong Google Cloud.'**
+  String get locationPickerSearchPermissionDenied;
+
+  /// No description provided for @locationPickerPoweredByGoogle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kết quả từ Google Places'**
+  String get locationPickerPoweredByGoogle;
+
+  /// No description provided for @locationPickerManualHelper.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không đúng nơi? Kéo bản đồ để tự ghim.'**
+  String get locationPickerManualHelper;
+
+  /// No description provided for @locationPickerPinHelper.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kéo bản đồ để đặt ghim vào đúng vị trí.'**
+  String get locationPickerPinHelper;
+
+  /// No description provided for @locationPickerContinueNaming.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục đặt tên'**
+  String get locationPickerContinueNaming;
+
+  /// No description provided for @locationPickerNameKicker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bước cuối'**
+  String get locationPickerNameKicker;
+
+  /// No description provided for @locationPickerNameTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đặt tên cho nơi này'**
+  String get locationPickerNameTitle;
+
+  /// No description provided for @locationPickerNameLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên hiển thị'**
+  String get locationPickerNameLabel;
+
+  /// No description provided for @locationPickerNameHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ví dụ: Quán cà phê đầu tiên'**
+  String get locationPickerNameHint;
+
+  /// No description provided for @locationPickerNameRequired.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hãy đặt tên cho địa điểm'**
+  String get locationPickerNameRequired;
+
+  /// No description provided for @locationPickerAddressLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Địa chỉ tìm thấy'**
+  String get locationPickerAddressLabel;
+
+  /// No description provided for @locationPickerCoordinateLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tọa độ ghim'**
+  String get locationPickerCoordinateLabel;
+
+  /// No description provided for @locationPickerSave.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng địa điểm này'**
+  String get locationPickerSave;
+
+  /// No description provided for @locationPickerMissingKeyTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa thể mở bản đồ'**
+  String get locationPickerMissingKeyTitle;
+
+  /// No description provided for @locationPickerMissingKeyBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hãy cấu hình Google Maps API key để tìm hoặc ghim nơi mới. Bạn vẫn có thể quay lại và lưu kỷ niệm không có địa điểm.'**
+  String get locationPickerMissingKeyBody;
+
+  /// No description provided for @mapLocatedEmptyTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có nơi nào trên hành trình'**
+  String get mapLocatedEmptyTitle;
+
+  /// No description provided for @mapLocatedEmptyBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khi một kỷ niệm được gắn địa điểm, nơi đó sẽ xuất hiện ở đây.'**
+  String get mapLocatedEmptyBody;
+
+  /// No description provided for @mapLocatedEmptyCta.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm kỷ niệm có địa điểm'**
+  String get mapLocatedEmptyCta;
+
+  /// No description provided for @mapLocationMemoryListTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kỷ niệm tại nơi này'**
+  String get mapLocationMemoryListTitle;
+
+  /// No description provided for @mapLocationAddressFallback.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một nơi được hai đứa giữ lại'**
+  String get mapLocationAddressFallback;
+
+  /// No description provided for @mapOpenMemory.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở kỷ niệm'**
+  String get mapOpenMemory;
 }
 
 class _AppLocalizationsDelegate

@@ -28,11 +28,11 @@ class PlaceSearchRepositoryImpl implements PlaceSearchRepository {
 
   @override
   Future<PlaceSearchResult> fetchPlaceDetails({
-    required String placeId,
+    required String googlePlaceId,
     required String sessionToken,
   }) async {
     final json = await _dataSource.fetchPlaceDetails(
-      placeId: placeId,
+      googlePlaceId: googlePlaceId,
       sessionToken: sessionToken,
     );
     final location = json['location'];
@@ -41,8 +41,8 @@ class PlaceSearchRepositoryImpl implements PlaceSearchRepository {
     }
 
     return PlaceSearchResult(
-      placeId: json['id'] as String? ?? placeId,
-      name: _displayNameFromJson(json) ?? placeId,
+      googlePlaceId: json['id'] as String? ?? googlePlaceId,
+      name: _displayNameFromJson(json) ?? googlePlaceId,
       formattedAddress: json['formattedAddress'] as String?,
       coordinate: GeoCoordinate(
         latitude: (location['latitude'] as num).toDouble(),
@@ -71,7 +71,7 @@ class PlaceSearchRepositoryImpl implements PlaceSearchRepository {
         : null;
 
     return PlaceSearchSuggestion(
-      placeId: placeId,
+      googlePlaceId: placeId,
       primaryText: primaryText,
       secondaryText: secondaryText,
       fullText: fullText,

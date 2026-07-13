@@ -121,6 +121,7 @@ class MemoryDto {
       primaryTagId: MemoryTag.systemIdForCategory(
         memoryCategoryFromDto(category),
       ),
+      locationId: placeId,
       locationName: locationName,
       latitude: latitude,
       longitude: longitude,

@@ -14,6 +14,7 @@ class MemoryFormScreen extends StatefulWidget {
     required this.data,
     required this.onSubmit,
     required this.onCreateTag,
+    required this.onPickLocation,
     this.memory,
     super.key,
   });
@@ -22,6 +23,10 @@ class MemoryFormScreen extends StatefulWidget {
   final Memory? memory;
   final Future<Memory> Function(MemoryDraft draft) onSubmit;
   final Future<MemoryTag> Function(String name) onCreateTag;
+  final Future<MemoryLocationSelection?> Function(
+    MemoryLocationSelection? current,
+  )
+  onPickLocation;
 
   @override
   State<MemoryFormScreen> createState() => _MemoryFormScreenState();
@@ -34,7 +39,6 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _storyController;
-  late final TextEditingController _locationController;
   late final TextEditingController _noteController;
 
   late List<MemoryTag> _tags;
@@ -42,6 +46,7 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   late String _selectedTagId;
   late List<MemoryVoiceMessage> _voiceMessages;
   late List<MemoryMediaGroup> _mediaGroups;
+  MemoryLocationSelection? _locationSelection;
 
   bool _saving = false;
 
@@ -54,9 +59,6 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
     _tags = [...widget.data.tags];
     _titleController = TextEditingController(text: memory?.title ?? '');
     _storyController = TextEditingController(text: memory?.story ?? '');
-    _locationController = TextEditingController(
-      text: memory?.locationName ?? '',
-    );
     _noteController = TextEditingController(text: memory?.note ?? '');
     _selectedDate = memory?.date ?? DateTime.now();
     _selectedTagId =
@@ -66,13 +68,17 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
             : _tags.first.id);
     _voiceMessages = [...?memory?.voiceMessages];
     _mediaGroups = [...?memory?.mediaGroups];
+    final locationId = memory?.locationId;
+    if (locationId != null &&
+        widget.data.locationByIdOrNull(locationId) != null) {
+      _locationSelection = MemoryLocationSelection.existing(locationId);
+    }
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _storyController.dispose();
-    _locationController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -109,10 +115,15 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
                     _MainInfoCard(
                       titleController: _titleController,
                       storyController: _storyController,
-                      locationController: _locationController,
+                      locationName: _selectedLocationName,
+                      locationAddress: _selectedLocationAddress,
                       noteController: _noteController,
                       selectedDate: _selectedDate,
                       onPickDate: _pickDate,
+                      onPickLocation: _pickLocation,
+                      onRemoveLocation: _locationSelection == null
+                          ? null
+                          : () => setState(() => _locationSelection = null),
                       voiceMessages: _voiceMessages,
                       onAddVoiceMessage:
                           _voiceMessages.length >= _maxVoiceMessages
@@ -206,6 +217,37 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
         _selectedDate.minute,
       );
     });
+  }
+
+  Future<void> _pickLocation() async {
+    final selection = await widget.onPickLocation(_locationSelection);
+    if (!mounted || selection == null) {
+      return;
+    }
+    setState(() => _locationSelection = selection);
+  }
+
+  String? get _selectedLocationName {
+    final selection = _locationSelection;
+    if (selection == null) {
+      return null;
+    }
+    final existing = widget.data.locationByIdOrNull(
+      selection.existingLocationId,
+    );
+    return existing?.displayName ?? selection.draftLocation?.displayName;
+  }
+
+  String? get _selectedLocationAddress {
+    final selection = _locationSelection;
+    if (selection == null) {
+      return null;
+    }
+    final existing = widget.data.locationByIdOrNull(
+      selection.existingLocationId,
+    );
+    return existing?.formattedAddress ??
+        selection.draftLocation?.formattedAddress;
   }
 
   Future<void> _showCreateTagSheet() async {
@@ -596,7 +638,8 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
         story: _storyController.text,
         date: _selectedDate,
         primaryTagId: _selectedTagId,
-        locationName: _locationController.text,
+        locationId: _locationSelection?.existingLocationId,
+        newLocation: _locationSelection?.draftLocation,
         note: _noteController.text,
         voiceMessages: List.unmodifiable(_voiceMessages),
         mediaGroups: List.unmodifiable(normalizedGroups),
@@ -743,10 +786,13 @@ class _MainInfoCard extends StatelessWidget {
   const _MainInfoCard({
     required this.titleController,
     required this.storyController,
-    required this.locationController,
+    required this.locationName,
+    required this.locationAddress,
     required this.noteController,
     required this.selectedDate,
     required this.onPickDate,
+    required this.onPickLocation,
+    required this.onRemoveLocation,
     required this.voiceMessages,
     required this.onAddVoiceMessage,
     required this.onRemoveVoiceMessage,
@@ -754,10 +800,13 @@ class _MainInfoCard extends StatelessWidget {
 
   final TextEditingController titleController;
   final TextEditingController storyController;
-  final TextEditingController locationController;
+  final String? locationName;
+  final String? locationAddress;
   final TextEditingController noteController;
   final DateTime selectedDate;
   final VoidCallback onPickDate;
+  final VoidCallback onPickLocation;
+  final VoidCallback? onRemoveLocation;
   final List<MemoryVoiceMessage> voiceMessages;
   final VoidCallback? onAddVoiceMessage;
   final ValueChanged<MemoryVoiceMessage> onRemoveVoiceMessage;
@@ -793,10 +842,12 @@ class _MainInfoCard extends StatelessWidget {
             icon: Icons.calendar_month_rounded,
             onTap: onPickDate,
           ),
-          _LabeledTextField(
+          _LocationField(
             label: l10n.memoryFormLocationLabel,
-            hint: l10n.memoryFormLocationHint,
-            controller: locationController,
+            name: locationName,
+            address: locationAddress ?? l10n.memoryFormLocationAddressFallback,
+            onPick: onPickLocation,
+            onRemove: onRemoveLocation,
           ),
           _LabeledTextField(
             label: l10n.memoryFormNoteLabel,
@@ -1444,6 +1495,146 @@ class _FieldButton extends StatelessWidget {
               ),
               Icon(icon, color: AppColors.rose, size: 18),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationField extends StatelessWidget {
+  const _LocationField({
+    required this.label,
+    required this.name,
+    required this.address,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final String label;
+  final String? name;
+  final String address;
+  final VoidCallback onPick;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final selectedName = name;
+    return _FieldBlock(
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.s),
+          onTap: onPick,
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 64),
+            padding: const EdgeInsets.all(AppSpacing.s),
+            decoration: BoxDecoration(
+              color: selectedName == null
+                  ? AppColors.surfaceWarm
+                  : AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.s),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: selectedName == null
+                ? Row(
+                    children: [
+                      const Icon(
+                        Icons.add_location_alt_rounded,
+                        color: AppColors.rose,
+                      ),
+                      const SizedBox(width: AppSpacing.s),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.memoryFormLocationEmpty,
+                              style: AppTextStyles.bodyM.copyWith(
+                                color: AppColors.ink,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xxs),
+                            Text(
+                              l10n.memoryFormLocationOptional,
+                              style: AppTextStyles.bodyS.copyWith(
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: AppColors.muted,
+                        size: 15,
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.place_rounded,
+                            color: AppColors.rose,
+                          ),
+                          const SizedBox(width: AppSpacing.s),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  selectedName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.bodyM.copyWith(
+                                    color: AppColors.ink,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.xxs),
+                                Text(
+                                  address,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.bodyS.copyWith(
+                                    color: AppColors.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.s),
+                      Wrap(
+                        spacing: AppSpacing.xs,
+                        runSpacing: AppSpacing.xs,
+                        children: [
+                          TextButton.icon(
+                            onPressed: onPick,
+                            icon: const Icon(Icons.edit_location_alt_rounded),
+                            label: Text(l10n.memoryFormLocationChange),
+                          ),
+                          if (onRemove != null)
+                            TextButton.icon(
+                              onPressed: onRemove,
+                              icon: const Icon(Icons.close_rounded),
+                              label: Text(l10n.memoryFormLocationRemove),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.danger,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),

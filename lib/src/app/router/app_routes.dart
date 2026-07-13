@@ -13,6 +13,8 @@ abstract final class AppRouteNames {
   static const timelineMemory = 'timelineMemory';
   static const timelineAddMemory = 'timelineAddMemory';
   static const timelineEditMemory = 'timelineEditMemory';
+  static const timelineAddMemoryLocation = 'timelineAddMemoryLocation';
+  static const timelineEditMemoryLocation = 'timelineEditMemoryLocation';
 
   static const map = 'map';
   static const mapMemory = 'mapMemory';
@@ -35,6 +37,7 @@ abstract final class AppRoutePaths {
   static const memoryDetailSegment = 'memories/:memoryId';
   static const addMemorySegment = 'new-memory';
   static const editMemorySegment = 'edit-memory/:memoryId';
+  static const locationSegment = 'location';
   static const letterDetailSegment = 'letters/:letterId';
   static const branchLetterDetailSegment = ':letterId';
   static const recapSegment = 'recap';

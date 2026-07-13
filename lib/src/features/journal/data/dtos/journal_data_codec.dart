@@ -5,9 +5,10 @@ import '../../domain/entities/journal_entities.dart';
 abstract final class JournalDataDraftCodec {
   static String encode(JournalData data) {
     return jsonEncode({
-      'version': 1,
+      'version': 2,
       'tags': data.tags.map(_tagToJson).toList(growable: false),
       'memories': data.memories.map(_memoryToJson).toList(growable: false),
+      'locations': data.locations.map(_locationToJson).toList(growable: false),
     });
   }
 
@@ -27,6 +28,10 @@ abstract final class JournalDataDraftCodec {
             .map(_memoryFromJson)
             .toList()
           ..sort((a, b) => b.date.compareTo(a.date));
+    final locations = (decoded['locations'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(_locationFromJson)
+        .toList(growable: false);
 
     if (memories.isEmpty) {
       return seed;
@@ -35,6 +40,9 @@ abstract final class JournalDataDraftCodec {
     return seed.copyWith(
       memories: List.unmodifiable(memories),
       tags: List.unmodifiable(tags.isEmpty ? seed.tags : tags),
+      locations: List.unmodifiable(
+        locations.isEmpty ? seed.locations : locations,
+      ),
     );
   }
 
@@ -68,6 +76,7 @@ abstract final class JournalDataDraftCodec {
       'category': memory.category.name,
       'phase': memory.phase.name,
       'primaryTagId': memory.primaryTagId,
+      'locationId': memory.locationId,
       'locationName': memory.locationName,
       'latitude': memory.latitude,
       'longitude': memory.longitude,
@@ -120,6 +129,7 @@ abstract final class JournalDataDraftCodec {
       primaryTagId:
           json['primaryTagId'] as String? ??
           MemoryTag.systemIdForCategory(category),
+      locationId: json['locationId'] as String? ?? json['placeId'] as String?,
       locationName: json['locationName'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
@@ -211,6 +221,38 @@ abstract final class JournalDataDraftCodec {
       'waveform': message.waveform,
       'createdAt': message.createdAt.toIso8601String(),
     };
+  }
+
+  static Map<String, dynamic> _locationToJson(MemoryLocation location) {
+    return {
+      'id': location.id,
+      'displayName': location.displayName,
+      'formattedAddress': location.formattedAddress,
+      'latitude': location.latitude,
+      'longitude': location.longitude,
+      'googlePlaceId': location.googlePlaceId,
+      'source': location.source.name,
+      'createdAt': location.createdAt.toIso8601String(),
+      'updatedAt': location.updatedAt.toIso8601String(),
+    };
+  }
+
+  static MemoryLocation _locationFromJson(Map<String, dynamic> json) {
+    return MemoryLocation(
+      id: json['id'] as String,
+      displayName: json['displayName'] as String,
+      formattedAddress: json['formattedAddress'] as String?,
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      googlePlaceId: json['googlePlaceId'] as String?,
+      source: _enumByName(
+        MemoryLocationSource.values,
+        json['source'] as String?,
+        MemoryLocationSource.manual,
+      ),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+    );
   }
 
   static MemoryVoiceMessage _voiceMessageFromJson(Map<String, dynamic> json) {

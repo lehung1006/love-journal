@@ -1,11 +1,14 @@
 # Mình & Em - Current UI/UX Source Of Truth
 
-Last updated: 2026-07-05  
-Implementation status: reflects the current Flutter app after Riverpod, GoRouter, editable Time module work, and Flutter localization setup.
+Last updated: 2026-07-13
+Implementation status: reflects the implemented Map/Memory Location flow, empty bundled memory/place seeds, and the current Google Places permission blocker.
 
 ## Purpose
 
-This document describes the UI and UX that the app currently implements.
+This document describes both the UI/UX currently implemented by Flutter and any approved target behavior that is still pending native/backend work. Sections use these labels:
+
+- **Implemented:** present in the current Flutter code.
+- **Approved target:** reviewed in Figma and intended behavior when the remaining native/backend dependency is available.
 
 Use this file when:
 
@@ -20,6 +23,7 @@ Related design files:
 - `love-journal-figma-handoff.html`: original MVP visual handoff.
 - `love-journal-time-management-handoff.html`: Time/Add Memory extension handoff.
 - `love-journal-implementation-spec.md`: product and implementation spec.
+- [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC): approved Map and Location Picker flow.
 
 ## Product Feel
 
@@ -146,6 +150,8 @@ The tab bar is hidden on deeper routes:
 /home/recap
 /timeline/new-memory
 /timeline/edit-memory/:memoryId
+/timeline/new-memory/location
+/timeline/edit-memory/:memoryId/location
 /timeline/memories/:memoryId
 /map/memories/:memoryId
 /letters/:letterId
@@ -169,8 +175,10 @@ flowchart TD
   T --> TA["Add Memory"]
   T --> TE["Edit Memory"]
   T --> TD["Memory Detail"]
+  TA --> LP["Location Picker"]
+  TE --> LP
 
-  M --> MS["Place Preview Sheet"]
+  M --> MS["Location Memory List Sheet"]
   MS --> MD["Memory Detail"]
 
   L --> LD["Letter Detail"]
@@ -398,6 +406,13 @@ Routes:
 - `/timeline/new-memory`
 - `/timeline/edit-memory/:memoryId`
 
+Approved child routes:
+
+- `/timeline/new-memory/location`
+- `/timeline/edit-memory/:memoryId/location`
+- Location Picker is one pushed screen with internal UI states, not eleven separate routes.
+- The bottom tab bar remains hidden while the picker is open.
+
 Purpose:
 
 - create or update one curated memory;
@@ -430,6 +445,20 @@ Fields:
 - `Ghi chú`;
 - `Lời nhắn cho khoảnh khắc này`.
 
+Previous location behavior (removed):
+
+- `Địa điểm` was a free-text field.
+- The form saved `locationName` only and did not preserve coordinates or a stable location reference.
+
+Current location behavior:
+
+- Replace the free-text field with a tappable Location row/card.
+- The empty state communicates that location is optional and offers `Thêm địa điểm`.
+- A selected state shows the user-defined display name, address when available, and actions to change or remove the location.
+- Tapping the row opens Location Picker and returns a temporary `MemoryLocation` selection to the form.
+- The returned selection is committed only when the memory itself is saved.
+- Canceling the picker or abandoning the form must not create an orphan location.
+
 Validation:
 
 - title is required;
@@ -440,6 +469,96 @@ Validation:
   - voice message,
   - image,
   - video.
+
+Location does not satisfy the meaningful-body validation on its own.
+
+### Location Picker - Current Implementation
+
+Design source:
+
+- [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC)
+
+Purpose:
+
+- attach optional geographic context to a memory;
+- keep location creation inside the memory workflow;
+- offer accurate Google search without forcing users to position every pin by hand;
+- let the couple use their own emotional name for a place.
+
+Approved design states:
+
+1. `01 / Map empty`
+   - no visible memory has a valid location;
+   - Map shows an emotional empty state and CTA leading to Time/Add Memory.
+2. `02 / Map from memories`
+   - read-only map with markers projected from visible memories.
+3. `03 / Place memory list`
+   - marker bottom sheet lists all visible memories sharing the location.
+4. `04 / Location empty`
+   - Add/Edit Memory has no selected location yet.
+5. `05 / Choose a location`
+   - user chooses an existing location or starts a new search/manual pin flow.
+6. `06 / Reuse existing place`
+   - shows locations already referenced by memories and returns the selected internal `locationId`.
+7. `07 / Google Places suggestions`
+   - autocomplete suggestions appear after a short debounce;
+   - results include Google attribution and a manual-pin fallback.
+8. `08 / Search result selected`
+   - Place Details supplies the exact coordinate, formatted address, and `googlePlaceId`;
+   - user may drag the map to refine the pin before continuing.
+9. `09 / Manual pin fallback`
+   - user pans/zooms the map and places the coordinate without a Google result;
+   - manual locations do not require `googlePlaceId`.
+10. `10 / Name and save`
+    - user confirms a required display name;
+    - Google name may prefill the field but remains editable;
+    - saving returns the selection to Add/Edit Memory, not directly to persistence.
+11. `11 / Maps key unavailable`
+    - explains that map/search is unavailable without a platform key;
+    - app remains stable and allows cancel/back instead of crashing.
+
+Location Picker flow:
+
+```mermaid
+flowchart TD
+  A["Location field in Add/Edit Memory"] --> B{"Has selected location?"}
+  B -->|"No"| C["Location empty"]
+  B -->|"Yes"| D["Selected location card"]
+  C --> E["Choose a location"]
+  D --> E
+  D --> R["Remove location"]
+  E --> F["Reuse existing location"]
+  E --> G["Find or pin a new location"]
+  G --> H["Google Places suggestions"]
+  H --> I["Fetch Place Details"]
+  I --> J["Selected result + optional pin refinement"]
+  G --> K["Manual pin fallback"]
+  J --> L["Name and save"]
+  K --> L
+  F --> M["Return temporary selection"]
+  L --> M
+  M --> N["Save memory atomically"]
+```
+
+Interaction and validation:
+
+- Search begins after at least two trimmed characters and a short debounce.
+- One autocomplete session token is reused through suggestion selection, then rotated.
+- Place Details is requested only after the user selects a suggestion.
+- Search errors keep the query and expose retry/manual pin options.
+- `displayName` is required before returning a new location.
+- Coordinates must be finite and within valid latitude/longitude ranges.
+- Private `Memory.note` remains memory-owned; Location Picker has no separate note field in this milestone.
+- Reusing a location never duplicates it.
+- If a Google result matches an existing `googlePlaceId`, reuse the existing internal location instead of creating a duplicate.
+
+Current Google Places status:
+
+- The Flutter Location Picker UI, debounce/controller flow, repository boundary, request headers, and error state are implemented.
+- In the current local Android setup, autocomplete still returns no suggestions because Google Cloud responds with HTTP `403 PERMISSION_DENIED`.
+- The tested Android restriction identity is package `vn.hung.le.lovejournal` with SHA-1 `9A:27:5D:11:3E:A1:38:DC:CC:25:39:D8:D3:7E:00:A1:94:34:5F:A0`.
+- This is treated as an environment/API-key blocker, not a reason to move search into Map or reintroduce hardcoded places.
+- The UI must continue to offer manual pin fallback and a clear retry/error state while Places permission is unresolved.
 
 ### Lời Nhắn Cho Khoảnh Khắc Này
 
@@ -648,13 +767,15 @@ Purpose:
 
 - turn memories into places and a journey.
 
-Current UI:
+### Previous Implementation (Removed)
+
+The previous Flutter screen was a transitional implementation:
 
 - top bar:
   - kicker: `Những nơi mình qua`;
   - title: `Bản đồ`;
   - recenter icon;
-- real Google Map surface when `GOOGLE_MAPS_API_KEY` is configured;
+- real Google Map surface when a platform Maps key is configured;
 - warm static fallback canvas when the API key is missing;
 - saved place markers from `assets/data/places.json`;
 - floating search field for Google Places Autocomplete;
@@ -672,12 +793,49 @@ Interaction:
 - tap a suggestion to fetch Place Details, drop a temporary marker, and animate the camera to that result;
 - clearing search removes the temporary result marker/card.
 
-Implementation note:
+Implemented limitation:
 
 - The current implementation uses `google_maps_flutter` and Google Places Web Service.
 - API keys are supplied by environment/build configuration, never committed.
 - Search result selection is exploratory for now; searched places and notes are not persisted yet.
 - If the API key is absent, the app keeps a static fallback surface so local development and tests do not crash.
+- Marker ownership still comes from `assets/data/places.json`, not from editable memory locations.
+- This search field, saved-place rail, and bundled-place ownership are legacy relative to the approved target.
+
+### Current Implementation
+
+Map is a read-only projection of memories. It does not create, search, edit, or independently own places.
+
+Target UI:
+
+- top bar keeps `Những nơi mình qua`, `Bản đồ`, and recenter action;
+- real Google Map when a platform key is configured;
+- one marker per internal `locationId` referenced by at least one visible memory;
+- marker visual may indicate the number of memories without changing marker identity;
+- no Google Places search field;
+- no add-place action;
+- no saved-place management rail;
+- warm marker preview/list bottom sheet with an opaque background;
+- empty state when no visible memory has a valid location;
+- clear missing-key fallback when map rendering is unavailable.
+
+Target interaction:
+
+- tap marker to open the location's memory list;
+- show user-defined location name and optional formatted address;
+- show each visible memory with cover, title, date, and short story preview;
+- tap a memory to open Memory Detail through the Map branch;
+- recenter frames all visible markers;
+- memories without `locationId` or valid coordinates do not render;
+- soft-deleted memories are excluded from marker existence and counts.
+
+Projection updates:
+
+- saving a memory with a location adds it to the marker group;
+- editing `locationId` moves the memory to another group;
+- removing location removes only that memory from Map;
+- soft-deleting the final visible memory at a location removes its marker;
+- the Map screen watches journal state and must not maintain a second independently mutable place list.
 
 ## Screen: Letters
 
@@ -802,6 +960,8 @@ Component behavior notes:
 - `MemoryListCard` now supports optional tag label, media summary, and more action.
 - `TimelineSpine` supports optional metadata and overflow actions.
 - `VoiceNotePlayer` is visual-only for now.
+- `LocationMemoryListSheet` is the current Map marker bottom sheet.
+- `PlacePreviewSheet` is legacy and should not be used for the read-only memory-derived Map flow.
 
 ## Bottom Sheets
 
@@ -845,7 +1005,7 @@ Current mock limitations:
 - video playback is mocked;
 - voice playback is mocked;
 - Time search is not implemented;
-- Map searched places/place notes are not persisted yet;
+- Google Places search UI is implemented in Location Picker but currently blocked by Google Cloud `403 PERMISSION_DENIED` in the local Android setup;
 - no undo/trash UI for soft delete;
 - no account/cloud sync.
 
@@ -864,6 +1024,10 @@ Current mock limitations:
 11. Keep user-facing copy in localization resources.
 12. Keep the app local-first until auth/sync is intentionally designed.
 13. Keep Google Maps API keys outside Git and preserve the no-key fallback for local development.
+14. Create or choose locations only from Add/Edit Memory.
+15. Keep Map read-only and derive it from visible memories.
+16. Use a user-controlled location display name even when coordinates came from Google.
+17. Keep private notes attached to memories, not locations.
 
 ## UI/UX Verification Checklist
 
@@ -880,6 +1044,13 @@ Use this checklist after major UI changes:
 - Delete action asks for confirmation.
 - Add Memory hides bottom tab bar.
 - Edit Memory hides bottom tab bar.
+- Location Picker hides bottom tab bar.
+- Canceling Location Picker does not create or persist a location.
+- The form can reuse an existing location without duplicating it.
+- Google Places search appears only in Location Picker.
+- Selecting a suggestion fetches Place Details and allows pin refinement.
+- Manual pinning works without a `googlePlaceId`.
+- A new location requires a user-confirmed display name.
 - Tag selector wraps chips to next line.
 - Tag selector chips size to text, not equal full-width rows.
 - Create-tag bottom sheet can be dismissed without controller lifecycle exceptions.
@@ -891,24 +1062,27 @@ Use this checklist after major UI changes:
 - Memory Detail shows voice messages and media groups.
 - Locked letters do not expose body content.
 - Map bottom sheet has visible background.
-- Map shows a real Google Map when `GOOGLE_MAPS_API_KEY` is configured.
+- Map shows a real Google Map when a platform Maps key is configured.
 - Map shows a clear API-key fallback state when the key is absent.
-- Map search suggestions can be selected without persisting accidental place data.
+- Map has no search/add/edit place controls after the approved refactor.
+- Map empty state appears when no visible memory has a valid location.
+- Memories sharing a `locationId` appear under one marker and one memory list.
+- Changing/removing a memory location updates Map projection.
+- Soft-deleting the final memory at a location removes its marker.
 - Recap works even with no featured memory.
 
 ## Next UI/UX Work
 
 Recommended next design/implementation passes:
 
-1. Add widget tests for Time empty, add memory, custom tag, and soft delete.
+1. Add more widget tests for Time empty, add memory, custom tag, soft delete, Location Picker, and Map projection.
 2. Design real permission states for microphone, photos, and camera.
 3. Replace mock audio/media with native services.
-4. Add Time search UX.
-5. Add undo or trash recovery after soft delete.
-6. Add accessibility pass:
+4. Add Time search UX and undo/trash recovery.
+5. Add accessibility pass:
    - semantic labels;
    - text scale;
    - contrast checks;
    - touch targets.
-7. Add responsive checks for smaller Android devices.
+6. Add responsive checks for smaller Android devices.
 

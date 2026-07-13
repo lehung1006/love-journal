@@ -7,13 +7,13 @@ class GeoCoordinate {
 
 class PlaceSearchSuggestion {
   const PlaceSearchSuggestion({
-    required this.placeId,
+    required this.googlePlaceId,
     required this.primaryText,
     required this.fullText,
     this.secondaryText,
   });
 
-  final String placeId;
+  final String googlePlaceId;
   final String primaryText;
   final String? secondaryText;
   final String fullText;
@@ -21,13 +21,13 @@ class PlaceSearchSuggestion {
 
 class PlaceSearchResult {
   const PlaceSearchResult({
-    required this.placeId,
+    required this.googlePlaceId,
     required this.name,
     required this.coordinate,
     this.formattedAddress,
   });
 
-  final String placeId;
+  final String googlePlaceId;
   final String name;
   final String? formattedAddress;
   final GeoCoordinate coordinate;

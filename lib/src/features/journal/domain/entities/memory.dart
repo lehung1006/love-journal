@@ -162,6 +162,7 @@ class Memory {
     required this.createdAt,
     required this.updatedAt,
     this.primaryTagId,
+    this.locationId,
     this.locationName,
     this.latitude,
     this.longitude,
@@ -183,6 +184,7 @@ class Memory {
   final MemoryCategory category;
   final RelationshipPhase phase;
   final String? primaryTagId;
+  final String? locationId;
   final String? locationName;
   final double? latitude;
   final double? longitude;
@@ -228,6 +230,7 @@ class Memory {
     MemoryCategory? category,
     RelationshipPhase? phase,
     String? primaryTagId,
+    String? locationId,
     String? locationName,
     double? latitude,
     double? longitude,
@@ -253,6 +256,7 @@ class Memory {
       category: category ?? this.category,
       phase: phase ?? this.phase,
       primaryTagId: primaryTagId ?? this.primaryTagId,
+      locationId: locationId ?? this.locationId,
       locationName: locationName ?? this.locationName,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,

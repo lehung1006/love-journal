@@ -13,6 +13,7 @@ import '../../features/journal/presentation/components/journal_components.dart';
 import '../../features/journal/presentation/screens/home_screen.dart';
 import '../../features/journal/presentation/screens/letter_detail_screen.dart';
 import '../../features/journal/presentation/screens/letters_screen.dart';
+import '../../features/journal/presentation/screens/location_picker_screen.dart';
 import '../../features/journal/presentation/screens/map_screen.dart';
 import '../../features/journal/presentation/screens/memory_detail_screen.dart';
 import '../../features/journal/presentation/screens/memory_form_screen.dart';
@@ -201,6 +202,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     builder: (_, _) {
                       return const _MemoryFormRoute();
                     },
+                    routes: [
+                      GoRoute(
+                        name: AppRouteNames.timelineAddMemoryLocation,
+                        path: AppRoutePaths.locationSegment,
+                        builder: (_, state) {
+                          return _LocationPickerRoute(
+                            initialSelection:
+                                state.extra as MemoryLocationSelection?,
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   GoRoute(
                     name: AppRouteNames.timelineEditMemory,
@@ -213,6 +226,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                         ),
                       );
                     },
+                    routes: [
+                      GoRoute(
+                        name: AppRouteNames.timelineEditMemoryLocation,
+                        path: AppRoutePaths.locationSegment,
+                        builder: (_, state) {
+                          return _LocationPickerRoute(
+                            initialSelection:
+                                state.extra as MemoryLocationSelection?,
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   GoRoute(
                     name: AppRouteNames.timelineMemory,
@@ -241,6 +266,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     builder: (context, ref, data, _) {
                       return MapScreen(
                         data: data,
+                        onAddMemory: () =>
+                            context.goNamed(AppRouteNames.timelineAddMemory),
                         onMemoryTap: (memory) => _openMemory(
                           context: context,
                           ref: ref,
@@ -453,7 +480,7 @@ class _MemoryFormRoute extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _JournalRouteBuilder(
-      builder: (_, ref, data, _) {
+      builder: (context, ref, data, _) {
         final id = memoryId;
         final memory = id == null ? null : data.memoryById(id);
         return MemoryFormScreen(
@@ -461,6 +488,18 @@ class _MemoryFormRoute extends ConsumerWidget {
           memory: memory,
           onCreateTag: (name) {
             return ref.read(journalDataProvider.notifier).createTag(name);
+          },
+          onPickLocation: (selection) {
+            final routeName = id == null
+                ? AppRouteNames.timelineAddMemoryLocation
+                : AppRouteNames.timelineEditMemoryLocation;
+            return context.pushNamed<MemoryLocationSelection>(
+              routeName,
+              pathParameters: id == null
+                  ? const {}
+                  : {AppRouteParams.memoryId: id},
+              extra: selection,
+            );
           },
           onSubmit: (draft) {
             if (id == null) {
@@ -470,6 +509,26 @@ class _MemoryFormRoute extends ConsumerWidget {
                 .read(journalDataProvider.notifier)
                 .updateMemory(id, draft);
           },
+        );
+      },
+    );
+  }
+}
+
+class _LocationPickerRoute extends ConsumerWidget {
+  const _LocationPickerRoute({this.initialSelection});
+
+  final MemoryLocationSelection? initialSelection;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _JournalRouteBuilder(
+      builder: (context, _, data, _) {
+        return LocationPickerScreen(
+          data: data,
+          initialSelection: initialSelection,
+          onCancel: () => context.pop(),
+          onSelected: (selection) => context.pop(selection),
         );
       },
     );

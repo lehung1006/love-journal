@@ -1,13 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../../core/config/map_api_key_reader.dart';
 import '../../../../core/config/map_service_config.dart';
 import '../../data/data_sources/google_places_data_source.dart';
 import '../../data/repositories/place_search_repository_impl.dart';
 import '../../domain/repositories/place_search_repository.dart';
 
-final mapServiceConfigProvider = Provider<MapServiceConfig>((ref) {
-  return const MapServiceConfig();
+final mapApiKeyReaderProvider = Provider<MapApiKeyReader>((ref) {
+  return const MapApiKeyReader();
+});
+
+final mapServiceConfigProvider = FutureProvider<MapServiceConfig>((ref) async {
+  return ref.watch(mapApiKeyReaderProvider).readMapServiceConfig();
 });
 
 final placesHttpClientProvider = Provider<http.Client>((ref) {
@@ -16,13 +21,19 @@ final placesHttpClientProvider = Provider<http.Client>((ref) {
   return client;
 });
 
-final googlePlacesDataSourceProvider = Provider<GooglePlacesDataSource>((ref) {
+final googlePlacesDataSourceProvider = FutureProvider<GooglePlacesDataSource>((
+  ref,
+) async {
+  final config = await ref.watch(mapServiceConfigProvider.future);
   return GooglePlacesApiDataSource(
     client: ref.watch(placesHttpClientProvider),
-    config: ref.watch(mapServiceConfigProvider),
+    config: config,
   );
 });
 
-final placeSearchRepositoryProvider = Provider<PlaceSearchRepository>((ref) {
-  return PlaceSearchRepositoryImpl(ref.watch(googlePlacesDataSourceProvider));
+final placeSearchRepositoryProvider = FutureProvider<PlaceSearchRepository>((
+  ref,
+) async {
+  final dataSource = await ref.watch(googlePlacesDataSourceProvider.future);
+  return PlaceSearchRepositoryImpl(dataSource);
 });
