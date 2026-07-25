@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../../../../core/config/map_api_key_reader.dart';
 import '../../../../core/config/map_service_config.dart';
 import '../../data/data_sources/google_places_data_source.dart';
+import '../../data/data_sources/place_search_data_source.dart';
 import '../../data/repositories/place_search_repository_impl.dart';
 import '../../domain/repositories/place_search_repository.dart';
 
@@ -21,7 +22,7 @@ final placesHttpClientProvider = Provider<http.Client>((ref) {
   return client;
 });
 
-final googlePlacesDataSourceProvider = FutureProvider<GooglePlacesDataSource>((
+final placeSearchDataSourceProvider = FutureProvider<PlaceSearchDataSource>((
   ref,
 ) async {
   final config = await ref.watch(mapServiceConfigProvider.future);
@@ -34,6 +35,6 @@ final googlePlacesDataSourceProvider = FutureProvider<GooglePlacesDataSource>((
 final placeSearchRepositoryProvider = FutureProvider<PlaceSearchRepository>((
   ref,
 ) async {
-  final dataSource = await ref.watch(googlePlacesDataSourceProvider.future);
+  final dataSource = await ref.watch(placeSearchDataSourceProvider.future);
   return PlaceSearchRepositoryImpl(dataSource);
 });

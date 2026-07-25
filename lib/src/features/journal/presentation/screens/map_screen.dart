@@ -130,6 +130,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     showUnfocusedModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       builder: (sheetContext) {
         return LocationMemoryListSheet(
           group: group,

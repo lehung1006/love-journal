@@ -119,6 +119,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                         ),
                         onRecapTap: () =>
                             context.pushNamed(AppRouteNames.homeRecap),
+                        onAddMemory: () =>
+                            context.goNamed(AppRouteNames.timelineAddMemory),
                       );
                     },
                   );
@@ -461,6 +463,10 @@ class _MemoryDetailRoute extends ConsumerWidget {
         return MemoryDetailScreen(
           memory: memory,
           isFavorite: preferences.favoriteMemoryIds.contains(memory.id),
+          onEdit: () => context.goNamed(
+            AppRouteNames.timelineEditMemory,
+            pathParameters: {AppRouteParams.memoryId: memory.id},
+          ),
           onToggleFavorite: () => unawaited(
             ref
                 .read(journalSessionControllerProvider.notifier)
@@ -508,6 +514,12 @@ class _MemoryFormRoute extends ConsumerWidget {
             return ref
                 .read(journalDataProvider.notifier)
                 .updateMemory(id, draft);
+          },
+          onSaved: (memory) {
+            context.goNamed(
+              AppRouteNames.timelineMemory,
+              pathParameters: {AppRouteParams.memoryId: memory.id},
+            );
           },
         );
       },

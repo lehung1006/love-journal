@@ -41,6 +41,14 @@ dependencies:
   go_router: ^17.3.0
   google_maps_flutter: ^2.17.1
   http: ^1.6.0
+  image_picker: ^1.2.3
+  file_picker: ^10.3.10
+  record: ^7.1.1
+  path_provider: ^2.1.5
+  path: ^1.9.1
+  video_player: ^2.13.0
+  video_thumbnail_gen: ^0.6.3
+  url_launcher: ^6.3.2
   intl: any
 
 dev_dependencies:

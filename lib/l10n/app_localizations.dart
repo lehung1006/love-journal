@@ -190,6 +190,12 @@ abstract class AppLocalizations {
   /// **'Chào em'**
   String get homeKicker;
 
+  /// No description provided for @homeTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mình & Em'**
+  String get homeTitle;
+
   /// No description provided for @homeRecapTooltip.
   ///
   /// In vi, this message translates to:
@@ -199,7 +205,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeHeroKicker.
   ///
   /// In vi, this message translates to:
-  /// **'Kỷ niệm của tụi mình'**
+  /// **'Hành trình của tụi mình'**
   String get homeHeroKicker;
 
   /// No description provided for @homeLoveDays.
@@ -214,6 +220,12 @@ abstract class AppLocalizations {
   /// **'Và anh vẫn muốn đi tiếp cùng em.'**
   String get homeHeroSubtitle;
 
+  /// No description provided for @homeDaysTogether.
+  ///
+  /// In vi, this message translates to:
+  /// **'ngày bên nhau'**
+  String get homeDaysTogether;
+
   /// No description provided for @homeMemoriesWritten.
   ///
   /// In vi, this message translates to:
@@ -225,6 +237,78 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'nơi mình đã qua'**
   String get homePlacesVisited;
+
+  /// No description provided for @homeRecentKicker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gần đây'**
+  String get homeRecentKicker;
+
+  /// No description provided for @homeRecentMemories.
+  ///
+  /// In vi, this message translates to:
+  /// **'Những mảnh ghép'**
+  String get homeRecentMemories;
+
+  /// No description provided for @homeFeaturedBadge.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mình đã ghim'**
+  String get homeFeaturedBadge;
+
+  /// No description provided for @homePageIndicator.
+  ///
+  /// In vi, this message translates to:
+  /// **'{current}/{total}'**
+  String homePageIndicator(int current, int total);
+
+  /// No description provided for @homeLetterKicker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dành cho em'**
+  String get homeLetterKicker;
+
+  /// No description provided for @homeLetterSectionTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một lá thư đang đợi'**
+  String get homeLetterSectionTitle;
+
+  /// No description provided for @homeRecapTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuyện của tụi mình'**
+  String get homeRecapTitle;
+
+  /// No description provided for @homeRecapBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem lại hành trình qua những điều hai đứa đã cùng nhau giữ lại.'**
+  String get homeRecapBody;
+
+  /// No description provided for @homeEmptyKicker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trang đầu tiên'**
+  String get homeEmptyKicker;
+
+  /// No description provided for @homeEmptyTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mình bắt đầu giữ lại một ngày nhé?'**
+  String get homeEmptyTitle;
+
+  /// No description provided for @homeEmptyBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một tấm ảnh, một câu chuyện nhỏ, hay chỉ là giọng nói của hai đứa.'**
+  String get homeEmptyBody;
+
+  /// No description provided for @homeEmptyCta.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo kỷ niệm đầu tiên'**
+  String get homeEmptyCta;
 
   /// No description provided for @homeFeaturedMemory.
   ///
@@ -1323,6 +1407,120 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Kéo bản đồ để đặt ghim vào đúng vị trí.'**
   String get locationPickerPinHelper;
+
+  /// No description provided for @locationPickerMapBrowseMode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem'**
+  String get locationPickerMapBrowseMode;
+
+  /// No description provided for @locationPickerMapSelectMode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn vị trí'**
+  String get locationPickerMapSelectMode;
+
+  /// No description provided for @locationPickerMapReset.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đặt lại vị trí'**
+  String get locationPickerMapReset;
+
+  /// No description provided for @locationPickerMapTapHelper.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạm vào một điểm để tìm các địa điểm Google gần đó.'**
+  String get locationPickerMapTapHelper;
+
+  /// No description provided for @locationPickerMapBrowseHelper.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bật Chọn trên bản đồ khi bạn muốn đặt hoặc di chuyển ghim.'**
+  String get locationPickerMapBrowseHelper;
+
+  /// No description provided for @locationPickerResolvingPlace.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang mở thông tin địa điểm...'**
+  String get locationPickerResolvingPlace;
+
+  /// No description provided for @locationPickerNearbyLoading.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang tìm những nơi gần điểm ghim...'**
+  String get locationPickerNearbyLoading;
+
+  /// No description provided for @locationPickerNearbyTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Những nơi gần điểm ghim'**
+  String get locationPickerNearbyTitle;
+
+  /// No description provided for @locationPickerNearbyEmpty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không có địa điểm Google nào đủ gần. Bạn vẫn có thể giữ tọa độ này.'**
+  String get locationPickerNearbyEmpty;
+
+  /// No description provided for @locationPickerNearbyError.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa tải được các địa điểm gần đây. Bạn vẫn có thể giữ tọa độ này.'**
+  String get locationPickerNearbyError;
+
+  /// No description provided for @locationPickerNearbyAddressFallback.
+  ///
+  /// In vi, this message translates to:
+  /// **'Địa điểm gần tọa độ đã chọn'**
+  String get locationPickerNearbyAddressFallback;
+
+  /// No description provided for @locationPickerUseManualCoordinate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ tọa độ này'**
+  String get locationPickerUseManualCoordinate;
+
+  /// No description provided for @locationPickerUseSelectedPlace.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng nơi này'**
+  String get locationPickerUseSelectedPlace;
+
+  /// No description provided for @locationPickerOpenGoogleMaps.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở Maps'**
+  String get locationPickerOpenGoogleMaps;
+
+  /// No description provided for @locationPickerOpenLinkError.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa thể mở liên kết này'**
+  String get locationPickerOpenLinkError;
+
+  /// No description provided for @locationPickerPhotoAttribution.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh: {author}'**
+  String locationPickerPhotoAttribution(String author);
+
+  /// No description provided for @locationPickerBusinessOperational.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang hoạt động'**
+  String get locationPickerBusinessOperational;
+
+  /// No description provided for @locationPickerBusinessClosedTemporarily.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạm thời đóng cửa'**
+  String get locationPickerBusinessClosedTemporarily;
+
+  /// No description provided for @locationPickerBusinessClosedPermanently.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đóng cửa'**
+  String get locationPickerBusinessClosedPermanently;
 
   /// No description provided for @locationPickerContinueNaming.
   ///

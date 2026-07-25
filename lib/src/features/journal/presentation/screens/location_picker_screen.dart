@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/config/map_service_config.dart';
 import '../../../../core/localization/app_localizations_extension.dart';
@@ -11,6 +12,7 @@ import '../../application/providers/map_providers.dart';
 import '../../application/state/map_search_controller.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../components/journal_components.dart';
+import '../components/location_picker_map_components.dart';
 
 enum _LocationPickerMode { choose, search, name }
 
@@ -41,19 +43,25 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
 
   final _searchTextController = TextEditingController();
   final _nameController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   Timer? _searchDebounce;
   GoogleMapController? _mapController;
 
   _LocationPickerMode _mode = _LocationPickerMode.choose;
   MemoryLocationDraft? _draft;
+  GeoCoordinate? _markerCoordinate;
   late GeoCoordinate _cameraTarget;
   bool _settingSearchText = false;
+  bool _isMapSelectionMode = false;
+  bool _searchHasFocus = false;
 
   @override
   void initState() {
     super.initState();
     _cameraTarget = _initialCoordinate();
+    _restoreInitialMapSelection();
     _searchTextController.addListener(_handleSearchChanged);
+    _searchFocusNode.addListener(_handleSearchFocusChanged);
   }
 
   @override
@@ -62,6 +70,9 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     _searchTextController
       ..removeListener(_handleSearchChanged)
       ..dispose();
+    _searchFocusNode
+      ..removeListener(_handleSearchFocusChanged)
+      ..dispose();
     _nameController.dispose();
     super.dispose();
   }
@@ -69,6 +80,8 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: ValueKey('location-picker-${_mode.name}'),
+      resizeToAvoidBottomInset: _mode != _LocationPickerMode.search,
       body: switch (_mode) {
         _LocationPickerMode.choose => _buildChooseView(context),
         _LocationPickerMode.search => _buildSearchView(context),
@@ -125,7 +138,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
               body: l10n.locationPickerNoExistingBody,
             )
           else
-            _LocationSurface(
+            LocationPickerSurface(
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
@@ -143,7 +156,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
               ),
             ),
           const SizedBox(height: AppSpacing.l),
-          _LocationSurface(
+          LocationPickerSurface(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -191,6 +204,16 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     final hasMapKey = config.hasGoogleMapsApiKey;
     final isLoading = configState.isLoading && !configState.hasValue;
     final searchState = ref.watch(locationSearchControllerProvider);
+    final searchInputActive =
+        _searchHasFocus || MediaQuery.viewInsetsOf(context).bottom > 0;
+    final searchResultsVisible =
+        searchState.isSearching ||
+        searchState.isResolving ||
+        searchState.errorMessage != null ||
+        searchState.suggestions.isNotEmpty ||
+        (searchState.query.trim().length >= 2 &&
+            searchState.query.trim() != searchState.selectedPlace?.name.trim());
+    final markers = _buildMarkers(searchState);
 
     return AppScaffold(
       safeBottom: false,
@@ -218,36 +241,19 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                         longitude: position.target.longitude,
                       );
                     },
-                    onCameraIdle: _syncDraftCoordinate,
+                    onTap: _isMapSelectionMode ? _selectCoordinateOnMap : null,
+                    markers: markers,
                     compassEnabled: false,
                     mapToolbarEnabled: false,
                     myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
+                    padding: EdgeInsets.only(
+                      top: 196,
+                      bottom: searchInputActive ? 24 : 250,
+                    ),
                   )
                 : _MissingKeyView(onBack: _backFromSearch),
           ),
-          if (hasMapKey)
-            const Positioned.fill(
-              child: IgnorePointer(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: 34),
-                    child: Icon(
-                      Icons.location_pin,
-                      size: 48,
-                      color: AppColors.rose,
-                      shadows: [
-                        Shadow(
-                          color: Color(0x66000000),
-                          blurRadius: 12,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
           Positioned(
             left: AppSpacing.screenX,
             top: AppSpacing.screenTop,
@@ -255,7 +261,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _LocationSurface(
+                LocationPickerSurface(
                   child: TopBar(
                     kicker: l10n.locationPickerSearchKicker,
                     title: l10n.locationPickerSearchTitle,
@@ -268,51 +274,42 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                 ),
                 if (hasMapKey) ...[
                   const SizedBox(height: AppSpacing.s),
-                  _SearchPanel(
+                  LocationSearchPanel(
                     controller: _searchTextController,
+                    focusNode: _searchFocusNode,
                     state: searchState,
                     onClear: _clearSearch,
                     onSuggestionTap: _selectSuggestion,
+                  ),
+                  const SizedBox(height: AppSpacing.s),
+                  LocationMapToolbar(
+                    selectionMode: _isMapSelectionMode,
+                    hasSelection: _markerCoordinate != null,
+                    onSelectionModeChanged: _setMapSelectionMode,
+                    onReset: _resetMapSelection,
                   ),
                 ],
               ],
             ),
           ),
-          if (hasMapKey)
+          if (hasMapKey && !searchInputActive && !searchResultsVisible)
             Positioned(
               left: AppSpacing.screenX,
               right: AppSpacing.screenX,
               bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.m,
-              child: _LocationSurface(
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.open_with_rounded,
-                          color: AppColors.teal,
-                          size: 20,
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Expanded(
-                          child: Text(
-                            _draft == null
-                                ? l10n.locationPickerPinHelper
-                                : l10n.locationPickerManualHelper,
-                            style: AppTextStyles.bodyS.copyWith(
-                              color: AppColors.muted,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.s),
-                    PrimaryButton(
-                      label: l10n.locationPickerContinueNaming,
-                      icon: Icons.arrow_forward_rounded,
-                      onPressed: _continueToName,
-                    ),
-                  ],
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * .44,
+                ),
+                child: LocationMapBottomPanel(
+                  state: searchState,
+                  markerCoordinate: _markerCoordinate,
+                  selectionMode: _isMapSelectionMode,
+                  onCandidateTap: _selectNearbyCandidate,
+                  onUseManualCoordinate: _continueToName,
+                  onUseSelectedPlace: _continueToName,
+                  onOpenGoogleMaps: _openSelectedPlaceInGoogleMaps,
+                  onOpenAttribution: _openAttribution,
                 ),
               ),
             ),
@@ -349,7 +346,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.m),
-          _LocationSurface(
+          LocationPickerSurface(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -451,6 +448,49 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
         .length;
   }
 
+  Set<Marker> _buildMarkers(LocationSearchState searchState) {
+    final markers = <Marker>{};
+    final markerCoordinate = _markerCoordinate;
+    if (markerCoordinate != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('selected-location'),
+          position: LatLng(
+            markerCoordinate.latitude,
+            markerCoordinate.longitude,
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          draggable: _isMapSelectionMode,
+          onDragEnd: _selectCoordinateOnMap,
+        ),
+      );
+    }
+    if (_isMapSelectionMode) {
+      for (final candidate in searchState.nearbyCandidates) {
+        markers.add(
+          Marker(
+            markerId: MarkerId('nearby-${candidate.googlePlaceId}'),
+            position: LatLng(
+              candidate.coordinate.latitude,
+              candidate.coordinate.longitude,
+            ),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueAzure,
+            ),
+            infoWindow: InfoWindow(
+              title: candidate.name,
+              snippet:
+                  candidate.formattedAddress ??
+                  candidate.primaryTypeDisplayName,
+            ),
+            onTap: () => unawaited(_selectNearbyCandidate(candidate)),
+          ),
+        );
+      }
+    }
+    return markers;
+  }
+
   void _openSearch() {
     final selected = _selectedLocation;
     if (selected != null) {
@@ -460,13 +500,23 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
       );
     }
     ref.read(locationSearchControllerProvider.notifier).clear();
-    setState(() => _mode = _LocationPickerMode.search);
+    _restoreInitialMapSelection();
+    setState(() {
+      _mode = _LocationPickerMode.search;
+      _isMapSelectionMode = false;
+    });
   }
 
   void _backFromSearch() {
+    _searchFocusNode.unfocus();
     _searchDebounce?.cancel();
-    _clearSearch();
-    setState(() => _mode = _LocationPickerMode.choose);
+    _setSearchText('');
+    ref.read(locationSearchControllerProvider.notifier).clear();
+    _restoreInitialMapSelection();
+    setState(() {
+      _mode = _LocationPickerMode.choose;
+      _isMapSelectionMode = false;
+    });
   }
 
   void _handleSearchChanged() {
@@ -491,6 +541,14 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     });
   }
 
+  void _handleSearchFocusChanged() {
+    final hasFocus = _searchFocusNode.hasFocus;
+    if (!mounted || _searchHasFocus == hasFocus) {
+      return;
+    }
+    setState(() => _searchHasFocus = hasFocus);
+  }
+
   Future<void> _selectSuggestion(PlaceSearchSuggestion suggestion) async {
     FocusManager.instance.primaryFocus?.unfocus();
     _searchDebounce?.cancel();
@@ -500,10 +558,26 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     if (!mounted || result == null) {
       return;
     }
+    await _applyGooglePlace(result);
+  }
+
+  Future<void> _selectNearbyCandidate(NearbyPlaceCandidate candidate) async {
+    final result = await ref
+        .read(locationSearchControllerProvider.notifier)
+        .selectNearbyCandidate(candidate);
+    if (!mounted || result == null) {
+      return;
+    }
+    await _applyGooglePlace(result);
+  }
+
+  Future<void> _applyGooglePlace(PlaceSearchResult result) async {
     _setSearchText(result.name);
     _nameController.text = result.name;
     _cameraTarget = result.coordinate;
     setState(() {
+      _markerCoordinate = result.coordinate;
+      _isMapSelectionMode = false;
       _draft = MemoryLocationDraft(
         displayName: result.name,
         formattedAddress: result.formattedAddress,
@@ -521,30 +595,84 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     );
   }
 
-  void _syncDraftCoordinate() {
-    final draft = _draft;
-    if (draft == null || !mounted) {
-      return;
-    }
+  void _selectCoordinateOnMap(LatLng position) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    _searchDebounce?.cancel();
+    final coordinate = GeoCoordinate(
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+    _setSearchText('');
+    _nameController.clear();
+    ref
+        .read(locationSearchControllerProvider.notifier)
+        .beginManualMapSelection();
     setState(() {
-      _draft = draft.copyWith(
-        latitude: _cameraTarget.latitude,
-        longitude: _cameraTarget.longitude,
+      _cameraTarget = coordinate;
+      _markerCoordinate = coordinate;
+      _draft = MemoryLocationDraft(
+        displayName: '',
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude,
+        source: MemoryLocationSource.manual,
       );
     });
+    unawaited(
+      ref
+          .read(locationSearchControllerProvider.notifier)
+          .searchNearby(coordinate),
+    );
+  }
+
+  void _setMapSelectionMode(bool enabled) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (!enabled) {
+      ref.read(locationSearchControllerProvider.notifier).clearNearbyResults();
+    }
+    setState(() => _isMapSelectionMode = enabled);
+  }
+
+  void _resetMapSelection() {
+    _searchDebounce?.cancel();
+    _setSearchText('');
+    ref.read(locationSearchControllerProvider.notifier).clear();
+    _restoreInitialMapSelection();
+    setState(() => _isMapSelectionMode = false);
+    final marker = _markerCoordinate;
+    if (marker != null) {
+      _cameraTarget = marker;
+      unawaited(
+        _mapController?.animateCamera(
+              CameraUpdate.newLatLngZoom(
+                LatLng(marker.latitude, marker.longitude),
+                15,
+              ),
+            ) ??
+            Future<void>.value(),
+      );
+    }
+  }
+
+  void _restoreInitialMapSelection() {
+    final selected = _selectedLocation;
+    final initialDraft = widget.initialSelection?.draftLocation;
+    _draft = initialDraft;
+    _markerCoordinate = selected == null
+        ? null
+        : GeoCoordinate(
+            latitude: selected.latitude,
+            longitude: selected.longitude,
+          );
+    _nameController.text = initialDraft?.displayName ?? '';
   }
 
   void _continueToName() {
     final draft = _draft;
     if (draft == null) {
-      _draft = MemoryLocationDraft(
-        displayName: '',
-        latitude: _cameraTarget.latitude,
-        longitude: _cameraTarget.longitude,
-        source: MemoryLocationSource.manual,
-      );
-      _nameController.clear();
-    } else if (_nameController.text.trim().isEmpty) {
+      return;
+    }
+    _searchFocusNode.unfocus();
+    if (_nameController.text.trim().isEmpty) {
       _nameController.text = draft.displayName;
     }
     setState(() => _mode = _LocationPickerMode.name);
@@ -568,7 +696,44 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
   void _clearSearch() {
     _searchDebounce?.cancel();
     _setSearchText('');
-    ref.read(locationSearchControllerProvider.notifier).clear();
+    ref.read(locationSearchControllerProvider.notifier).clearAutocomplete();
+  }
+
+  Future<void> _openSelectedPlaceInGoogleMaps() async {
+    final uri = ref
+        .read(locationSearchControllerProvider)
+        .selectedPlace
+        ?.googleMapsUri;
+    if (uri == null) {
+      return;
+    }
+    await _openExternalUri(uri);
+  }
+
+  Future<void> _openAttribution(PlaceAuthorAttribution attribution) async {
+    final uri = attribution.uri;
+    if (uri == null) {
+      return;
+    }
+    await _openExternalUri(uri);
+  }
+
+  Future<void> _openExternalUri(String value) async {
+    final uri = Uri.tryParse(value);
+    if (uri == null) {
+      return;
+    }
+    var opened = false;
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      opened = false;
+    }
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.locationPickerOpenLinkError)),
+      );
+    }
   }
 
   void _setSearchText(String value) {
@@ -581,192 +746,6 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     if (mounted) {
       setState(() {});
     }
-  }
-}
-
-class _SearchPanel extends StatelessWidget {
-  const _SearchPanel({
-    required this.controller,
-    required this.state,
-    required this.onClear,
-    required this.onSuggestionTap,
-  });
-
-  final TextEditingController controller;
-  final LocationSearchState state;
-  final VoidCallback onClear;
-  final ValueChanged<PlaceSearchSuggestion> onSuggestionTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final hasQuery = controller.text.trim().isNotEmpty;
-    final shouldShowResults =
-        state.isSearching ||
-        state.isResolving ||
-        state.errorMessage != null ||
-        state.suggestions.isNotEmpty ||
-        (state.query.trim().length >= 2 && state.selectedPlace == null);
-
-    return _LocationSurface(
-      padding: EdgeInsets.zero,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 52,
-            child: Row(
-              children: [
-                const SizedBox(width: AppSpacing.s),
-                const Icon(Icons.search_rounded, color: AppColors.rose),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    textInputAction: TextInputAction.search,
-                    style: AppTextStyles.bodyM.copyWith(
-                      color: AppColors.ink,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      isDense: true,
-                      hintText: l10n.locationPickerSearchHint,
-                    ),
-                  ),
-                ),
-                if (hasQuery)
-                  IconButton(
-                    tooltip: l10n.locationPickerSearchClearTooltip,
-                    onPressed: onClear,
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                  )
-                else
-                  const SizedBox(width: AppSpacing.s),
-              ],
-            ),
-          ),
-          if (shouldShowResults)
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 248),
-              child: _SearchResults(
-                state: state,
-                onSuggestionTap: onSuggestionTap,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SearchResults extends StatelessWidget {
-  const _SearchResults({required this.state, required this.onSuggestionTap});
-
-  final LocationSearchState state;
-  final ValueChanged<PlaceSearchSuggestion> onSuggestionTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    Widget child;
-    if (state.isSearching || state.isResolving) {
-      child = _SearchStatus(
-        icon: const SizedBox.square(
-          dimension: 16,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppColors.rose,
-          ),
-        ),
-        label: l10n.locationPickerSearchLoading,
-      );
-    } else if (state.errorMessage != null) {
-      final errorMessage = state.errorMessage!;
-      child = _SearchStatus(
-        icon: const Icon(Icons.error_outline_rounded, color: AppColors.danger),
-        label: errorMessage.toLowerCase().contains('permission')
-            ? l10n.locationPickerSearchPermissionDenied
-            : errorMessage,
-      );
-    } else if (state.suggestions.isEmpty) {
-      child = _SearchStatus(
-        icon: const Icon(Icons.search_off_rounded, color: AppColors.muted),
-        label: l10n.locationPickerSearchEmpty,
-      );
-    } else {
-      child = ListView(
-        padding: EdgeInsets.zero,
-        shrinkWrap: true,
-        children: [
-          for (final suggestion in state.suggestions)
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.place_rounded, color: AppColors.rose),
-              title: Text(
-                suggestion.primaryText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.bodyM.copyWith(
-                  color: AppColors.ink,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              subtitle: suggestion.secondaryText == null
-                  ? null
-                  : Text(
-                      suggestion.secondaryText!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-              onTap: () => onSuggestionTap(suggestion),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.s),
-            child: Text(
-              l10n.locationPickerPoweredByGoogle,
-              style: AppTextStyles.bodyS.copyWith(
-                color: AppColors.mutedLight,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.line)),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _SearchStatus extends StatelessWidget {
-  const _SearchStatus({required this.icon, required this.label});
-
-  final Widget icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.s),
-      child: Row(
-        children: [
-          icon,
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: Text(
-              label,
-              style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -874,7 +853,7 @@ class _LocationSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _LocationSurface(
+    return LocationPickerSurface(
       child: Row(
         children: [
           CircleAvatar(
@@ -965,29 +944,6 @@ class _SectionTitle extends StatelessWidget {
         color: AppColors.roseDark,
         fontWeight: FontWeight.w800,
       ),
-    );
-  }
-}
-
-class _LocationSurface extends StatelessWidget {
-  const _LocationSurface({
-    required this.child,
-    this.padding = const EdgeInsets.all(AppSpacing.s),
-  });
-
-  final Widget child;
-  final EdgeInsets padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: .96),
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        border: Border.all(color: AppColors.line),
-        boxShadow: AppShadows.card,
-      ),
-      child: Padding(padding: padding, child: child),
     );
   }
 }

@@ -7,6 +7,7 @@ import '../journal_formatters.dart';
 import '_pressable_scale.dart';
 import 'layout_components.dart';
 import 'media_components.dart';
+import 'memory_media_viewer.dart';
 
 class StatCard extends StatelessWidget {
   const StatCard({
@@ -74,7 +75,8 @@ class MemoryListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagePath = memory.coverMedia?.uri;
+    final cover = memory.coverMedia;
+    final imagePath = cover?.uri;
 
     return PressableScale(
       onTap: onTap,
@@ -90,7 +92,15 @@ class MemoryListCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            MemoryThumbnail(imagePath: imagePath),
+            MemoryThumbnail(
+              imagePath: imagePath,
+              content: cover?.type == MemoryMediaType.video
+                  ? MemoryVideoPreview(
+                      uri: cover!.uri,
+                      thumbnailUri: cover.thumbnailUri,
+                    )
+                  : null,
+            ),
             const SizedBox(width: AppSpacing.s),
             Expanded(
               child: Column(

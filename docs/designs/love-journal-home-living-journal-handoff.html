@@ -1,0 +1,1412 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mình & Em · Living Journal Home</title>
+  <style>
+    :root {
+      --paper: #fff8f2;
+      --paper-muted: #f4ebe4;
+      --surface: #ffffff;
+      --surface-warm: #fff4ee;
+      --ink: #20191d;
+      --ink-soft: #3a3036;
+      --muted: #75686f;
+      --muted-light: #9b8d93;
+      --line: #e7d9cf;
+      --rose: #bf5363;
+      --rose-dark: #923b4a;
+      --wine: #5f2634;
+      --teal: #3f7b84;
+      --moss: #687f6f;
+      --amber: #c5964f;
+      --lavender: #87779d;
+      --night: #19151d;
+      --frame-w: 393px;
+      --frame-h: 852px;
+      --shadow-card: 0 12px 28px rgba(56, 34, 42, .08);
+      --shadow-floating: 0 18px 48px rgba(35, 24, 31, .18);
+      --shadow-hero: 0 26px 72px rgba(35, 24, 31, .22);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    * {
+      box-sizing: border-box;
+      letter-spacing: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 1180px;
+      background:
+        linear-gradient(rgba(231, 217, 207, .32) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(231, 217, 207, .32) 1px, transparent 1px),
+        linear-gradient(180deg, #fff8f2 0%, #f7eee8 100%);
+      background-size: 32px 32px, 32px 32px, auto;
+    }
+
+    button {
+      border: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    p {
+      margin: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    .brand-title,
+    .hero-days,
+    .empty-title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 600;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .board {
+      width: 1656px;
+      max-width: calc(100% - 48px);
+      margin: 0 auto;
+      padding: 48px 0 96px;
+    }
+
+    .cover {
+      min-height: 430px;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border: 1px solid rgba(231, 217, 207, .72);
+      border-radius: 8px;
+      color: #fff;
+      background:
+        linear-gradient(90deg, rgba(25, 21, 29, .91) 0%, rgba(25, 21, 29, .61) 52%, rgba(25, 21, 29, .10) 100%),
+        url("assets/anniversary-hero.png") center 44% / cover no-repeat;
+      box-shadow: var(--shadow-hero);
+    }
+
+    .cover-kicker,
+    .eyebrow {
+      color: var(--rose-dark);
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+    }
+
+    .cover .cover-kicker {
+      color: rgba(255, 255, 255, .72);
+    }
+
+    h1 {
+      max-width: 890px;
+      margin-top: 12px;
+      font-size: 68px;
+      line-height: 70px;
+    }
+
+    .cover-copy {
+      max-width: 780px;
+      margin-top: 20px;
+      color: rgba(255, 255, 255, .78);
+      font-size: 17px;
+      line-height: 27px;
+    }
+
+    .cover-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .board-button {
+      min-height: 42px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 999px;
+      color: #fff;
+      background: rgba(255, 255, 255, .11);
+      font-size: 13px;
+      font-weight: 800;
+      backdrop-filter: blur(12px);
+    }
+
+    .board-button.primary {
+      border-color: var(--rose);
+      background: var(--rose);
+    }
+
+    .section {
+      margin-top: 64px;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 520px minmax(0, 1fr);
+      gap: 48px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      margin-top: 9px;
+      font-size: 44px;
+      line-height: 48px;
+    }
+
+    .section-note {
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 25px;
+    }
+
+    .frames {
+      display: grid;
+      grid-template-columns: repeat(4, var(--frame-w));
+      gap: 28px;
+      align-items: start;
+    }
+
+    .frame-wrap {
+      display: grid;
+      gap: 12px;
+    }
+
+    .frame-label {
+      min-height: 54px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .frame-label strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .frame-index {
+      color: var(--rose-dark);
+      font-weight: 850;
+    }
+
+    .phone {
+      position: relative;
+      width: var(--frame-w);
+      height: var(--frame-h);
+      overflow: hidden;
+      border: 1px solid rgba(32, 25, 29, .14);
+      border-radius: 34px;
+      background: linear-gradient(180deg, #fff8f2 0%, #f7eee8 100%);
+      box-shadow: 0 24px 80px rgba(35, 24, 31, .15);
+    }
+
+    .status-bar {
+      position: absolute;
+      z-index: 20;
+      inset: 0 0 auto;
+      height: 34px;
+      padding: 11px 26px 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 800;
+      pointer-events: none;
+    }
+
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .signal {
+      width: 15px;
+      height: 9px;
+      border-bottom: 2px solid currentColor;
+      border-left: 2px solid currentColor;
+      transform: skewX(-18deg);
+    }
+
+    .battery {
+      width: 18px;
+      height: 9px;
+      padding: 1px;
+      border: 1.5px solid currentColor;
+      border-radius: 2px;
+    }
+
+    .battery::after {
+      content: "";
+      display: block;
+      width: 75%;
+      height: 100%;
+      border-radius: 1px;
+      background: currentColor;
+    }
+
+    .phone-viewport {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .home-scroll {
+      min-height: 1240px;
+      padding: 48px 20px 122px;
+      transition: transform 560ms cubic-bezier(.16, 1, .3, 1);
+    }
+
+    .phone.scrolled .home-scroll {
+      transform: translateY(-468px);
+    }
+
+    .topbar {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .greeting {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 650;
+    }
+
+    .brand-title {
+      margin-top: 2px;
+      font-size: 28px;
+      line-height: 30px;
+    }
+
+    .circle-button {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--rose-dark);
+      background: rgba(255, 255, 255, .88);
+      box-shadow: var(--shadow-card);
+    }
+
+    .hero-stack {
+      position: relative;
+      height: 330px;
+      margin-top: 14px;
+    }
+
+    .hero-paper {
+      position: absolute;
+      inset: 9px 11px 2px;
+      border-radius: 16px;
+      background: #eadbcf;
+      transform: rotate(2.2deg);
+      box-shadow: var(--shadow-card);
+    }
+
+    .hero-paper.second {
+      inset: 7px 9px 4px;
+      background: #fff;
+      transform: rotate(-1.5deg);
+    }
+
+    .living-hero {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: 16px;
+      color: #fff;
+      background: var(--night);
+      box-shadow: var(--shadow-hero);
+    }
+
+    .living-hero img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center 45%;
+      transform: scale(1.04);
+    }
+
+    .living-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(25, 21, 29, .02) 20%, rgba(25, 21, 29, .25) 52%, rgba(25, 21, 29, .92) 100%);
+    }
+
+    .hero-chip {
+      position: absolute;
+      z-index: 2;
+      top: 16px;
+      left: 16px;
+      min-height: 28px;
+      padding: 6px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255, 255, 255, .23);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, .88);
+      background: rgba(25, 21, 29, .25);
+      font-size: 10px;
+      line-height: 13px;
+      font-weight: 800;
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-copy {
+      position: absolute;
+      z-index: 2;
+      left: 18px;
+      right: 18px;
+      bottom: 16px;
+    }
+
+    .hero-kicker {
+      color: rgba(255, 255, 255, .72);
+      font-size: 10px;
+      line-height: 13px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+    }
+
+    .hero-days {
+      margin-top: 7px;
+      font-size: 38px;
+      line-height: 40px;
+    }
+
+    .hero-memory {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: rgba(255, 255, 255, .82);
+      font-size: 11px;
+      line-height: 16px;
+    }
+
+    .hero-memory span:first-child {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hero-arrow {
+      width: 30px;
+      height: 30px;
+      flex: 0 0 30px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, .24);
+      border-radius: 50%;
+      color: #fff;
+      background: rgba(255, 255, 255, .10);
+    }
+
+    .stats-ribbon {
+      min-height: 78px;
+      margin-top: 18px;
+      padding: 10px 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .45);
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 3px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-right: 1px solid var(--line);
+    }
+
+    .stat:last-child {
+      border-right: 0;
+    }
+
+    .stat-value {
+      color: var(--rose-dark);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 23px;
+      line-height: 25px;
+      font-weight: 600;
+    }
+
+    .stat:nth-child(2) .stat-value {
+      color: var(--teal);
+    }
+
+    .stat:nth-child(3) .stat-value {
+      color: var(--amber);
+    }
+
+    .stat-label {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 12px;
+      font-weight: 700;
+    }
+
+    .home-section {
+      margin-top: 24px;
+    }
+
+    .home-section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .home-section h3 {
+      font-size: 21px;
+      line-height: 24px;
+    }
+
+    .section-count {
+      color: var(--muted-light);
+      font-size: 10px;
+      line-height: 14px;
+      font-weight: 750;
+    }
+
+    .memory-rail {
+      width: calc(100% + 20px);
+      display: flex;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .memory-story {
+      position: relative;
+      width: 286px;
+      height: 214px;
+      flex: 0 0 286px;
+      overflow: hidden;
+      border-radius: 10px;
+      color: #fff;
+      background: var(--night);
+      box-shadow: var(--shadow-card);
+      transform-origin: center bottom;
+    }
+
+    .memory-story.peek {
+      transform: scale(.94) translateY(7px);
+      opacity: .82;
+    }
+
+    .memory-story img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .memory-story::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(25, 21, 29, .02) 25%, rgba(25, 21, 29, .80) 100%);
+    }
+
+    .memory-badge {
+      position: absolute;
+      z-index: 2;
+      top: 12px;
+      left: 12px;
+      min-height: 25px;
+      padding: 5px 9px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 999px;
+      color: var(--rose-dark);
+      background: rgba(255, 244, 238, .92);
+      font-size: 9px;
+      line-height: 12px;
+      font-weight: 850;
+    }
+
+    .memory-copy {
+      position: absolute;
+      z-index: 2;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+    }
+
+    .memory-date {
+      color: rgba(255, 255, 255, .72);
+      font-size: 9px;
+      line-height: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+
+    .memory-title {
+      margin-top: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+      line-height: 25px;
+      font-weight: 600;
+    }
+
+    .memory-place {
+      margin-top: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: rgba(255, 255, 255, .72);
+      font-size: 10px;
+      line-height: 14px;
+    }
+
+    .pager {
+      display: flex;
+      gap: 5px;
+      margin-top: 11px;
+    }
+
+    .pager span {
+      width: 5px;
+      height: 5px;
+      border-radius: 99px;
+      background: var(--line);
+    }
+
+    .pager span.active {
+      width: 18px;
+      background: var(--rose);
+    }
+
+    .letter-strip {
+      position: relative;
+      min-height: 126px;
+      padding: 18px 16px 16px 82px;
+      overflow: hidden;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .52);
+    }
+
+    .letter-strip::after {
+      content: "";
+      position: absolute;
+      width: 118px;
+      height: 118px;
+      left: -62px;
+      bottom: -70px;
+      border: 1px solid rgba(191, 83, 99, .16);
+      border-radius: 50%;
+    }
+
+    .envelope {
+      position: absolute;
+      left: 18px;
+      top: 25px;
+      width: 44px;
+      height: 33px;
+      border: 2px solid var(--rose);
+      border-radius: 4px;
+      color: var(--rose);
+    }
+
+    .envelope::before,
+    .envelope::after {
+      content: "";
+      position: absolute;
+      width: 27px;
+      height: 2px;
+      top: 8px;
+      background: currentColor;
+    }
+
+    .envelope::before {
+      left: -1px;
+      transform: rotate(35deg);
+      transform-origin: left;
+    }
+
+    .envelope::after {
+      right: -1px;
+      transform: rotate(-35deg);
+      transform-origin: right;
+    }
+
+    .letter-kicker {
+      color: var(--rose-dark);
+      font-size: 9px;
+      line-height: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+    }
+
+    .letter-title {
+      margin-top: 5px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      line-height: 22px;
+      font-weight: 600;
+    }
+
+    .letter-preview {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 15px;
+    }
+
+    .letter-state {
+      margin-top: 9px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--teal);
+      font-size: 9px;
+      line-height: 12px;
+      font-weight: 850;
+    }
+
+    .recap-band {
+      min-height: 84px;
+      padding: 15px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-radius: 10px;
+      color: #fff;
+      background: var(--wine);
+      box-shadow: var(--shadow-card);
+    }
+
+    .recap-band h4 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      line-height: 21px;
+      font-weight: 600;
+    }
+
+    .recap-band p {
+      margin-top: 4px;
+      color: rgba(255, 255, 255, .66);
+      font-size: 9px;
+      line-height: 13px;
+    }
+
+    .recap-action {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--wine);
+      background: #fff;
+    }
+
+    .empty-hero {
+      position: relative;
+      min-height: 332px;
+      margin-top: 14px;
+      overflow: hidden;
+      border-radius: 16px;
+      color: #fff;
+      background: var(--night);
+      box-shadow: var(--shadow-hero);
+    }
+
+    .empty-hero img {
+      width: 100%;
+      height: 332px;
+      display: block;
+      object-fit: cover;
+      opacity: .68;
+      filter: saturate(.72);
+    }
+
+    .empty-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(25, 21, 29, .18), rgba(25, 21, 29, .88));
+    }
+
+    .empty-copy {
+      position: absolute;
+      z-index: 2;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+    }
+
+    .empty-title {
+      max-width: 250px;
+      font-size: 29px;
+      line-height: 31px;
+    }
+
+    .empty-body {
+      max-width: 280px;
+      margin-top: 8px;
+      color: rgba(255, 255, 255, .72);
+      font-size: 11px;
+      line-height: 17px;
+    }
+
+    .empty-cta {
+      min-height: 42px;
+      margin-top: 15px;
+      padding: 0 15px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--rose);
+      font-size: 11px;
+      font-weight: 850;
+      box-shadow: 0 10px 24px rgba(191, 83, 99, .28);
+    }
+
+    .empty-note {
+      margin-top: 24px;
+      padding: 20px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      text-align: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 23px;
+      font-style: italic;
+    }
+
+    .tabbar {
+      position: absolute;
+      z-index: 30;
+      left: 16px;
+      right: 16px;
+      bottom: 12px;
+      height: 64px;
+      padding: 0 6px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid rgba(231, 217, 207, .92);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .90);
+      box-shadow: var(--shadow-floating);
+      backdrop-filter: blur(16px);
+    }
+
+    .tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--muted-light);
+      font-size: 9px;
+      line-height: 12px;
+      font-weight: 800;
+    }
+
+    .tab .icon-wrap {
+      width: 23px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #e8dcd4;
+    }
+
+    .tab .icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    .tab.active {
+      color: var(--rose-dark);
+    }
+
+    .tab.active .icon-wrap {
+      width: 29px;
+      color: #fff;
+      background: var(--rose);
+      box-shadow: 0 6px 12px rgba(191, 83, 99, .25);
+    }
+
+    .live .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: reveal 620ms cubic-bezier(.16, 1, .3, 1) forwards;
+    }
+
+    .live .reveal.hero-reveal {
+      transform: translateY(14px) scale(.975);
+      animation-name: heroReveal;
+      animation-duration: 780ms;
+    }
+
+    .live .reveal:nth-of-type(2) {
+      animation-delay: 80ms;
+    }
+
+    .live .reveal:nth-of-type(3) {
+      animation-delay: 180ms;
+    }
+
+    .live .reveal:nth-of-type(4) {
+      animation-delay: 260ms;
+    }
+
+    @keyframes reveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes heroReveal {
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .spec-card {
+      min-height: 176px;
+      padding: 22px;
+      border-right: 1px solid var(--line);
+    }
+
+    .spec-card:last-child {
+      border-right: 0;
+    }
+
+    .spec-card strong {
+      display: block;
+      color: var(--rose-dark);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .spec-card h3 {
+      margin-top: 10px;
+      font-size: 20px;
+      line-height: 24px;
+    }
+
+    .spec-card p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 20px;
+    }
+
+    .motion-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .motion-step {
+      min-height: 122px;
+      padding: 18px;
+      border-right: 1px solid var(--line);
+    }
+
+    .motion-step:last-child {
+      border-right: 0;
+    }
+
+    .motion-time {
+      color: var(--rose-dark);
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 850;
+    }
+
+    .motion-step b {
+      display: block;
+      margin-top: 7px;
+      font-size: 13px;
+      line-height: 18px;
+    }
+
+    .motion-step p {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .live .reveal {
+        opacity: 1;
+        transform: none;
+        animation: none;
+      }
+
+      .phone.scrolled .home-scroll {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <symbol id="i-heart" viewBox="0 0 24 24">
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/>
+    </symbol>
+    <symbol id="i-home" viewBox="0 0 24 24">
+      <path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>
+    </symbol>
+    <symbol id="i-time" viewBox="0 0 24 24">
+      <path d="M3 12h4l2-7 4 14 2-7h6"/>
+    </symbol>
+    <symbol id="i-map" viewBox="0 0 24 24">
+      <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"/><path d="M9 3v15M15 6v15"/>
+    </symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14"/>
+    </symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24">
+      <path d="m9 18 6-6-6-6"/>
+    </symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24">
+      <path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4Z"/><path d="m19 14 .8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8Z"/>
+    </symbol>
+  </svg>
+
+  <main class="board">
+    <section class="cover">
+      <div class="cover-kicker">Home redesign · UI proposal</div>
+      <h1>Home như một cuốn nhật ký đang sống.</h1>
+      <p class="cover-copy">Media trở thành điểm chạm đầu tiên, các con số hòa vào câu chuyện và những ký ức gần đây luôn hé lộ một điều để người dùng muốn chạm tiếp.</p>
+      <div class="cover-actions">
+        <button class="board-button primary" type="button" id="replayMotion">
+          <svg class="icon"><use href="#i-spark"/></svg>
+          Phát lại motion
+        </button>
+        <a class="board-button" href="#screens" style="text-decoration:none">
+          Xem các trạng thái
+          <svg class="icon"><use href="#i-arrow"/></svg>
+        </a>
+      </div>
+    </section>
+
+    <section class="section" id="screens">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Living journal · 393 × 852</div>
+          <h2>Ba trạng thái chính</h2>
+        </div>
+        <p class="section-note">Bố cục giữ đúng token hiện tại nhưng giảm cảm giác dashboard: hero giàu cảm xúc hơn, thống kê không còn là các card rời và nội dung phía dưới tạo thành một dòng kể chuyện liên tục.</p>
+      </div>
+
+      <div class="frames">
+        <article class="frame-wrap">
+          <div class="frame-label">
+            <div><strong>Home · Cover</strong>First viewport và hero</div>
+            <span class="frame-index">01</span>
+          </div>
+          <div class="phone live" id="livePhone">
+            <div class="status-bar">
+              <span>11:17</span>
+              <span class="status-icons"><span class="signal"></span><span>87%</span><span class="battery"></span></span>
+            </div>
+            <div class="phone-viewport">
+              <div class="home-scroll">
+                <header class="topbar reveal">
+                  <div>
+                    <div class="greeting">Chào em</div>
+                    <div class="brand-title">Mình &amp; Em</div>
+                  </div>
+                  <button class="circle-button" type="button" aria-label="Mở recap">
+                    <svg class="icon"><use href="#i-heart"/></svg>
+                  </button>
+                </header>
+
+                <div class="hero-stack reveal hero-reveal">
+                  <div class="hero-paper"></div>
+                  <div class="hero-paper second"></div>
+                  <div class="living-hero">
+                    <img src="assets/anniversary-hero.png" alt="Một kỷ niệm của hai người">
+                    <div class="hero-chip">
+                      <svg class="icon" style="width:13px;height:13px"><use href="#i-spark"/></svg>
+                      Ký ức hôm nay
+                    </div>
+                    <div class="hero-copy">
+                      <div class="hero-kicker">Hành trình của tụi mình</div>
+                      <div class="hero-days">1.126 ngày yêu</div>
+                      <div class="hero-memory">
+                        <span>Sinh nhật của em · 05.06.2026</span>
+                        <span class="hero-arrow"><svg class="icon"><use href="#i-arrow"/></svg></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="stats-ribbon reveal">
+                  <div class="stat"><span class="stat-value">1.126</span><span class="stat-label">ngày bên nhau</span></div>
+                  <div class="stat"><span class="stat-value">18</span><span class="stat-label">kỷ niệm đã viết</span></div>
+                  <div class="stat"><span class="stat-value">7</span><span class="stat-label">nơi mình đã qua</span></div>
+                </div>
+
+                <section class="home-section reveal">
+                  <div class="home-section-head">
+                    <div><div class="eyebrow">Gần đây</div><h3>Những mảnh ghép</h3></div>
+                    <div class="section-count">1 / 5</div>
+                  </div>
+                  <div class="memory-rail">
+                    <article class="memory-story">
+                      <img src="assets/anniversary-hero.png" alt="">
+                      <div class="memory-badge"><svg class="icon" style="width:12px;height:12px"><use href="#i-heart"/></svg>Mình đã ghim</div>
+                      <div class="memory-copy">
+                        <div class="memory-date">12.04.2026</div>
+                        <div class="memory-title">Đà Lạt mùa mưa</div>
+                        <div class="memory-place">Đà Lạt · Chuyến đi của hai đứa</div>
+                      </div>
+                    </article>
+                    <article class="memory-story peek">
+                      <img src="assets/anniversary-hero.png" alt="" style="object-position:70% center;filter:saturate(.72) hue-rotate(18deg)">
+                      <div class="memory-copy">
+                        <div class="memory-date">18.03.2026</div>
+                        <div class="memory-title">Một chiều rất thường</div>
+                        <div class="memory-place">Hồ Chí Minh · Đời thường</div>
+                      </div>
+                    </article>
+                  </div>
+                </section>
+              </div>
+            </div>
+            <nav class="tabbar">
+              <div class="tab active"><span class="icon-wrap"><svg class="icon"><use href="#i-home"/></svg></span>Home</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-time"/></svg></span>Time</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-map"/></svg></span>Map</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-mail"/></svg></span>Thư</div>
+            </nav>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label">
+            <div><strong>Home · Discovery</strong>Carousel đang active</div>
+            <span class="frame-index">02</span>
+          </div>
+          <div class="phone scrolled">
+            <div class="status-bar">
+              <span>11:17</span>
+              <span class="status-icons"><span class="signal"></span><span>87%</span><span class="battery"></span></span>
+            </div>
+            <div class="phone-viewport">
+              <div class="home-scroll">
+                <header class="topbar">
+                  <div><div class="greeting">Chào em</div><div class="brand-title">Mình &amp; Em</div></div>
+                  <button class="circle-button" type="button"><svg class="icon"><use href="#i-heart"/></svg></button>
+                </header>
+                <div class="hero-stack">
+                  <div class="hero-paper"></div><div class="hero-paper second"></div>
+                  <div class="living-hero">
+                    <img src="assets/anniversary-hero.png" alt="">
+                    <div class="hero-copy"><div class="hero-kicker">Hành trình của tụi mình</div><div class="hero-days">1.126 ngày yêu</div></div>
+                  </div>
+                </div>
+                <div class="stats-ribbon">
+                  <div class="stat"><span class="stat-value">1.126</span><span class="stat-label">ngày bên nhau</span></div>
+                  <div class="stat"><span class="stat-value">18</span><span class="stat-label">kỷ niệm đã viết</span></div>
+                  <div class="stat"><span class="stat-value">7</span><span class="stat-label">nơi mình đã qua</span></div>
+                </div>
+                <section class="home-section">
+                  <div class="home-section-head">
+                    <div><div class="eyebrow">Gần đây</div><h3>Những mảnh ghép</h3></div>
+                    <div class="section-count">1 / 5</div>
+                  </div>
+                  <div class="memory-rail">
+                    <article class="memory-story">
+                      <img src="assets/anniversary-hero.png" alt="">
+                      <div class="memory-badge"><svg class="icon" style="width:12px;height:12px"><use href="#i-heart"/></svg>Mình đã ghim</div>
+                      <div class="memory-copy">
+                        <div class="memory-date">12.04.2026</div>
+                        <div class="memory-title">Đà Lạt mùa mưa</div>
+                        <div class="memory-place">Đà Lạt · Chuyến đi của hai đứa</div>
+                      </div>
+                    </article>
+                    <article class="memory-story peek">
+                      <img src="assets/anniversary-hero.png" alt="" style="object-position:70% center;filter:saturate(.72) hue-rotate(18deg)">
+                      <div class="memory-copy"><div class="memory-title">Một chiều rất thường</div></div>
+                    </article>
+                  </div>
+                  <div class="pager"><span class="active"></span><span></span><span></span><span></span><span></span></div>
+                </section>
+                <section class="home-section">
+                  <div class="home-section-head"><div><div class="eyebrow">Dành cho em</div><h3>Một lá thư đang đợi</h3></div></div>
+                  <article class="letter-strip">
+                    <span class="envelope"></span>
+                    <div class="letter-kicker">Lá thư tiếp theo</div>
+                    <div class="letter-title">Gửi em, người anh thương</div>
+                    <div class="letter-preview">Một lá thư cho ngày mình tròn ba năm.</div>
+                    <div class="letter-state"><svg class="icon" style="width:12px;height:12px"><use href="#i-heart"/></svg>Có thể mở ngay</div>
+                  </article>
+                </section>
+                <section class="home-section">
+                  <article class="recap-band">
+                    <div><h4>Chuyện của tụi mình</h4><p>Xem lại hành trình qua những điều đã cùng nhau giữ lại.</p></div>
+                    <span class="recap-action"><svg class="icon"><use href="#i-arrow"/></svg></span>
+                  </article>
+                </section>
+              </div>
+            </div>
+            <nav class="tabbar">
+              <div class="tab active"><span class="icon-wrap"><svg class="icon"><use href="#i-home"/></svg></span>Home</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-time"/></svg></span>Time</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-map"/></svg></span>Map</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-mail"/></svg></span>Thư</div>
+            </nav>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label">
+            <div><strong>Home · Letter &amp; Recap</strong>Nhịp cuối trang</div>
+            <span class="frame-index">03</span>
+          </div>
+          <div class="phone">
+            <div class="status-bar">
+              <span>11:17</span>
+              <span class="status-icons"><span class="signal"></span><span>87%</span><span class="battery"></span></span>
+            </div>
+            <div class="phone-viewport">
+              <div style="padding:60px 20px 118px">
+                <div class="eyebrow">Dành cho em</div>
+                <h3 style="font-size:27px;line-height:30px;margin-top:7px">Một lá thư đang đợi</h3>
+                <p style="margin-top:8px;color:var(--muted);font-size:12px;line-height:18px">Home giữ lại một lời nhắn đủ gần để em luôn có điều gì đó đang chờ.</p>
+                <article class="letter-strip" style="margin-top:22px">
+                  <span class="envelope"></span>
+                  <div class="letter-kicker">Lá thư tiếp theo</div>
+                  <div class="letter-title">Gửi em, người anh thương</div>
+                  <div class="letter-preview">Một lá thư cho ngày mình tròn ba năm.</div>
+                  <div class="letter-state"><svg class="icon" style="width:12px;height:12px"><use href="#i-heart"/></svg>Có thể mở ngay</div>
+                </article>
+                <div style="height:1px;background:var(--line);margin:34px 0 28px"></div>
+                <div class="eyebrow">Ba năm bằng những điều nhỏ</div>
+                <h3 style="font-size:27px;line-height:30px;margin-top:7px">Chuyện của tụi mình</h3>
+                <div style="position:relative;height:268px;margin-top:18px;overflow:hidden;border-radius:16px;box-shadow:var(--shadow-hero)">
+                  <img src="assets/anniversary-hero.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(25,21,29,.05),rgba(25,21,29,.86))"></div>
+                  <div style="position:absolute;left:16px;right:16px;bottom:16px;color:#fff">
+                    <div style="font-family:Georgia,serif;font-size:25px;line-height:28px">Mỗi ngày đều là một phần của hành trình.</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;color:rgba(255,255,255,.74);font-size:11px">
+                      <span>Xem recap ba năm</span>
+                      <span class="hero-arrow"><svg class="icon"><use href="#i-arrow"/></svg></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <nav class="tabbar">
+              <div class="tab active"><span class="icon-wrap"><svg class="icon"><use href="#i-home"/></svg></span>Home</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-time"/></svg></span>Time</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-map"/></svg></span>Map</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-mail"/></svg></span>Thư</div>
+            </nav>
+          </div>
+        </article>
+
+        <article class="frame-wrap">
+          <div class="frame-label">
+            <div><strong>Home · Empty</strong>Chưa có kỷ niệm</div>
+            <span class="frame-index">04</span>
+          </div>
+          <div class="phone">
+            <div class="status-bar">
+              <span>11:17</span>
+              <span class="status-icons"><span class="signal"></span><span>87%</span><span class="battery"></span></span>
+            </div>
+            <div class="phone-viewport">
+              <div class="home-scroll" style="min-height:900px">
+                <header class="topbar">
+                  <div><div class="greeting">Chào em</div><div class="brand-title">Mình &amp; Em</div></div>
+                  <button class="circle-button" type="button"><svg class="icon"><use href="#i-heart"/></svg></button>
+                </header>
+                <article class="empty-hero">
+                  <img src="assets/anniversary-hero.png" alt="">
+                  <div class="empty-copy">
+                    <div class="hero-kicker">Trang đầu tiên</div>
+                    <div class="empty-title">Mình bắt đầu giữ lại một ngày nhé?</div>
+                    <p class="empty-body">Một tấm ảnh, một câu chuyện nhỏ, hay chỉ là giọng nói của hai đứa.</p>
+                    <button class="empty-cta" type="button"><svg class="icon" style="width:16px;height:16px"><use href="#i-plus"/></svg>Tạo kỷ niệm đầu tiên</button>
+                  </div>
+                </article>
+                <div class="stats-ribbon">
+                  <div class="stat"><span class="stat-value">1.126</span><span class="stat-label">ngày bên nhau</span></div>
+                  <div class="stat"><span class="stat-value">0</span><span class="stat-label">kỷ niệm đã viết</span></div>
+                  <div class="stat"><span class="stat-value">0</span><span class="stat-label">nơi mình đã qua</span></div>
+                </div>
+                <div class="empty-note">“Trang này sẽ đẹp lên bằng những ngày rất thật của tụi mình.”</div>
+                <section class="home-section">
+                  <div class="home-section-head"><div><div class="eyebrow">Dành cho em</div><h3>Một lá thư đang đợi</h3></div></div>
+                  <article class="letter-strip">
+                    <span class="envelope"></span>
+                    <div class="letter-kicker">Lá thư tiếp theo</div>
+                    <div class="letter-title">Gửi em, người anh thương</div>
+                    <div class="letter-preview">Một lá thư cho ngày mình tròn ba năm.</div>
+                    <div class="letter-state"><svg class="icon" style="width:12px;height:12px"><use href="#i-heart"/></svg>Có thể mở ngay</div>
+                  </article>
+                </section>
+              </div>
+            </div>
+            <nav class="tabbar">
+              <div class="tab active"><span class="icon-wrap"><svg class="icon"><use href="#i-home"/></svg></span>Home</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-time"/></svg></span>Time</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-map"/></svg></span>Map</div>
+              <div class="tab"><span class="icon-wrap"><svg class="icon"><use href="#i-mail"/></svg></span>Thư</div>
+            </nav>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Visual decisions</div>
+          <h2>Điểm thay đổi chính</h2>
+        </div>
+        <p class="section-note">Mỗi thay đổi đều nhằm làm Home giàu cảm xúc hơn mà không tăng mật độ thao tác hay tạo thêm một dashboard tiện ích.</p>
+      </div>
+      <div class="spec-grid">
+        <article class="spec-card">
+          <strong>01 · Hero</strong>
+          <h3>Một bìa nhật ký, không phải banner</h3>
+          <p>Lớp giấy lệch nhẹ tạo chiều sâu; media, số ngày yêu và ký ức hòa vào cùng một điểm chạm mở Recap.</p>
+        </article>
+        <article class="spec-card">
+          <strong>02 · Statistics</strong>
+          <h3>Con số trở thành nhịp kể</h3>
+          <p>Ba chỉ số nằm trên một dải liên tục, dùng rose, teal và amber để tránh cảm giác một màu.</p>
+        </article>
+        <article class="spec-card">
+          <strong>03 · Discovery</strong>
+          <h3>Luôn hé lộ ký ức tiếp theo</h3>
+          <p>Card kế tiếp xuất hiện một phần ở mép màn hình; featured memory có nhãn nhưng không tạo section lặp.</p>
+        </article>
+        <article class="spec-card">
+          <strong>04 · Empty</strong>
+          <h3>Trống nhưng vẫn có cảm xúc</h3>
+          <p>Giữ số ngày yêu và lá thư; CTA tạo kỷ niệm trở thành hành động rõ ràng duy nhất trong hero.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Motion handoff</div>
+          <h2>Nhịp chuyển động cơ bản</h2>
+        </div>
+        <p class="section-note">Giai đoạn UI chỉ dùng entrance và page focus. Parallax, count-up và autoplay video được giữ lại cho vòng motion sau khi bố cục được duyệt.</p>
+      </div>
+      <div class="motion-strip">
+        <article class="motion-step"><span class="motion-time">0–260ms</span><b>Header</b><p>Fade và trượt lên 8px.</p></article>
+        <article class="motion-step"><span class="motion-time">80–700ms</span><b>Living hero</b><p>Opacity 0→1, scale .975→1.</p></article>
+        <article class="motion-step"><span class="motion-time">180–620ms</span><b>Stats ribbon</b><p>Fade và trượt lên 10px.</p></article>
+        <article class="motion-step"><span class="motion-time">260–700ms</span><b>Discovery</b><p>Section xuất hiện sau hero.</p></article>
+        <article class="motion-step"><span class="motion-time">On swipe</span><b>Page focus</b><p>Card active scale 1; card kế .94.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const replayButton = document.getElementById("replayMotion");
+    const livePhone = document.getElementById("livePhone");
+
+    replayButton.addEventListener("click", () => {
+      livePhone.classList.remove("live");
+      void livePhone.offsetWidth;
+      livePhone.classList.add("live");
+      document.getElementById("screens").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  </script>
+</body>
+</html>

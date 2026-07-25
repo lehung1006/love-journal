@@ -5,6 +5,7 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import '../journal_formatters.dart';
 import 'media_components.dart';
+import 'memory_media_viewer.dart';
 
 class LocationMemoryListSheet extends StatelessWidget {
   const LocationMemoryListSheet({
@@ -127,6 +128,7 @@ class _MemoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cover = memory.coverMedia;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -135,7 +137,15 @@ class _MemoryRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.s),
           child: Row(
             children: [
-              MemoryThumbnail(imagePath: memory.coverMedia?.uri),
+              MemoryThumbnail(
+                imagePath: cover?.uri,
+                content: cover?.type == MemoryMediaType.video
+                    ? MemoryVideoPreview(
+                        uri: cover!.uri,
+                        thumbnailUri: cover.thumbnailUri,
+                      )
+                    : null,
+              ),
               const SizedBox(width: AppSpacing.s),
               Expanded(
                 child: Column(

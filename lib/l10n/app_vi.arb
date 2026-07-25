@@ -16,8 +16,9 @@
   "openingBody": "Anh gói lại vài nơi mình đã đi qua, vài ngày mình đã thương nhau, và một lời hẹn thật nhỏ cho chặng sau.",
   "openingCta": "Mở món quà",
   "homeKicker": "Chào em",
+  "homeTitle": "Mình & Em",
   "homeRecapTooltip": "Kỷ niệm 3 năm",
-  "homeHeroKicker": "Kỷ niệm của tụi mình",
+  "homeHeroKicker": "Hành trình của tụi mình",
   "homeLoveDays": "{days} ngày yêu",
   "@homeLoveDays": {
     "placeholders": {
@@ -27,8 +28,31 @@
     }
   },
   "homeHeroSubtitle": "Và anh vẫn muốn đi tiếp cùng em.",
+  "homeDaysTogether": "ngày bên nhau",
   "homeMemoriesWritten": "kỷ niệm đã viết",
   "homePlacesVisited": "nơi mình đã qua",
+  "homeRecentKicker": "Gần đây",
+  "homeRecentMemories": "Những mảnh ghép",
+  "homeFeaturedBadge": "Mình đã ghim",
+  "homePageIndicator": "{current}/{total}",
+  "@homePageIndicator": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "homeLetterKicker": "Dành cho em",
+  "homeLetterSectionTitle": "Một lá thư đang đợi",
+  "homeRecapTitle": "Chuyện của tụi mình",
+  "homeRecapBody": "Xem lại hành trình qua những điều hai đứa đã cùng nhau giữ lại.",
+  "homeEmptyKicker": "Trang đầu tiên",
+  "homeEmptyTitle": "Mình bắt đầu giữ lại một ngày nhé?",
+  "homeEmptyBody": "Một tấm ảnh, một câu chuyện nhỏ, hay chỉ là giọng nói của hai đứa.",
+  "homeEmptyCta": "Tạo kỷ niệm đầu tiên",
   "homeFeaturedMemory": "Kỷ niệm nổi bật",
   "homeNoFeaturedTitle": "Chưa có kỷ niệm nổi bật",
   "homeNoFeaturedBody": "Khi thêm kỷ niệm đầu tiên, Home sẽ giữ lại khoảnh khắc đáng nhớ nhất ở đây.",
@@ -343,6 +367,32 @@
   "locationPickerPoweredByGoogle": "Kết quả từ Google Places",
   "locationPickerManualHelper": "Không đúng nơi? Kéo bản đồ để tự ghim.",
   "locationPickerPinHelper": "Kéo bản đồ để đặt ghim vào đúng vị trí.",
+  "locationPickerMapBrowseMode": "Xem",
+  "locationPickerMapSelectMode": "Chọn vị trí",
+  "locationPickerMapReset": "Đặt lại vị trí",
+  "locationPickerMapTapHelper": "Chạm vào một điểm để tìm các địa điểm Google gần đó.",
+  "locationPickerMapBrowseHelper": "Bật Chọn trên bản đồ khi bạn muốn đặt hoặc di chuyển ghim.",
+  "locationPickerResolvingPlace": "Đang mở thông tin địa điểm...",
+  "locationPickerNearbyLoading": "Đang tìm những nơi gần điểm ghim...",
+  "locationPickerNearbyTitle": "Những nơi gần điểm ghim",
+  "locationPickerNearbyEmpty": "Không có địa điểm Google nào đủ gần. Bạn vẫn có thể giữ tọa độ này.",
+  "locationPickerNearbyError": "Chưa tải được các địa điểm gần đây. Bạn vẫn có thể giữ tọa độ này.",
+  "locationPickerNearbyAddressFallback": "Địa điểm gần tọa độ đã chọn",
+  "locationPickerUseManualCoordinate": "Giữ tọa độ này",
+  "locationPickerUseSelectedPlace": "Dùng nơi này",
+  "locationPickerOpenGoogleMaps": "Mở Maps",
+  "locationPickerOpenLinkError": "Chưa thể mở liên kết này",
+  "locationPickerPhotoAttribution": "Ảnh: {author}",
+  "@locationPickerPhotoAttribution": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "locationPickerBusinessOperational": "Đang hoạt động",
+  "locationPickerBusinessClosedTemporarily": "Tạm thời đóng cửa",
+  "locationPickerBusinessClosedPermanently": "Đã đóng cửa",
   "locationPickerContinueNaming": "Tiếp tục đặt tên",
   "locationPickerNameKicker": "Bước cuối",
   "locationPickerNameTitle": "Đặt tên cho nơi này",

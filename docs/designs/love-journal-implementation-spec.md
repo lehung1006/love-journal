@@ -1,10 +1,13 @@
 # Mình & Em - Mobile App Implementation Spec
 
-Version: 1.1
+Version: 1.2
 Target: Flutter
-Last updated: 2026-07-13
+Last updated: 2026-07-25
 Design board: `love-journal-figma-handoff.html`
 Time management extension: `love-journal-time-management-handoff.html`
+Memory Composer handoff: `love-journal-memory-composer-handoff.html`
+Home stage-1 handoff: `love-journal-home-living-journal-handoff.html`
+Home preview: `love-journal-home-living-journal-preview.png`
 Map/Memory Location design: [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC)
 Current UI/UX source of truth: `love-journal-current-ui-ux.md`  
 Token file: `love-journal-design-tokens.json`
@@ -52,7 +55,8 @@ Current implementation note:
 
 - The Flutter codebase has implemented the memory-owned location architecture and read-only Map projection.
 - Bundled `assets/data/memories.json` and `assets/data/places.json` are intentionally empty so new memories/locations are created by the user instead of restored from hardcoded seed data.
-- Google Places Autocomplete is implemented in Location Picker, but the current local Android key still receives HTTP `403 PERMISSION_DENIED` from Google Cloud. Treat this as an API-key/project/restriction/billing blocker or move Places behind a backend/proxy; do not reintroduce Map search or hardcoded places.
+- Google Places Autocomplete, explicit map selection with Nearby Search, compact Place Details, and lazy one-photo preview are implemented in Location Picker. The current local-first build uses Places API (New) REST through a platform-neutral data source, including on Android. Do not reintroduce Map search or hardcoded places.
+- Native image/video selection, voice recording, persisted first-frame video thumbnails, full-screen media viewing, and controlled cover-video playback are implemented for the local-first Android flow.
 
 ## Navigation
 
@@ -93,7 +97,7 @@ Approved Location Picker routes:
 ```
 
 - Location Picker is pushed above Add/Edit Memory and does not show the bottom tab bar.
-- Search, selected-result refinement, manual pinning, and naming are internal states of one picker screen.
+- Search, browse/select map mode, Nearby candidates, selected-place preview, manual coordinates, and naming are internal states of one picker screen.
 - The picker returns a temporary `MemoryLocationSelection`; the form beneath remains the owner of unsaved memory state.
 
 Opening logic:
@@ -244,6 +248,7 @@ type MemoryVoiceMessage = {
 
 type MemoryMediaGroup = {
   id: string;
+  title?: string;
   note?: string;
   items: MemoryMedia[];
   sortOrder: number;
@@ -325,12 +330,37 @@ type PlaceSearchSuggestion = {
   fullText: string;
 };
 
+type NearbyPlaceCandidate = {
+  googlePlaceId: string;
+  name: string;
+  formattedAddress?: string;
+  latitude: number;
+  longitude: number;
+  primaryTypeDisplayName?: string;
+  businessStatus?: "operational" | "closedTemporarily" | "closedPermanently";
+};
+
+type PlacePhotoReference = {
+  name: string;
+  widthPx?: number;
+  heightPx?: number;
+  authorAttributions: Array<{
+    displayName: string;
+    uri?: string;
+    photoUri?: string;
+  }>;
+};
+
 type PlaceSearchResult = {
   googlePlaceId: string;
   name: string;
   formattedAddress?: string;
   latitude: number;
   longitude: number;
+  primaryTypeDisplayName?: string;
+  businessStatus?: "operational" | "closedTemporarily" | "closedPermanently";
+  googleMapsUri?: string;
+  photos: PlacePhotoReference[];
 };
 ```
 
@@ -338,21 +368,42 @@ Rules:
 
 - Autocomplete starts after at least two trimmed characters and a short debounce.
 - Keep one session token from autocomplete through Place Details selection, then rotate it.
-- Fetch Place Details only after a suggestion is selected.
+- Map interaction starts in browse mode. Pan/zoom/camera idle never mutate the draft and never call Places.
+- Render map mode as a compact `Xem` / `Chọn vị trí` segmented control. Do not place a long status sentence beside it; contextual guidance belongs in the bottom panel.
+- Keep reset as an independent icon action and show it only when a marker exists.
+- Enabling `Chọn vị trí` allows map tap and marker drag-end to create a temporary manual coordinate.
+- Give Google Places Search its own `FocusNode`. Focus must hide the bottom context panel immediately; `MediaQuery.viewInsets` remains a fallback for keyboard activation through other input paths.
+- Set `resizeToAvoidBottomInset: false` only for the search/map step. Choose and Name retain normal resize behavior, and Name remains scrollable with its autofocus keyboard.
+- Unfocus must restore the previous bottom panel without resetting the selected place, marker, transient photo, query, or picker draft.
+- Each explicit coordinate runs Nearby Search with a 150 meter radius, `DISTANCE` ranking, all types, and at most 8 results.
+- Nearby results render as tappable markers and a synchronized list.
+- Fetch Place Details only after an Autocomplete suggestion or Nearby candidate is selected.
+- Nearby-selected Place Details must omit the Autocomplete session token.
+- Place Details requests compact fields only; the first photo is fetched lazily after selection.
+- Photo bytes and dynamic place metadata remain transient and are never serialized into `MemoryLocation`.
+- A slower response from an earlier search, map tap, Details request, or photo request must not overwrite newer state.
+- Manually moving a Google-backed selection clears `formattedAddress`, `googlePlaceId`, and selected Google metadata before Nearby Search starts.
 - Selecting a result creates only a temporary picker draft until the memory is saved.
-- Search failure keeps the query visible and provides retry plus manual pin fallback.
+- Autocomplete failure keeps the query visible. Nearby failure keeps the selected coordinate and manual-save action available.
 - Current Flutter search models call the external identifier `placeId`; map or rename it to `googlePlaceId` at the Google Places boundary so it cannot be confused with internal `locationId` or legacy seed `placeId`.
 - Do not commit Google Maps API keys.
-- For production, consider routing Places Web Service calls through a backend/proxy if mobile key restrictions are not enough.
+- The current direct REST implementation is temporary and requires an application-unrestricted key; it must move behind a backend/proxy before production.
 - The app must keep a no-key fallback state so local development and automated tests can run without secrets.
 
-Current Android diagnostic:
+Current Android implementation:
 
 - Package/application id: `vn.hung.le.lovejournal`.
 - Debug SHA-1 used for restriction: `9A:27:5D:11:3E:A1:38:DC:CC:25:39:D8:D3:7E:00:A1:94:34:5F:A0`.
-- A direct Places API (New) autocomplete call using the configured key plus Android package/cert headers returned HTTP `403 PERMISSION_DENIED`.
-- Legacy Places autocomplete returned `REQUEST_DENIED` because the legacy API is not enabled; the app should continue using Places API (New).
-- If the Google Cloud console appears correctly configured, verify billing, project ownership of the key, saved API restrictions, propagation delay, and Android app restriction identity. A backend/proxy is the production direction if mobile REST restrictions remain fragile.
+- `GooglePlacesApiDataSource` owns Autocomplete, Nearby Search, Place Details, Place Photos, 50 km autocomplete bias, session-token reuse, field masks, and structured HTTP errors.
+- Nearby Search is called only from explicit map tap or marker drag-end; it is never tied to camera movement.
+- Place photo responses are held in memory for the selected preview and include visible author attribution when Google returns it.
+- REST requests send only Web Service-supported authentication headers; they do not send Android package/certificate or iOS bundle headers.
+- Cloud checks confirmed active billing, API enablement, and project ownership. The same key succeeds against Places API (New) REST from Cloud Shell but receives `403 PERMISSION_DENIED` from the local host and Android device.
+- Key metadata confirms a standard key with no application restriction and only the required Places/Android Maps API targets. The linked payments profile country is Vietnam.
+- Minimal and full request variants fail identically outside Cloud Shell, ruling out field mask, query, session token, and location bias as the source of the denial. Forced IPv4 and IPv6 requests from the local Windows host are both denied.
+- A native Places SDK bridge returned `9011 REQUEST_DENIED` on-device and is not part of the current runtime path.
+- On 2026-07-21, a replacement local key returned HTTP `200` with five Autocomplete suggestions from the same Windows host. The debug APK built successfully and its merged manifest contained the replacement key.
+- This resolves the Flutter request-path question but not production eligibility: Google's current Maps Platform Prohibited Territories list includes Vietnam. Billing country must reflect the real billing address, and production distribution requires a compliant provider decision.
 
 ### Legacy Place Compatibility
 
@@ -388,6 +439,9 @@ LockedLetterBadge
 PlacePreviewSheet
 VoiceNotePlayer
 MediaCarousel
+MemoryVideoThumbnail
+MemoryVideoPlayer
+MemoryMediaViewer
 QuoteBlock
 MemoryEmptyState
 MemoryActionMenu
@@ -428,22 +482,77 @@ Behavior:
 
 ### Home
 
-Purpose: emotional dashboard, not a utility dashboard.
+Purpose: the living front page of the journal, not a utility dashboard.
+
+Implementation status:
+
+- Stage 1 implemented.
+- Source: `lib/src/features/journal/presentation/screens/home_screen.dart`.
+- Components: `lib/src/features/journal/presentation/components/home_components.dart`.
+- Visual handoff: `docs/designs/love-journal-home-living-journal-handoff.html`.
 
 Sections:
 
-- Header: greeting + app title.
-- Hero memory: love day counter.
-- Stats: memory count, place count.
-- Featured memory card.
-- Next locked/open letter.
-- Bottom tabs.
+- Header: `Chào em` + `Mình & Em`; heart opens Recap.
+- Living hero:
+  - 334px high;
+  - featured memory, falling back to the first visible memory;
+  - love-day count, memory title, date, and place;
+  - static image or video thumbnail;
+  - tap opens Recap.
+- Stats ribbon:
+  - love days;
+  - `visibleMemories.length`;
+  - `mapLocationGroups.length`.
+- Recent discovery PageView:
+  - copy visible memories;
+  - sort by date descending, then `updatedAt` descending;
+  - remove the hero memory;
+  - take at most five;
+  - card tap opens Memory Detail.
+- Compact letter section:
+  - use `nextHomeLetter(now)`;
+  - preserve locked/opened state label;
+  - tap opens Letter Detail.
+- Recap band: entire surface opens Recap.
+- Bottom tabs remain owned by `MainNavigationShell`.
 
 Rules:
 
 - Hero media must be visually dominant.
 - Keep copy short.
-- Home should always have a primary next action.
+- Home should always have a clear next action.
+- Video media in stage 1 must use `MemoryVideoPreview(showPlayIcon: false)` and must not initialize `MemoryVideoPlayer`.
+- Location statistics must not use legacy `JournalData.places`.
+- Fixed-height media surfaces must cap and ellipsize text without resizing the layout.
+- Components must be separated from screen-level data orchestration.
+
+Empty state:
+
+- When `featuredMemoryOrNull == null`, use `AppAssets.heroImage`.
+- Hide the recent-memory PageView.
+- Show `Tạo kỷ niệm đầu tiên`.
+- Route the CTA through `AppRouteNames.timelineAddMemory`.
+- Letter and Recap sections remain available.
+
+Motion and accessibility:
+
+- `HomeScreen` is stateful and owns one shared entrance `AnimationController`.
+- Entrance duration is 760ms with staggered intervals and the existing soft curve.
+- PageView cards may scale and translate slightly based on distance from the active page.
+- Read `MediaQuery.disableAnimations`.
+- When disabled animations are requested:
+  - set entrance progress directly to 1;
+  - do not apply PageView distance transforms;
+  - do not introduce a replacement looping animation.
+
+Stage 2, not yet implemented:
+
+- Daily-memory selector.
+- Hero parallax.
+- Count-up statistics.
+- Featured-memory priority in the recent carousel.
+- Muted hero-video autoplay with offstage and navigation lifecycle control.
 
 ### Timeline
 
@@ -481,7 +590,7 @@ Current product extension:
 
 ### Add/Edit Memory
 
-Purpose: create or update one curated memory without making the app feel like a generic gallery manager.
+Purpose: create or update one curated memory through a visual composer without making the app feel like a generic form or gallery manager.
 
 Route:
 
@@ -492,30 +601,47 @@ Route:
 
 Sections:
 
-- App bar with back action, title, and save action.
-- Main detail sheet, visually related to `MemoryDetail`:
-  - Title.
-  - Description.
-  - Time.
-  - Location.
-  - Private note.
-  - `Lời nhắn cho khoảnh khắc này` area with empty state, imported audio, and recorded voice states.
-- Tag selector:
-  - Existing system/custom tags as chips.
-  - Inline action to create a new tag.
-  - MVP should allow one primary tag.
-  - Chips should behave like flexbox row items: size to content, flow horizontally, and wrap to the next line.
-  - Chips must not stretch into equal full-width rows.
-  - The create-tag bottom sheet should own its text controller inside the sheet lifecycle so dismissing it cannot use a disposed controller.
+- Composer header with close, autosave state, and editable generated title.
+- Compact metadata chips for date, one primary tag, and optional location.
+- Date selection uses a fixed-size 42-cell month sheet with direct previous/next state updates; avoid the default date-picker month transition in this flow.
+- Empty-canvas prompt with three entry actions: media, story, voice.
+- One expanding story field. When migrating an existing memory, append legacy `note` to `story` once for editing.
+- `Lời nhắn cho khoảnh khắc này` supports imported audio and recorded voice, maximum 3 messages.
 - Media groups:
   - User can add groups dynamically.
   - MVP maximum is 3 groups per memory.
+  - Each group has an optional persisted `title`; UI falls back to `Đoạn x` for legacy/null values and allows direct editing.
   - Each group has an optional note at the top.
   - Each group can contain images and videos mixed together.
   - Each group preserves sort order.
-- Sticky save bar:
+- Persistent composer toolbar:
+  - Repeat media, story, and voice actions.
   - Primary CTA: `Lưu kỷ niệm`.
-  - Show loading state when saving or uploading.
+  - Disable save until story, voice, image, or video exists.
+  - Show submitting state while repository persistence is running.
+
+Title and draft rules:
+
+- Manual title override wins.
+- Otherwise use first story line, then location display name, then tag/date.
+- Date defaults to today and tag defaults to `Đời thường`.
+- Location alone is not meaningful content.
+- Persist `MemoryComposerDraft` separately from the journal data draft with debounce autosave.
+- Flush on close/back, offer resume/discard on reopen, and delete the draft only after successful memory save.
+
+Attachment boundary:
+
+- Presentation depends on `MemoryAttachmentService`, not picker plugin APIs.
+- Device implementation uses `image_picker`, `file_picker`, `record`, and `path_provider`.
+- Copy selected/recorded files into app-owned documents storage before putting their paths in immutable draft state.
+- Non-IO targets use a stable no-op adapter until product-specific browser storage is designed.
+- Use `video_player` behind reusable presentation components only for requested playback; Android minimum SDK is 24.
+- Use `video_thumbnail_gen` during import to create one app-owned first-frame JPEG per video. Persist its path as nullable `MemoryMedia.thumbnailUri`; legacy records without it may extract a thumbnail at runtime as a compatibility fallback.
+- Thumbnail rails must render static images and must not initialize one `VideoPlayerController` per visible tile.
+- Opening the media viewer must not mutate or discard the current composer draft.
+- Video selection uses a multi-file picker and accepts only the remaining slots within a hard 3-video-per-memory limit.
+- The attachment service reports import progress after selection. Presentation shows a non-dismissible modal loading surface before awaiting the picker result so native caching and app-storage copying cannot look frozen.
+- The controller re-applies the 3-video limit before mutating immutable draft state; UI/picker checks are not the only guard.
 
 Location UX:
 
@@ -527,11 +653,16 @@ Location UX:
   - find or pin a new location.
 - New location discovery supports:
   - Google Places Autocomplete suggestions;
-  - Place Details after suggestion selection;
-  - map drag to refine the selected coordinate;
+  - compact Place Details after suggestion selection;
+  - one lazily loaded photo, visible attribution, business status, and Google Maps link when available;
+  - a compact `Xem` / `Chọn vị trí` segmented map mode control with a conditional reset icon;
+  - direct map tap or marker drag-end without tying the location to camera movement;
+  - Nearby Search candidates shown as both markers and a list;
   - manual pin fallback without using Google search;
   - required user-confirmed display name.
 - If no Maps key is available, show a stable explanation and allow back/cancel. Do not crash or commit a partial location.
+- Search focus hides the contextual lower panel before keyboard animation and keeps the search/suggestion surface anchored at the top.
+- Closing the keyboard restores the lower panel with the previous selection intact.
 - Back/cancel returns no result and preserves the form's previous location selection.
 - Remove clears the form's temporary `locationId`/location draft; persistence changes only on memory save.
 
@@ -544,10 +675,14 @@ flowchart TD
   C -->|"Existing"| D["Select MemoryLocation"]
   C -->|"Google"| E["Autocomplete suggestions"]
   E --> F["Fetch Place Details"]
-  F --> G["Refine pin if needed"]
-  C -->|"Manual"| H["Pan map and pin coordinate"]
+  F --> G["Compact preview"]
+  C -->|"Map"| H["Enable selection mode"]
+  H --> L["Tap or drag marker"]
+  L --> M["Nearby Search candidates"]
+  M --> F
+  L --> N["Keep manual coordinate"]
   G --> I["Confirm display name"]
-  H --> I
+  N --> I
   D --> J["Return temporary selection"]
   I --> J
   J --> K["Save memory + location atomically"]
@@ -613,16 +748,23 @@ Media group UX:
   - Groups can be reordered relative to each other.
   - `sortOrder` must be persisted for both groups and items.
 - Empty group rules:
-  - Empty groups can exist during editing.
-  - Empty groups are not saved unless they contain a note.
-  - If a group contains only a note, it can be saved as a story break.
-  - User cannot create a fourth group in MVP.
+- Empty groups can exist during editing.
+- Empty groups are not saved unless they contain a note.
+- If a group contains only a note, it can be saved as a story break.
+- User cannot create a fourth group in MVP.
+- Current media-preview behavior:
+  - every video item renders its own static first-frame thumbnail plus a play affordance;
+  - tapping an image/video opens a full-screen viewer at that item;
+  - the viewer pages within the current group, supports image zoom, and exposes video play/pause without seeking;
+  - starting a video pauses any other active memory video to prevent overlapping audio.
+  - video count is global to the memory, not reset per group; at most 3 video items may exist across all groups;
+  - multiple selected videos are copied sequentially with visible `x/n` feedback, while files beyond the remaining slots are not copied;
 
 Validation:
 
-- Title is required.
-- Date/time is required.
-- At least one of description, note, voice message, image, or video should exist.
+- Title is generated when there is no explicit override.
+- Date defaults to today and remains required in the persisted model.
+- At least one of story, voice message, image, or video should exist.
 - Media group can be empty only while the user is editing; empty groups should not be saved.
 - New custom tag names should be trimmed and de-duplicated case-insensitively.
 - Imported voice message must have a readable local URI or uploaded remote URI before final save.
@@ -656,6 +798,11 @@ Rules:
 - Avoid long dense paragraphs.
 - Split long story into short blocks if over 600 characters.
 - Voice note should show duration even if playback is not implemented yet.
+- Image cover tap opens the full-screen viewer.
+- A video cover uses a real player and automatically plays exactly 3 completed runs unless the user pauses it.
+- After the third automatic run, the cover remains stopped. Subsequent manual Play starts from the beginning and stops after one run; automatic looping never resumes for that screen instance.
+- Cover and viewer video controls expose play/pause only. Do not expose a seek bar in this milestone.
+- Media-rail items open the viewer at the selected index; videos use their own persisted first-frame thumbnails.
 
 ### Map
 
@@ -677,6 +824,7 @@ Current implemented behavior:
 - Join those memories to `MemoryLocation` and group by internal `locationId`.
 - Render one marker per group using the location coordinates.
 - Marker tap opens `LocationMemoryListSheet` with the user-defined location name, optional address, and all visible memories in the group.
+- Present `LocationMemoryListSheet` through the root navigator. Its route, barrier, and safe-area content must render above `MainNavigationShell` and the persistent tab bar.
 - Memory row tap opens Memory Detail through the Map branch.
 - Memories without a resolvable location or valid coordinates do not render.
 - Empty projection shows an emotional empty state with a CTA to Time/Add Memory.
@@ -694,17 +842,18 @@ Projection consistency:
 
 Configuration:
 
-- Android injects `GOOGLE_MAPS_ANDROID_API_KEY` through a manifest placeholder. Use a Google Cloud key restricted to package `vn.hung.le.lovejournal` and the signing certificate SHA-1.
+- Android injects `GOOGLE_MAPS_ANDROID_API_KEY` through a manifest placeholder. During local REST testing the key must have Application restriction `None`; keep its API restrictions limited to `Maps SDK for Android` and `Places API (New)`.
 - iOS injects `GOOGLE_MAPS_IOS_API_KEY` through `Info.plist`/build settings. Use a Google Cloud key restricted to bundle id `vn.hung.le.lovejournal`.
-- Dart/Places calls temporarily read the platform key through a native method channel. For production, move Places calls behind a backend/proxy and keep the Places key server-side.
-- Android REST requests send `X-Android-Package` and `X-Android-Cert`; the certificate is the runtime SHA-1 encoded as hexadecimal without delimiters. iOS REST requests send `X-Ios-Bundle-Identifier`.
+- Places calls currently use `GooglePlacesApiDataSource`; the key is attached to HTTPS requests in Dart for this local-first milestone.
+- The platform-neutral `PlaceSearchDataSource` contract allows the REST client to be replaced by a backend implementation without changing application or presentation layers.
 - Enable `Places API (New)` and include it in API restrictions in addition to the relevant platform Maps SDK.
-- Places calls are made only by Location Picker. Map rendering uses the Maps SDK key but never calls Autocomplete.
+- Places calls are made only by Location Picker. Map tab rendering uses the Maps SDK key but never calls Autocomplete, Nearby Search, Place Details, or Place Photos.
+- Before production, move Places requests behind a backend/proxy and restore a separate Android package/SHA-1-restricted key for native Maps rendering.
 
-Current local blocker:
+Verification status:
 
-- Map and Location Picker can read the Android key from the configured local path, but Google Places Autocomplete still returns `403 PERMISSION_DENIED` for the current key/project setup.
-- The user has already tried uninstalling the app, `flutter clean`, `flutter pub get`, and rebuilding, so future debugging should focus on Google Cloud project/key/billing/restriction state or on moving Places requests behind a backend/proxy.
+- The old key remained source-dependently denied outside Cloud Shell, but the replacement key passes REST Autocomplete from Windows. The debug APK build passes with the replacement key injected into its manifest.
+- On-device Autocomplete, Nearby Search, Place Details, and Place Photos need a fresh verification after this interaction update. Production must not rely on a billing-country workaround that conflicts with the real billing address or Maps Platform territory terms.
 
 ### Letters
 
@@ -864,6 +1013,11 @@ Before giving the app:
 - Map has no add/search/edit place controls.
 - Map markers and counts match visible located memories after create, edit, remove-location, and soft-delete actions.
 - Missing Maps key states do not crash Map or Location Picker.
+- Composer and Memory Detail video tiles render the correct static first-frame thumbnail for every video in a segment.
+- Image/video taps open the viewer at the correct item in both editing and read-only flows.
+- Cover video stops after 3 completed automatic runs, then manual replay runs once without seeking.
+- Multi-video picker never persists more than the remaining slots under the 3-video-per-memory limit.
+- A loading overlay is visible while large/multiple selected videos are prepared and copied into app-owned storage.
 
 ## Implementation Recommendation
 

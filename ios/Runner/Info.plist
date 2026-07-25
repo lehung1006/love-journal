@@ -28,6 +28,12 @@
 	<string>$(GOOGLE_MAPS_IOS_API_KEY)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Love Journal dùng camera để lưu ảnh vào kỷ niệm của bạn.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Love Journal dùng micro để ghi lời nhắn cho kỷ niệm.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Love Journal cần truy cập thư viện để bạn chọn ảnh và video.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

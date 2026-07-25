@@ -1,20 +1,28 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/ui/modal_bottom_sheet.dart';
 import '../../application/providers/journal_providers.dart';
+import '../../application/providers/memory_attachment_providers.dart';
+import '../../application/state/memory_composer_controller.dart';
+import '../../application/state/memory_composer_state.dart';
 import '../../domain/entities/journal_entities.dart';
+import '../../domain/services/memory_attachment_service.dart';
 import '../components/journal_components.dart';
 import '../journal_formatters.dart';
 import '../journal_localizations.dart';
 
-class MemoryFormScreen extends StatefulWidget {
+class MemoryFormScreen extends ConsumerStatefulWidget {
   const MemoryFormScreen({
     required this.data,
     required this.onSubmit,
     required this.onCreateTag,
     required this.onPickLocation,
+    required this.onSaved,
     this.memory,
     super.key,
   });
@@ -27,28 +35,20 @@ class MemoryFormScreen extends StatefulWidget {
     MemoryLocationSelection? current,
   )
   onPickLocation;
+  final ValueChanged<Memory> onSaved;
 
   @override
-  State<MemoryFormScreen> createState() => _MemoryFormScreenState();
+  ConsumerState<MemoryFormScreen> createState() => _MemoryFormScreenState();
 }
 
-class _MemoryFormScreenState extends State<MemoryFormScreen> {
-  static const _maxVoiceMessages = 3;
-  static const _maxMediaGroups = 3;
-
-  final _formKey = GlobalKey<FormState>();
+class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _storyController;
-  late final TextEditingController _noteController;
-
+  late final FocusNode _storyFocusNode;
+  late final String _draftId;
   late List<MemoryTag> _tags;
-  late DateTime _selectedDate;
-  late String _selectedTagId;
-  late List<MemoryVoiceMessage> _voiceMessages;
-  late List<MemoryMediaGroup> _mediaGroups;
-  MemoryLocationSelection? _locationSelection;
-
-  bool _saving = false;
+  bool _resumePromptShown = false;
+  _VideoImportViewState? _videoImport;
 
   bool get _isEditing => widget.memory != null;
 
@@ -56,22 +56,41 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   void initState() {
     super.initState();
     final memory = widget.memory;
+    _draftId = memory == null ? 'new-memory' : 'edit-${memory.id}';
     _tags = [...widget.data.tags];
     _titleController = TextEditingController(text: memory?.title ?? '');
-    _storyController = TextEditingController(text: memory?.story ?? '');
-    _noteController = TextEditingController(text: memory?.note ?? '');
-    _selectedDate = memory?.date ?? DateTime.now();
-    _selectedTagId =
-        memory?.effectiveTagId ??
-        (_tags.isEmpty
-            ? MemoryTag.systemIdForCategory(MemoryCategory.daily)
-            : _tags.first.id);
-    _voiceMessages = [...?memory?.voiceMessages];
-    _mediaGroups = [...?memory?.mediaGroups];
-    final locationId = memory?.locationId;
-    if (locationId != null &&
-        widget.data.locationByIdOrNull(locationId) != null) {
-      _locationSelection = MemoryLocationSelection.existing(locationId);
+    _storyController = TextEditingController(text: _initialStory(memory));
+    _storyFocusNode = FocusNode();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final defaultTagId = memory?.effectiveTagId ?? _defaultTagId;
+      final baseDraft = memory == null
+          ? MemoryComposerDraft.empty(
+              now: DateTime.now(),
+              primaryTagId: defaultTagId,
+            )
+          : MemoryComposerDraft.fromMemory(memory);
+      await ref
+          .read(memoryComposerControllerProvider(_draftId).notifier)
+          .initialize(baseDraft);
+      if (!mounted) {
+        return;
+      }
+      final state = ref.read(memoryComposerControllerProvider(_draftId));
+      _syncTextFields(state.draft);
+      if (state.restorableDraft != null) {
+        _showResumeDraftSheet();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant MemoryFormScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    for (final tag in widget.data.tags) {
+      if (!_tags.any((item) => item.id == tag.id)) {
+        _tags.add(tag);
+      }
     }
   }
 
@@ -79,1792 +98,913 @@ class _MemoryFormScreenState extends State<MemoryFormScreen> {
   void dispose() {
     _titleController.dispose();
     _storyController.dispose();
-    _noteController.dispose();
+    _storyFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Scaffold(
-      body: AppScaffold(
-        safeBottom: false,
-        padding: EdgeInsets.zero,
-        child: Stack(
+    final provider = memoryComposerControllerProvider(_draftId);
+    final state = ref.watch(provider);
+    final draft = state.draft;
+    final tag = _tagForId(draft.primaryTagId);
+    final locationName = _locationName(draft.locationSelection);
+    final generatedTitle = resolveMemoryTitle(
+      draft: draft,
+      tagName: _tagLabel(tag),
+      locationName: locationName,
+    );
+    final isSubmitting = state.status == MemoryComposerStatus.submitting;
+    final videoImport = _videoImport;
+
+    return PopScope(
+      canPop: videoImport == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          unawaited(ref.read(provider.notifier).saveNow());
+        }
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        body: Stack(
           children: [
-            Positioned.fill(
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.screenX,
-                    AppSpacing.screenTop,
-                    AppSpacing.screenX,
-                    112,
+            AppScaffold(
+              safeBottom: false,
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xs,
+                      AppSpacing.xs,
+                      AppSpacing.xs,
+                      0,
+                    ),
+                    child: MemoryComposerTopBar(
+                      isEditing: _isEditing,
+                      status: state.status,
+                      onClose: _closeComposer,
+                      onEditTitle: () => _showTitleSheet(generatedTitle),
+                    ),
                   ),
-                  children: [
-                    _FormTopBar(
-                      title: _isEditing
-                          ? l10n.memoryFormEditTitle
-                          : l10n.memoryFormNewTitle,
-                      saving: _saving,
-                      onBack: () => Navigator.of(context).pop(),
-                      onSave: _submit,
-                    ),
-                    const SizedBox(height: AppSpacing.m),
-                    _MainInfoCard(
-                      titleController: _titleController,
-                      storyController: _storyController,
-                      locationName: _selectedLocationName,
-                      locationAddress: _selectedLocationAddress,
-                      noteController: _noteController,
-                      selectedDate: _selectedDate,
-                      onPickDate: _pickDate,
-                      onPickLocation: _pickLocation,
-                      onRemoveLocation: _locationSelection == null
-                          ? null
-                          : () => setState(() => _locationSelection = null),
-                      voiceMessages: _voiceMessages,
-                      onAddVoiceMessage:
-                          _voiceMessages.length >= _maxVoiceMessages
-                          ? null
-                          : _showVoiceSourceSheet,
-                      onRemoveVoiceMessage: _removeVoiceMessage,
-                    ),
-                    const SizedBox(height: AppSpacing.m),
-                    _TagSelector(
-                      tags: _tags,
-                      selectedTagId: _selectedTagId,
-                      onSelected: (tag) {
-                        setState(() => _selectedTagId = tag.id);
-                      },
-                      onCreateTag: _showCreateTagSheet,
-                    ),
-                    const SizedBox(height: AppSpacing.m),
-                    _MediaGroupsSection(
-                      groups: _mediaGroups,
-                      maxGroups: _maxMediaGroups,
-                      onAddGroup: _mediaGroups.length >= _maxMediaGroups
-                          ? null
-                          : _addMediaGroup,
-                      onUpdateGroupNote: _updateGroupNote,
-                      onAddMedia: _showMediaSourceSheet,
-                      onRemoveMedia: _removeMedia,
-                      onRemoveGroup: _removeMediaGroup,
-                      onMoveGroup: _moveMediaGroup,
-                    ),
-                  ],
-                ),
+                  Expanded(
+                    child: state.isInitialized
+                        ? ListView(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.screenX,
+                              AppSpacing.s,
+                              AppSpacing.screenX,
+                              AppSpacing.xxl,
+                            ),
+                            children: [
+                              MemoryComposerMetadata(
+                                dateLabel: formatDate(draft.date),
+                                tagLabel: _tagLabel(tag),
+                                locationLabel: locationName ?? 'Thêm địa điểm',
+                                onDateTap: _pickDate,
+                                onTagTap: _showTagSheet,
+                                onLocationTap: _pickLocation,
+                                onLocationClear: draft.locationSelection == null
+                                    ? null
+                                    : () => ref
+                                          .read(provider.notifier)
+                                          .setLocation(null),
+                              ),
+                              const SizedBox(height: AppSpacing.l),
+                              Text(
+                                generatedTitle,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.titleL.copyWith(
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                              if (!draft.hasMeaningfulContent)
+                                MemoryComposerEmptyPrompt(
+                                  onMedia: () => _showMediaSourceSheet(),
+                                  onStory: _focusStory,
+                                  onVoice: _showVoiceSourceSheet,
+                                )
+                              else
+                                const SizedBox(height: AppSpacing.xl),
+                              MemoryComposerStoryField(
+                                controller: _storyController,
+                                focusNode: _storyFocusNode,
+                                onChanged: ref.read(provider.notifier).setStory,
+                              ),
+                              if (draft.voiceMessages.isNotEmpty) ...[
+                                const SizedBox(height: AppSpacing.l),
+                                MemoryComposerVoiceStrip(
+                                  messages: draft.voiceMessages,
+                                  onRemove: ref
+                                      .read(provider.notifier)
+                                      .removeVoiceMessage,
+                                ),
+                              ],
+                              if (draft.mediaGroups.isNotEmpty) ...[
+                                const SizedBox(height: AppSpacing.xl),
+                                for (
+                                  var index = 0;
+                                  index < draft.mediaGroups.length;
+                                  index++
+                                )
+                                  MemoryComposerMediaGroupView(
+                                    key: ValueKey(draft.mediaGroups[index].id),
+                                    group: draft.mediaGroups[index],
+                                    index: index,
+                                    canMoveUp: index > 0,
+                                    canMoveDown:
+                                        index < draft.mediaGroups.length - 1,
+                                    onTitleChanged: (value) => ref
+                                        .read(provider.notifier)
+                                        .updateGroupTitle(
+                                          draft.mediaGroups[index].id,
+                                          value,
+                                        ),
+                                    onNoteChanged: (value) => ref
+                                        .read(provider.notifier)
+                                        .updateGroupNote(
+                                          draft.mediaGroups[index].id,
+                                          value,
+                                        ),
+                                    onAddMedia: () => _showMediaSourceSheet(
+                                      groupId: draft.mediaGroups[index].id,
+                                    ),
+                                    onOpenMedia: (mediaId) {
+                                      final media =
+                                          draft.mediaGroups[index].items;
+                                      final mediaIndex = media.indexWhere(
+                                        (item) => item.id == mediaId,
+                                      );
+                                      unawaited(
+                                        showMemoryMediaViewer(
+                                          context: context,
+                                          media: media,
+                                          initialIndex: mediaIndex,
+                                        ),
+                                      );
+                                    },
+                                    onRemoveMedia: (mediaId) => ref
+                                        .read(provider.notifier)
+                                        .removeMedia(
+                                          draft.mediaGroups[index].id,
+                                          mediaId,
+                                        ),
+                                    onRemoveGroup: () => ref
+                                        .read(provider.notifier)
+                                        .removeMediaGroup(
+                                          draft.mediaGroups[index].id,
+                                        ),
+                                    onMoveUp: () => ref
+                                        .read(provider.notifier)
+                                        .moveMediaGroup(
+                                          draft.mediaGroups[index].id,
+                                          -1,
+                                        ),
+                                    onMoveDown: () => ref
+                                        .read(provider.notifier)
+                                        .moveMediaGroup(
+                                          draft.mediaGroups[index].id,
+                                          1,
+                                        ),
+                                  ),
+                              ],
+                            ],
+                          )
+                        : const Center(child: CircularProgressIndicator()),
+                  ),
+                  MemoryComposerBottomBar(
+                    canSubmit: state.canSubmit,
+                    isSubmitting: isSubmitting,
+                    canAddGroup:
+                        draft.mediaGroups.length <
+                        MemoryComposerController.maxMediaGroups,
+                    canAddVoice:
+                        draft.voiceMessages.length <
+                        MemoryComposerController.maxVoiceMessages,
+                    onMedia: () => _showMediaSourceSheet(),
+                    onStory: _focusStory,
+                    onVoice: _showVoiceSourceSheet,
+                    onSubmit: () => _submit(generatedTitle),
+                  ),
+                ],
               ),
             ),
-            Positioned(
-              left: AppSpacing.screenX,
-              right: AppSpacing.screenX,
-              bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.m,
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0x00F7EEE8), Color(0xFFF7EEE8)],
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.m),
-                  child: PrimaryButton(
-                    label: _saving
-                        ? l10n.memoryFormSaving
-                        : l10n.memoryFormSave,
-                    icon: Icons.check_rounded,
-                    onPressed: _saving ? null : _submit,
-                  ),
+            if (videoImport != null)
+              Positioned.fill(
+                child: MemoryComposerMediaImportOverlay(
+                  completedFiles: videoImport.completedFiles,
+                  totalFiles: videoImport.totalFiles,
                 ),
               ),
-            ),
           ],
         ),
       ),
     );
+  }
+
+  String get _defaultTagId {
+    if (_tags.isNotEmpty) {
+      final dailyId = MemoryTag.systemIdForCategory(MemoryCategory.daily);
+      return _tags.any((tag) => tag.id == dailyId) ? dailyId : _tags.first.id;
+    }
+    return MemoryTag.systemIdForCategory(MemoryCategory.daily);
+  }
+
+  String _initialStory(Memory? memory) {
+    if (memory == null) {
+      return '';
+    }
+    final note = memory.note?.trim();
+    return [
+      memory.story.trim(),
+      if (note != null && note.isNotEmpty) note,
+    ].where((part) => part.isNotEmpty).join('\n\n');
+  }
+
+  MemoryTag? _tagForId(String id) {
+    for (final tag in _tags) {
+      if (tag.id == id) {
+        return tag;
+      }
+    }
+    return null;
+  }
+
+  String _tagLabel(MemoryTag? tag) {
+    if (tag == null) {
+      return 'Đời thường';
+    }
+    return memoryTagLabel(context.l10n, tag);
+  }
+
+  String? _locationName(MemoryLocationSelection? selection) {
+    if (selection == null) {
+      return null;
+    }
+    final draft = selection.draftLocation;
+    if (draft != null) {
+      return draft.displayName;
+    }
+    return widget.data
+        .locationByIdOrNull(selection.existingLocationId)
+        ?.displayName;
+  }
+
+  void _syncTextFields(MemoryComposerDraft draft) {
+    final title = draft.titleOverride ?? '';
+    if (_titleController.text != title) {
+      _titleController.text = title;
+    }
+    if (_storyController.text != draft.story) {
+      _storyController.text = draft.story;
+    }
+  }
+
+  void _focusStory() {
+    _storyFocusNode.requestFocus();
+  }
+
+  Future<void> _closeComposer() async {
+    await ref
+        .read(memoryComposerControllerProvider(_draftId).notifier)
+        .saveNow();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
+    final provider = memoryComposerControllerProvider(_draftId);
+    final current = ref.read(provider).draft.date;
+    final picked = await showUnfocusedModalBottomSheet<DateTime>(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: AppColors.rose,
-              onPrimary: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      builder: (context) => MemoryComposerDatePicker(
+        initialDate: current,
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100),
+        onSelected: (date) => Navigator.of(context).pop(date),
+        onCancel: () => Navigator.of(context).pop(),
+      ),
     );
-    if (picked == null) {
-      return;
+    if (picked != null && mounted) {
+      ref
+          .read(provider.notifier)
+          .setDate(
+            DateTime(
+              picked.year,
+              picked.month,
+              picked.day,
+              current.hour,
+              current.minute,
+            ),
+          );
     }
-    setState(() {
-      _selectedDate = DateTime(
-        picked.year,
-        picked.month,
-        picked.day,
-        _selectedDate.hour,
-        _selectedDate.minute,
-      );
-    });
   }
 
   Future<void> _pickLocation() async {
-    final selection = await widget.onPickLocation(_locationSelection);
+    final provider = memoryComposerControllerProvider(_draftId);
+    final current = ref.read(provider).draft.locationSelection;
+    final selected = await widget.onPickLocation(current);
+    if (!mounted || selected == null) {
+      return;
+    }
+    ref.read(provider.notifier).setLocation(selected);
+  }
+
+  Future<void> _showTagSheet() async {
+    final provider = memoryComposerControllerProvider(_draftId);
+    final selectedId = ref.read(provider).draft.primaryTagId;
+    final selection = await showUnfocusedModalBottomSheet<String>(
+      context: context,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenX,
+          AppSpacing.m,
+          AppSpacing.screenX,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ComposerSheetHandle(),
+            Text(
+              'Nhãn cho kỷ niệm',
+              style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
+            ),
+            const SizedBox(height: AppSpacing.m),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                for (final tag in _tags)
+                  ChoiceChip(
+                    label: Text(_tagLabel(tag)),
+                    selected: tag.id == selectedId,
+                    onSelected: (_) => Navigator.of(context).pop(tag.id),
+                  ),
+                ActionChip(
+                  avatar: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Nhãn mới'),
+                  onPressed: () => Navigator.of(context).pop('__create__'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
     if (!mounted || selection == null) {
       return;
     }
-    setState(() => _locationSelection = selection);
-  }
-
-  String? get _selectedLocationName {
-    final selection = _locationSelection;
-    if (selection == null) {
-      return null;
+    if (selection == '__create__') {
+      await _showCreateTagSheet();
+      return;
     }
-    final existing = widget.data.locationByIdOrNull(
-      selection.existingLocationId,
-    );
-    return existing?.displayName ?? selection.draftLocation?.displayName;
-  }
-
-  String? get _selectedLocationAddress {
-    final selection = _locationSelection;
-    if (selection == null) {
-      return null;
-    }
-    final existing = widget.data.locationByIdOrNull(
-      selection.existingLocationId,
-    );
-    return existing?.formattedAddress ??
-        selection.draftLocation?.formattedAddress;
+    ref.read(provider.notifier).setTag(selection);
   }
 
   Future<void> _showCreateTagSheet() async {
-    final created = await showUnfocusedModalBottomSheet<MemoryTag>(
+    final controller = TextEditingController();
+    final name = await showUnfocusedModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      builder: (context) {
-        return _CreateTagSheet(onCreateTag: widget.onCreateTag);
-      },
-    );
-    if (created == null || !mounted) {
-      return;
-    }
-    setState(() {
-      if (!_tags.any((tag) => tag.id == created.id)) {
-        _tags = [..._tags, created];
-      }
-      _selectedTagId = created.id;
-    });
-  }
-
-  void _showVoiceSourceSheet() {
-    final l10n = context.l10n;
-    showUnfocusedModalBottomSheet<void>(
-      context: context,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screenX,
-            AppSpacing.m,
-            AppSpacing.screenX,
-            AppSpacing.m,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _SheetHandle(),
-              Text(
-                l10n.memoryFormAddVoiceTitle,
-                style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                l10n.memoryFormAddVoiceHelper,
-                style: AppTextStyles.bodyM.copyWith(color: AppColors.muted),
-              ),
-              const SizedBox(height: AppSpacing.m),
-              _SourceOption(
-                icon: Icons.audio_file_rounded,
-                title: l10n.memoryFormPickFromDevice,
-                subtitle: l10n.memoryFormPickAudioSubtitle,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _addMockVoiceMessage(MemoryVoiceMessageSource.imported);
-                },
-              ),
-              const SizedBox(height: AppSpacing.s),
-              _SourceOption(
-                icon: Icons.mic_rounded,
-                title: l10n.memoryFormRecordNew,
-                subtitle: l10n.memoryFormRecordSubtitle,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _showRecorderSheet();
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showRecorderSheet() {
-    final l10n = context.l10n;
-    showUnfocusedModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screenX,
-            AppSpacing.m,
-            AppSpacing.screenX,
-            AppSpacing.m,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const _SheetHandle(),
-              Text(
-                l10n.memoryDetailMomentMessage,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
-              ),
-              const SizedBox(height: AppSpacing.m),
-              Container(
-                width: 118,
-                height: 118,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.rose.withValues(alpha: .14),
-                  border: Border.all(
-                    color: AppColors.rose.withValues(alpha: .3),
-                    width: 10,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.mic_rounded,
-                  color: AppColors.rose,
-                  size: 34,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.s),
-              Text(
-                '00:34',
-                style: AppTextStyles.displayL.copyWith(color: AppColors.ink),
-              ),
-              const SizedBox(height: AppSpacing.s),
-              const VoiceNotePlayer(duration: '0:34'),
-              const SizedBox(height: AppSpacing.m),
-              Row(
-                children: [
-                  Expanded(
-                    child: SecondaryButton(
-                      label: l10n.memoryFormCancelRecording,
-                      icon: Icons.close_rounded,
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.s),
-                  Expanded(
-                    child: SecondaryButton(
-                      label: l10n.memoryFormSaveVoice,
-                      icon: Icons.check_rounded,
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _addMockVoiceMessage(MemoryVoiceMessageSource.recorded);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _addMockVoiceMessage(MemoryVoiceMessageSource source) {
-    if (_voiceMessages.length >= _maxVoiceMessages) {
-      return;
-    }
-    final now = DateTime.now();
-    final number = _voiceMessages.length + 1;
-    setState(() {
-      _voiceMessages = [
-        ..._voiceMessages,
-        MemoryVoiceMessage(
-          id: 'voice-${now.microsecondsSinceEpoch}',
-          uri: 'mock://${source.name}/${now.microsecondsSinceEpoch}',
-          source: source,
-          fileName: source == MemoryVoiceMessageSource.imported
-              ? 'loi-nhan-$number.m4a'
-              : null,
-          title: source == MemoryVoiceMessageSource.imported
-              ? context.l10n.memoryFormImportedAudioTitle(number)
-              : context.l10n.memoryFormRecordedVoiceTitle(number),
-          durationSeconds: source == MemoryVoiceMessageSource.imported
-              ? 42
-              : 34,
-          waveform: const [.22, .58, .38, .78, .44, .68, .28, .74],
-          createdAt: now,
+      builder: (context) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.screenX,
+          AppSpacing.m,
+          AppSpacing.screenX,
+          MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xl,
         ),
-      ];
-    });
-  }
-
-  void _removeVoiceMessage(MemoryVoiceMessage message) {
-    setState(() {
-      _voiceMessages = [
-        for (final item in _voiceMessages)
-          if (item.id != message.id) item,
-      ];
-    });
-  }
-
-  void _addMediaGroup() {
-    if (_mediaGroups.length >= _maxMediaGroups) {
-      return;
-    }
-    final now = DateTime.now();
-    setState(() {
-      _mediaGroups = [
-        ..._mediaGroups,
-        MemoryMediaGroup(
-          id: 'media-group-${now.microsecondsSinceEpoch}',
-          items: const [],
-          sortOrder: _mediaGroups.length,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ComposerSheetHandle(),
+            Text(
+              'Tạo nhãn mới',
+              style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
+            ),
+            const SizedBox(height: AppSpacing.m),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(hintText: 'Ví dụ: Hẹn hò'),
+              onSubmitted: (value) => Navigator.of(context).pop(value),
+            ),
+            const SizedBox(height: AppSpacing.m),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).pop(controller.text),
+                child: const Text('Tạo nhãn'),
+              ),
+            ),
+          ],
         ),
-      ];
-    });
-  }
-
-  void _updateGroupNote(MemoryMediaGroup group, String value) {
-    setState(() {
-      _mediaGroups = [
-        for (final item in _mediaGroups)
-          if (item.id == group.id)
-            MemoryMediaGroup(
-              id: item.id,
-              note: value.trim().isEmpty ? null : value,
-              items: item.items,
-              sortOrder: item.sortOrder,
-            )
-          else
-            item,
-      ];
-    });
-  }
-
-  void _showMediaSourceSheet(MemoryMediaGroup group) {
-    final l10n = context.l10n;
-    showUnfocusedModalBottomSheet<void>(
-      context: context,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screenX,
-            AppSpacing.m,
-            AppSpacing.screenX,
-            AppSpacing.m,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _SheetHandle(),
-              Text(
-                l10n.memoryFormAddMediaTitle,
-                style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
-              ),
-              const SizedBox(height: AppSpacing.m),
-              _SourceOption(
-                icon: Icons.photo_library_rounded,
-                title: l10n.memoryFormAddPhoto,
-                subtitle: l10n.memoryFormAddPhotoSubtitle,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _addMockMedia(group, MemoryMediaType.image);
-                },
-              ),
-              const SizedBox(height: AppSpacing.s),
-              _SourceOption(
-                icon: Icons.video_library_rounded,
-                title: l10n.memoryFormAddVideo,
-                subtitle: l10n.memoryFormAddVideoSubtitle,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _addMockMedia(group, MemoryMediaType.video);
-                },
-              ),
-              const SizedBox(height: AppSpacing.s),
-              _SourceOption(
-                icon: Icons.photo_camera_rounded,
-                title: l10n.memoryFormCamera,
-                subtitle: l10n.memoryFormCameraSubtitle,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _addMockMedia(group, MemoryMediaType.image);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _addMockMedia(MemoryMediaGroup group, MemoryMediaType type) {
-    final now = DateTime.now();
-    final media = MemoryMedia(
-      id: 'media-${now.microsecondsSinceEpoch}',
-      type: type,
-      uri: AppAssets.heroImage,
-      alt: type == MemoryMediaType.video
-          ? context.l10n.memoryFormVideoMockAlt
-          : context.l10n.memoryFormImageMockAlt,
-    );
-
-    setState(() {
-      _mediaGroups = [
-        for (final item in _mediaGroups)
-          if (item.id == group.id)
-            item.copyWith(items: [...item.items, media])
-          else
-            item,
-      ];
-    });
-  }
-
-  void _removeMedia(MemoryMediaGroup group, MemoryMedia media) {
-    setState(() {
-      _mediaGroups = [
-        for (final item in _mediaGroups)
-          if (item.id == group.id)
-            item.copyWith(
-              items: [
-                for (final candidate in item.items)
-                  if (candidate.id != media.id) candidate,
-              ],
-            )
-          else
-            item,
-      ];
-    });
-  }
-
-  void _removeMediaGroup(MemoryMediaGroup group) {
-    setState(() {
-      _mediaGroups = [
-        for (final item in _mediaGroups)
-          if (item.id != group.id) item,
-      ];
-      _mediaGroups = _reorderGroups(_mediaGroups);
-    });
-  }
-
-  void _moveMediaGroup(MemoryMediaGroup group, int offset) {
-    final currentIndex = _mediaGroups.indexWhere((item) => item.id == group.id);
-    if (currentIndex == -1) {
-      return;
-    }
-    final nextIndex = currentIndex + offset;
-    if (nextIndex < 0 || nextIndex >= _mediaGroups.length) {
-      return;
-    }
-    final updated = [..._mediaGroups];
-    final item = updated.removeAt(currentIndex);
-    updated.insert(nextIndex, item);
-    setState(() {
-      _mediaGroups = _reorderGroups(updated);
-    });
-  }
-
-  List<MemoryMediaGroup> _reorderGroups(List<MemoryMediaGroup> groups) {
-    return [
-      for (final entry in groups.asMap().entries)
-        entry.value.copyWith(sortOrder: entry.key),
-    ];
-  }
-
-  Future<void> _submit() async {
-    if (_saving) {
-      return;
-    }
-    final formValid = _formKey.currentState?.validate() ?? false;
-    if (!formValid) {
-      return;
-    }
-
-    final normalizedGroups = _reorderGroups(
-      _mediaGroups
-          .where(
-            (group) =>
-                group.items.isNotEmpty ||
-                (group.note?.trim().isNotEmpty ?? false),
-          )
-          .toList(growable: false),
-    );
-
-    final hasBody =
-        _storyController.text.trim().isNotEmpty ||
-        _noteController.text.trim().isNotEmpty ||
-        _voiceMessages.isNotEmpty ||
-        normalizedGroups.any((group) => group.items.isNotEmpty);
-    if (!hasBody) {
-      _showMessage(context.l10n.memoryFormBodyRequired);
-      return;
-    }
-
-    setState(() => _saving = true);
-    try {
-      final draft = MemoryDraft(
-        title: _titleController.text,
-        story: _storyController.text,
-        date: _selectedDate,
-        primaryTagId: _selectedTagId,
-        locationId: _locationSelection?.existingLocationId,
-        newLocation: _locationSelection?.draftLocation,
-        note: _noteController.text,
-        voiceMessages: List.unmodifiable(_voiceMessages),
-        mediaGroups: List.unmodifiable(normalizedGroups),
-        category: widget.memory?.category ?? MemoryCategory.daily,
-        phase: widget.memory?.phase ?? RelationshipPhase.year3,
-      );
-      await widget.onSubmit(draft);
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _saving = false);
-      }
-    }
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
-  }
-}
-
-class _CreateTagSheet extends StatefulWidget {
-  const _CreateTagSheet({required this.onCreateTag});
-
-  final Future<MemoryTag> Function(String name) onCreateTag;
-
-  @override
-  State<_CreateTagSheet> createState() => _CreateTagSheetState();
-}
-
-class _CreateTagSheetState extends State<_CreateTagSheet> {
-  final _controller = TextEditingController();
-  bool _saving = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Padding(
-      padding: EdgeInsets.only(
-        left: AppSpacing.screenX,
-        right: AppSpacing.screenX,
-        top: AppSpacing.m,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + AppSpacing.m,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _SheetHandle(),
-          Text(
-            l10n.memoryFormCreateTagTitle,
-            style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
-          ),
-          const SizedBox(height: AppSpacing.s),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(hintText: l10n.memoryFormCreateTagHint),
-            onSubmitted: (_) => _save(),
-          ),
-          const SizedBox(height: AppSpacing.m),
-          PrimaryButton(
-            label: l10n.memoryFormSaveTag,
-            icon: _saving ? Icons.hourglass_top_rounded : Icons.sell_rounded,
-            onPressed: _saving ? null : _save,
-          ),
-        ],
       ),
     );
-  }
-
-  Future<void> _save() async {
-    final name = _controller.text.trim();
-    if (name.isEmpty || _saving) {
+    controller.dispose();
+    if (!mounted || name == null || name.trim().isEmpty) {
       return;
     }
-    setState(() => _saving = true);
     try {
       final tag = await widget.onCreateTag(name);
-      if (mounted) {
-        Navigator.of(context).pop(tag);
+      if (!mounted) {
+        return;
       }
-    } finally {
+      if (!_tags.any((item) => item.id == tag.id)) {
+        setState(() => _tags = [..._tags, tag]);
+      }
+      ref
+          .read(memoryComposerControllerProvider(_draftId).notifier)
+          .setTag(tag.id);
+    } catch (error) {
       if (mounted) {
-        setState(() => _saving = false);
+        _showError('Chưa thể tạo nhãn. Vui lòng thử lại.');
       }
     }
   }
-}
 
-class _FormTopBar extends StatelessWidget {
-  const _FormTopBar({
-    required this.title,
-    required this.saving,
-    required this.onBack,
-    required this.onSave,
-  });
-
-  final String title;
-  final bool saving;
-  final VoidCallback onBack;
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        AppCircleButton(
-          icon: Icons.arrow_back_rounded,
-          tooltip: context.l10n.backTooltip,
-          onPressed: onBack,
+  Future<void> _showTitleSheet(String generatedTitle) async {
+    _titleController.text =
+        ref
+            .read(memoryComposerControllerProvider(_draftId))
+            .draft
+            .titleOverride ??
+        '';
+    final result = await showUnfocusedModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.screenX,
+          AppSpacing.m,
+          AppSpacing.screenX,
+          MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xl,
         ),
-        const SizedBox(width: AppSpacing.s),
-        Expanded(
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.s),
-        AppCircleButton(
-          icon: saving ? Icons.hourglass_top_rounded : Icons.check_rounded,
-          tooltip: context.l10n.saveTooltip,
-          isActive: true,
-          onPressed: saving ? null : onSave,
-        ),
-      ],
-    );
-  }
-}
-
-class _MainInfoCard extends StatelessWidget {
-  const _MainInfoCard({
-    required this.titleController,
-    required this.storyController,
-    required this.locationName,
-    required this.locationAddress,
-    required this.noteController,
-    required this.selectedDate,
-    required this.onPickDate,
-    required this.onPickLocation,
-    required this.onRemoveLocation,
-    required this.voiceMessages,
-    required this.onAddVoiceMessage,
-    required this.onRemoveVoiceMessage,
-  });
-
-  final TextEditingController titleController;
-  final TextEditingController storyController;
-  final String? locationName;
-  final String? locationAddress;
-  final TextEditingController noteController;
-  final DateTime selectedDate;
-  final VoidCallback onPickDate;
-  final VoidCallback onPickLocation;
-  final VoidCallback? onRemoveLocation;
-  final List<MemoryVoiceMessage> voiceMessages;
-  final VoidCallback? onAddVoiceMessage;
-  final ValueChanged<MemoryVoiceMessage> onRemoveVoiceMessage;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return _SurfaceCard(
-      floating: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _LabeledTextField(
-            label: l10n.memoryFormTitleLabel,
-            hint: l10n.memoryFormTitleHint,
-            controller: titleController,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return l10n.memoryFormTitleRequired;
-              }
-              return null;
-            },
-          ),
-          _LabeledTextField(
-            label: l10n.memoryFormDescriptionLabel,
-            hint: l10n.memoryFormDescriptionHint,
-            controller: storyController,
-            maxLines: 3,
-          ),
-          _FieldButton(
-            label: l10n.memoryFormDateLabel,
-            value: formatDate(selectedDate),
-            icon: Icons.calendar_month_rounded,
-            onTap: onPickDate,
-          ),
-          _LocationField(
-            label: l10n.memoryFormLocationLabel,
-            name: locationName,
-            address: locationAddress ?? l10n.memoryFormLocationAddressFallback,
-            onPick: onPickLocation,
-            onRemove: onRemoveLocation,
-          ),
-          _LabeledTextField(
-            label: l10n.memoryFormNoteLabel,
-            hint: l10n.memoryFormNoteHint,
-            controller: noteController,
-            maxLines: 2,
-            isLast: false,
-          ),
-          _VoiceMessageSection(
-            messages: voiceMessages,
-            onAdd: onAddVoiceMessage,
-            onRemove: onRemoveVoiceMessage,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VoiceMessageSection extends StatelessWidget {
-  const _VoiceMessageSection({
-    required this.messages,
-    required this.onAdd,
-    required this.onRemove,
-  });
-
-  final List<MemoryVoiceMessage> messages;
-  final VoidCallback? onAdd;
-  final ValueChanged<MemoryVoiceMessage> onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return _FieldBlock(
-      label: l10n.memoryDetailMomentMessage,
-      isLast: true,
-      child: Column(
-        children: [
-          if (messages.isEmpty)
-            _EmptyInlinePanel(
-              title: l10n.memoryFormNoVoiceTitle,
-              body: l10n.memoryFormNoVoiceBody,
-              primaryLabel: l10n.memoryFormAddVoiceCta,
-              icon: Icons.mic_rounded,
-              onPressed: onAdd,
-            )
-          else ...[
-            for (final message in messages) ...[
-              _VoiceMessageTile(
-                message: message,
-                onRemove: () => onRemove(message),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ComposerSheetHandle(),
+            Text(
+              'Tên kỷ niệm',
+              style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Để trống để dùng tên gợi ý: $generatedTitle',
+              style: AppTextStyles.bodyM.copyWith(color: AppColors.muted),
+            ),
+            const SizedBox(height: AppSpacing.m),
+            TextField(
+              controller: _titleController,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(hintText: 'Tên bạn muốn nhớ'),
+              onSubmitted: (value) => Navigator.of(context).pop(value),
+            ),
+            const SizedBox(height: AppSpacing.m),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () =>
+                    Navigator.of(context).pop(_titleController.text),
+                child: const Text('Xong'),
               ),
-              if (message != messages.last)
-                const SizedBox(height: AppSpacing.xs),
-            ],
-            const SizedBox(height: AppSpacing.s),
-            SecondaryButton(
-              label: onAdd == null
-                  ? l10n.memoryFormVoiceLimitReached
-                  : l10n.memoryFormAddVoiceCta,
-              icon: Icons.add_rounded,
-              onPressed: onAdd,
             ),
           ],
-        ],
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      ref
+          .read(memoryComposerControllerProvider(_draftId).notifier)
+          .setTitle(result);
+    }
+  }
+
+  Future<void> _showMediaSourceSheet({String? groupId}) async {
+    if (_videoImport != null) {
+      return;
+    }
+    final currentDraft = ref
+        .read(memoryComposerControllerProvider(_draftId))
+        .draft;
+    final remainingVideos =
+        MemoryComposerController.maxVideos - currentDraft.videoCount;
+    final source = await showUnfocusedModalBottomSheet<_MediaSource>(
+      context: context,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenX,
+          AppSpacing.m,
+          AppSpacing.screenX,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ComposerSheetHandle(),
+            Text(
+              'Thêm vào kỷ niệm',
+              style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
+            ),
+            const SizedBox(height: AppSpacing.m),
+            ComposerSourceOption(
+              icon: Icons.photo_library_outlined,
+              title: 'Chọn ảnh',
+              subtitle: 'Mở thư viện ảnh trên thiết bị',
+              onTap: () => Navigator.of(context).pop(_MediaSource.images),
+            ),
+            const SizedBox(height: AppSpacing.s),
+            ComposerSourceOption(
+              icon: Icons.video_library_outlined,
+              title: remainingVideos > 0 ? 'Chọn video' : 'Đã đủ 3 video',
+              subtitle: remainingVideos > 0
+                  ? 'Có thể chọn cùng lúc · còn $remainingVideos/3 video'
+                  : 'Mỗi kỷ niệm có tối đa 3 video',
+              onTap: remainingVideos > 0
+                  ? () => Navigator.of(context).pop(_MediaSource.video)
+                  : null,
+            ),
+            const SizedBox(height: AppSpacing.s),
+            ComposerSourceOption(
+              icon: Icons.photo_camera_outlined,
+              title: 'Chụp ảnh',
+              subtitle: 'Mở camera và lưu khoảnh khắc mới',
+              onTap: () => Navigator.of(context).pop(_MediaSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || source == null) {
+      return;
+    }
+    Object? importError;
+    MemoryMediaImportResult? videoResult;
+    var media = const <MemoryMedia>[];
+    try {
+      final service = ref.read(memoryAttachmentServiceProvider);
+      switch (source) {
+        case _MediaSource.images:
+          media = await service.pickImages();
+        case _MediaSource.video:
+          final latestDraft = ref
+              .read(memoryComposerControllerProvider(_draftId))
+              .draft;
+          final availableSlots =
+              MemoryComposerController.maxVideos - latestDraft.videoCount;
+          if (availableSlots <= 0) {
+            break;
+          }
+          _updateVideoImportProgress(
+            const MemoryAttachmentImportProgress(
+              completedFiles: 0,
+              totalFiles: 0,
+            ),
+          );
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted) {
+            return;
+          }
+          videoResult = await service.pickVideos(
+            maxCount: availableSlots,
+            onProgress: _updateVideoImportProgress,
+          );
+          media = videoResult.media;
+        case _MediaSource.camera:
+          final item = await service.takePhoto();
+          media = item == null ? const [] : [item];
+      }
+    } catch (error) {
+      importError = error;
+    } finally {
+      if (mounted && _videoImport != null) {
+        setState(() => _videoImport = null);
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    if (importError != null) {
+      _showError('Chưa thể mở media trên thiết bị. Vui lòng thử lại.');
+      return;
+    }
+    if (media.isEmpty) {
+      return;
+    }
+    final controller = ref.read(
+      memoryComposerControllerProvider(_draftId).notifier,
+    );
+    if (groupId == null) {
+      controller.addMediaGroup(media);
+    } else {
+      controller.addMedia(groupId, media);
+    }
+    if (videoResult?.wasLimited == true) {
+      _showError(
+        'Mỗi kỷ niệm chỉ có tối đa 3 video. '
+        '${videoResult!.skippedByLimit} video vượt giới hạn đã được bỏ qua.',
+      );
+    }
+  }
+
+  void _updateVideoImportProgress(MemoryAttachmentImportProgress progress) {
+    if (!mounted) {
+      return;
+    }
+    setState(
+      () => _videoImport = _VideoImportViewState(
+        completedFiles: progress.completedFiles,
+        totalFiles: progress.totalFiles,
       ),
     );
   }
-}
 
-class _VoiceMessageTile extends StatelessWidget {
-  const _VoiceMessageTile({required this.message, required this.onRemove});
-
-  final MemoryVoiceMessage message;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final source = message.source == MemoryVoiceMessageSource.recorded
-        ? l10n.memoryFormRecordedSource
-        : l10n.memoryFormImportedSource;
-    return Container(
-      constraints: const BoxConstraints(minHeight: 58),
-      padding: const EdgeInsets.all(AppSpacing.xs),
-      decoration: BoxDecoration(
-        color: AppColors.paper,
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: AppColors.rose,
-              shape: BoxShape.circle,
+  Future<void> _showVoiceSourceSheet() async {
+    final source =
+        await showUnfocusedModalBottomSheet<MemoryVoiceMessageSource>(
+          context: context,
+          builder: (context) => Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenX,
+              AppSpacing.m,
+              AppSpacing.screenX,
+              AppSpacing.xl,
             ),
-            child: const Icon(Icons.play_arrow_rounded, color: Colors.white),
-          ),
-          const SizedBox(width: AppSpacing.s),
-          Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const ComposerSheetHandle(),
                 Text(
-                  message.title ??
-                      message.fileName ??
-                      l10n.memoryFormVoiceFallbackTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyS.copyWith(
-                    color: AppColors.ink,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  'Lời nhắn cho khoảnh khắc này',
+                  style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
                 ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  l10n.memoryFormVoiceSourceAndDuration(
-                    source,
-                    _formatDuration(message.durationSeconds),
-                  ),
-                  style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
+                const SizedBox(height: AppSpacing.m),
+                ComposerSourceOption(
+                  icon: Icons.audio_file_outlined,
+                  title: 'Chọn file có sẵn',
+                  subtitle: 'Dùng một đoạn âm thanh trên thiết bị',
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pop(MemoryVoiceMessageSource.imported),
+                ),
+                const SizedBox(height: AppSpacing.s),
+                ComposerSourceOption(
+                  icon: Icons.mic_rounded,
+                  title: 'Ghi âm ngay',
+                  subtitle: 'Mở giao diện ghi âm',
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pop(MemoryVoiceMessageSource.recorded),
                 ),
               ],
             ),
           ),
-          IconButton(
-            tooltip: l10n.memoryFormDeleteVoiceTooltip,
-            onPressed: onRemove,
-            icon: const Icon(
-              Icons.delete_outline_rounded,
-              color: AppColors.danger,
-            ),
-          ),
-        ],
-      ),
-    );
+        );
+    if (!mounted || source == null) {
+      return;
+    }
+    if (source == MemoryVoiceMessageSource.recorded) {
+      await _showRecorderSheet();
+    } else {
+      await _pickAudioFiles();
+    }
   }
 
-  String _formatDuration(int? seconds) {
-    final value = seconds ?? 0;
-    final minutes = value ~/ 60;
-    final remaining = (value % 60).toString().padLeft(2, '0');
-    return '$minutes:$remaining';
-  }
-}
-
-class _TagSelector extends StatelessWidget {
-  const _TagSelector({
-    required this.tags,
-    required this.selectedTagId,
-    required this.onSelected,
-    required this.onCreateTag,
-  });
-
-  final List<MemoryTag> tags;
-  final String selectedTagId;
-  final ValueChanged<MemoryTag> onSelected;
-  final VoidCallback onCreateTag;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return _SurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionLabel(l10n.memoryFormTagSection),
-          const SizedBox(height: AppSpacing.s),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Wrap(
-                alignment: WrapAlignment.start,
-                runAlignment: WrapAlignment.start,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  for (final tag in tags)
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: constraints.maxWidth,
-                      ),
-                      child: AppFilterChip(
-                        label: memoryTagLabel(l10n, tag),
-                        selected: selectedTagId == tag.id,
-                        onTap: () => onSelected(tag),
-                      ),
-                    ),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-                    child: AppFilterChip(
-                      label: l10n.memoryFormCreateTagChip,
-                      selected: false,
-                      onTap: onCreateTag,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MediaGroupsSection extends StatelessWidget {
-  const _MediaGroupsSection({
-    required this.groups,
-    required this.maxGroups,
-    required this.onAddGroup,
-    required this.onUpdateGroupNote,
-    required this.onAddMedia,
-    required this.onRemoveMedia,
-    required this.onRemoveGroup,
-    required this.onMoveGroup,
-  });
-
-  final List<MemoryMediaGroup> groups;
-  final int maxGroups;
-  final VoidCallback? onAddGroup;
-  final void Function(MemoryMediaGroup group, String value) onUpdateGroupNote;
-  final ValueChanged<MemoryMediaGroup> onAddMedia;
-  final void Function(MemoryMediaGroup group, MemoryMedia media) onRemoveMedia;
-  final ValueChanged<MemoryMediaGroup> onRemoveGroup;
-  final void Function(MemoryMediaGroup group, int offset) onMoveGroup;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return _SurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: _SectionLabel(l10n.memoryFormMediaGroupsSection)),
-              _LimitPill(l10n.memoryFormGroupLimit(groups.length, maxGroups)),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            l10n.memoryFormMediaGroupsHelper,
-            style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
-          ),
-          const SizedBox(height: AppSpacing.s),
-          if (groups.isEmpty)
-            _EmptyInlinePanel(
-              title: l10n.memoryFormNoMediaGroupTitle,
-              body: l10n.memoryFormNoMediaGroupBody,
-              primaryLabel: l10n.memoryFormAddMediaGroup,
-              icon: Icons.perm_media_rounded,
-              onPressed: onAddGroup,
-            )
-          else ...[
-            for (final entry in groups.asMap().entries) ...[
-              _MediaGroupCard(
-                group: entry.value,
-                index: entry.key,
-                total: groups.length,
-                maxGroups: maxGroups,
-                onNoteChanged: (value) => onUpdateGroupNote(entry.value, value),
-                onAddMedia: () => onAddMedia(entry.value),
-                onRemoveMedia: (media) => onRemoveMedia(entry.value, media),
-                onRemoveGroup: () => onRemoveGroup(entry.value),
-                onMoveUp: entry.key == 0
-                    ? null
-                    : () => onMoveGroup(entry.value, -1),
-                onMoveDown: entry.key == groups.length - 1
-                    ? null
-                    : () => onMoveGroup(entry.value, 1),
+  Future<void> _showRecorderSheet() async {
+    final service = ref.read(memoryAttachmentServiceProvider);
+    try {
+      if (!await service.startRecording()) {
+        if (mounted) {
+          _showError('Ứng dụng cần quyền micro để ghi lời nhắn.');
+        }
+        return;
+      }
+    } catch (error) {
+      if (mounted) {
+        _showError('Chưa thể bắt đầu ghi âm. Vui lòng thử lại.');
+      }
+      return;
+    }
+    if (!mounted) {
+      await service.cancelRecording();
+      return;
+    }
+    final confirmed = await showUnfocusedModalBottomSheet<bool>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenX,
+          AppSpacing.m,
+          AppSpacing.screenX,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ComposerSheetHandle(),
+            Container(
+              width: 78,
+              height: 78,
+              decoration: const BoxDecoration(
+                color: AppColors.rose,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: AppSpacing.s),
-            ],
-            _AddGroupPanel(
-              groups: groups.length,
-              maxGroups: maxGroups,
-              onTap: onAddGroup,
+              child: const Icon(
+                Icons.mic_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.m),
+            Text(
+              'Đang ghi lời nhắn',
+              style: AppTextStyles.titleM.copyWith(color: AppColors.ink),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Chạm hoàn tất khi bạn đã nói xong.',
+              style: AppTextStyles.bodyM.copyWith(color: AppColors.muted),
+            ),
+            const SizedBox(height: AppSpacing.l),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Hủy'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    icon: const Icon(Icons.stop_rounded),
+                    label: const Text('Hoàn tất'),
+                  ),
+                ),
+              ],
             ),
           ],
-        ],
+        ),
       ),
     );
+    if (!mounted) {
+      await service.cancelRecording();
+      return;
+    }
+    try {
+      if (confirmed == true) {
+        final message = await service.stopRecording();
+        if (message != null && mounted) {
+          ref
+              .read(memoryComposerControllerProvider(_draftId).notifier)
+              .addVoiceMessage(message);
+        }
+      } else {
+        await service.cancelRecording();
+      }
+    } catch (error) {
+      await service.cancelRecording();
+      if (mounted) {
+        _showError('Chưa thể lưu đoạn ghi âm. Vui lòng thử lại.');
+      }
+    }
   }
-}
 
-class _MediaGroupCard extends StatelessWidget {
-  const _MediaGroupCard({
-    required this.group,
-    required this.index,
-    required this.total,
-    required this.maxGroups,
-    required this.onNoteChanged,
-    required this.onAddMedia,
-    required this.onRemoveMedia,
-    required this.onRemoveGroup,
-    required this.onMoveUp,
-    required this.onMoveDown,
-  });
-
-  final MemoryMediaGroup group;
-  final int index;
-  final int total;
-  final int maxGroups;
-  final ValueChanged<String> onNoteChanged;
-  final VoidCallback onAddMedia;
-  final ValueChanged<MemoryMedia> onRemoveMedia;
-  final VoidCallback onRemoveGroup;
-  final VoidCallback? onMoveUp;
-  final VoidCallback? onMoveDown;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.s),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .78),
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.drag_indicator_rounded,
-                color: AppColors.mutedLight,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.memoryFormMediaGroupTitle(index + 1, maxGroups),
-                      style: AppTextStyles.bodyS.copyWith(
-                        color: AppColors.roseDark,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      l10n.memoryFormMediaGroupHelper,
-                      style: AppTextStyles.bodyS.copyWith(
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: const Icon(
-                  Icons.more_horiz_rounded,
-                  color: AppColors.roseDark,
-                ),
-                onSelected: (value) {
-                  switch (value) {
-                    case 'add':
-                      onAddMedia();
-                    case 'up':
-                      onMoveUp?.call();
-                    case 'down':
-                      onMoveDown?.call();
-                    case 'delete':
-                      onRemoveGroup();
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'add',
-                    child: Text(l10n.memoryFormAddMediaTitle),
-                  ),
-                  PopupMenuItem(
-                    value: 'up',
-                    enabled: onMoveUp != null,
-                    child: Text(l10n.memoryFormMoveUp),
-                  ),
-                  PopupMenuItem(
-                    value: 'down',
-                    enabled: onMoveDown != null,
-                    child: Text(l10n.memoryFormMoveDown),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text(l10n.memoryFormDeleteGroup),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s),
-          TextFormField(
-            initialValue: group.note,
-            maxLines: 2,
-            onChanged: onNoteChanged,
-            decoration: InputDecoration(hintText: l10n.memoryFormGroupNoteHint),
-          ),
-          const SizedBox(height: AppSpacing.s),
-          GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: AppSpacing.xs,
-            mainAxisSpacing: AppSpacing.xs,
-            children: [
-              for (final media in group.items)
-                _MediaDraftTile(
-                  media: media,
-                  onRemove: () => onRemoveMedia(media),
-                ),
-              _AddMediaTile(onTap: onAddMedia),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.memoryFormItemCount(group.items.length),
-                  style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
-                ),
-              ),
-              Text(
-                total > 1
-                    ? l10n.memoryFormGroupsReorderHint
-                    : l10n.memoryFormAddGroupToContinue,
-                style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  Future<void> _pickAudioFiles() async {
+    try {
+      final messages = await ref
+          .read(memoryAttachmentServiceProvider)
+          .pickAudioFiles();
+      if (!mounted) {
+        return;
+      }
+      final controller = ref.read(
+        memoryComposerControllerProvider(_draftId).notifier,
+      );
+      for (final message in messages) {
+        controller.addVoiceMessage(message);
+      }
+    } catch (error) {
+      if (mounted) {
+        _showError('Chưa thể mở file âm thanh. Vui lòng thử lại.');
+      }
+    }
   }
-}
 
-class _MediaDraftTile extends StatelessWidget {
-  const _MediaDraftTile({required this.media, required this.onRemove});
-
-  final MemoryMedia media;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.s),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          AssetCoverImage(imagePath: media.uri),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.night.withValues(alpha: .02),
-                  AppColors.night.withValues(alpha: .42),
-                ],
-              ),
+  Future<void> _showResumeDraftSheet() async {
+    if (_resumePromptShown || !mounted) {
+      return;
+    }
+    _resumePromptShown = true;
+    final shouldResume = await showUnfocusedModalBottomSheet<bool>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenX,
+          AppSpacing.m,
+          AppSpacing.screenX,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ComposerSheetHandle(),
+            Text(
+              'Tiếp tục bản nháp?',
+              style: AppTextStyles.titleL.copyWith(color: AppColors.ink),
             ),
-          ),
-          if (media.type == MemoryMediaType.video)
-            const Center(
-              child: Icon(
-                Icons.play_circle_fill_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Kỷ niệm bạn đang viết lần trước vẫn còn ở đây.',
+              style: AppTextStyles.bodyM.copyWith(color: AppColors.muted),
             ),
-          Positioned(
-            right: 4,
-            top: 4,
-            child: InkWell(
-              onTap: onRemove,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .9),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.close_rounded,
-                  size: 15,
-                  color: AppColors.ink,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AddMediaTile extends StatelessWidget {
-  const _AddMediaTile({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceWarm,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        side: BorderSide(color: AppColors.rose.withValues(alpha: .24)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        onTap: onTap,
-        child: const Icon(Icons.add_rounded, color: AppColors.rose),
-      ),
-    );
-  }
-}
-
-class _AddGroupPanel extends StatelessWidget {
-  const _AddGroupPanel({
-    required this.groups,
-    required this.maxGroups,
-    required this.onTap,
-  });
-
-  final int groups;
-  final int maxGroups;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final reachedLimit = groups >= maxGroups;
-    return _EmptyInlinePanel(
-      title: reachedLimit
-          ? l10n.memoryFormGroupLimitReachedTitle
-          : l10n.memoryFormAddAnotherMediaGroupTitle,
-      body: reachedLimit
-          ? l10n.memoryFormGroupLimitReachedBody
-          : l10n.memoryFormAddAnotherMediaGroupBody,
-      primaryLabel: reachedLimit
-          ? l10n.memoryFormGroupLimitReachedCta
-          : l10n.memoryFormAddMediaGroup,
-      icon: reachedLimit
-          ? Icons.lock_rounded
-          : Icons.add_photo_alternate_rounded,
-      onPressed: reachedLimit ? null : onTap,
-    );
-  }
-}
-
-class _EmptyInlinePanel extends StatelessWidget {
-  const _EmptyInlinePanel({
-    required this.title,
-    required this.body,
-    required this.primaryLabel,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final String title;
-  final String body;
-  final String primaryLabel;
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.s),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceWarm,
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        border: Border.all(color: AppColors.rose.withValues(alpha: .18)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: AppTextStyles.bodyM.copyWith(
-              color: AppColors.ink,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            body,
-            style: AppTextStyles.bodyS.copyWith(color: AppColors.muted),
-          ),
-          const SizedBox(height: AppSpacing.s),
-          SecondaryButton(
-            label: primaryLabel,
-            icon: icon,
-            onPressed: onPressed,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FieldButton extends StatelessWidget {
-  const _FieldButton({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return _FieldBlock(
-      label: label,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 44),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.s),
-            border: Border.all(color: AppColors.line),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  value,
-                  style: AppTextStyles.bodyM.copyWith(
-                    color: AppColors.ink,
-                    fontWeight: FontWeight.w700,
+            const SizedBox(height: AppSpacing.l),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Bỏ bản nháp'),
                   ),
                 ),
-              ),
-              Icon(icon, color: AppColors.rose, size: 18),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LocationField extends StatelessWidget {
-  const _LocationField({
-    required this.label,
-    required this.name,
-    required this.address,
-    required this.onPick,
-    required this.onRemove,
-  });
-
-  final String label;
-  final String? name;
-  final String address;
-  final VoidCallback onPick;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final selectedName = name;
-    return _FieldBlock(
-      label: label,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.s),
-          onTap: onPick,
-          child: Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 64),
-            padding: const EdgeInsets.all(AppSpacing.s),
-            decoration: BoxDecoration(
-              color: selectedName == null
-                  ? AppColors.surfaceWarm
-                  : AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.s),
-              border: Border.all(color: AppColors.line),
-            ),
-            child: selectedName == null
-                ? Row(
-                    children: [
-                      const Icon(
-                        Icons.add_location_alt_rounded,
-                        color: AppColors.rose,
-                      ),
-                      const SizedBox(width: AppSpacing.s),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.memoryFormLocationEmpty,
-                              style: AppTextStyles.bodyM.copyWith(
-                                color: AppColors.ink,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xxs),
-                            Text(
-                              l10n.memoryFormLocationOptional,
-                              style: AppTextStyles.bodyS.copyWith(
-                                color: AppColors.muted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color: AppColors.muted,
-                        size: 15,
-                      ),
-                    ],
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.place_rounded,
-                            color: AppColors.rose,
-                          ),
-                          const SizedBox(width: AppSpacing.s),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  selectedName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.bodyM.copyWith(
-                                    color: AppColors.ink,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.xxs),
-                                Text(
-                                  address,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.bodyS.copyWith(
-                                    color: AppColors.muted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.s),
-                      Wrap(
-                        spacing: AppSpacing.xs,
-                        runSpacing: AppSpacing.xs,
-                        children: [
-                          TextButton.icon(
-                            onPressed: onPick,
-                            icon: const Icon(Icons.edit_location_alt_rounded),
-                            label: Text(l10n.memoryFormLocationChange),
-                          ),
-                          if (onRemove != null)
-                            TextButton.icon(
-                              onPressed: onRemove,
-                              icon: const Icon(Icons.close_rounded),
-                              label: Text(l10n.memoryFormLocationRemove),
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.danger,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
+                const SizedBox(width: AppSpacing.s),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Tiếp tục'),
                   ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LabeledTextField extends StatelessWidget {
-  const _LabeledTextField({
-    required this.label,
-    required this.hint,
-    required this.controller,
-    this.maxLines = 1,
-    this.validator,
-    this.isLast = false,
-  });
-
-  final String label;
-  final String hint;
-  final TextEditingController controller;
-  final int maxLines;
-  final String? Function(String?)? validator;
-  final bool isLast;
-
-  @override
-  Widget build(BuildContext context) {
-    return _FieldBlock(
-      label: label,
-      isLast: isLast,
-      child: TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        textCapitalization: TextCapitalization.sentences,
-        validator: validator,
-        decoration: InputDecoration(hintText: hint),
-      ),
-    );
-  }
-}
-
-class _FieldBlock extends StatelessWidget {
-  const _FieldBlock({
-    required this.label,
-    required this.child,
-    this.isLast = false,
-  });
-
-  final String label;
-  final Widget child;
-  final bool isLast;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.s),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isLast ? Colors.transparent : AppColors.line,
+                ),
+              ],
             ),
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.s),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label.toUpperCase(),
-                style: AppTextStyles.label.copyWith(color: AppColors.roseDark),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              child,
-            ],
-          ),
+          ],
         ),
       ),
     );
-  }
-}
-
-class _SurfaceCard extends StatelessWidget {
-  const _SurfaceCard({required this.child, this.floating = false});
-
-  final Widget child;
-  final bool floating;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .94),
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        border: Border.all(color: AppColors.line),
-        boxShadow: floating ? AppShadows.floating : AppShadows.card,
-      ),
-      child: child,
+    if (!mounted) {
+      return;
+    }
+    final controller = ref.read(
+      memoryComposerControllerProvider(_draftId).notifier,
     );
+    if (shouldResume == true) {
+      controller.resumeStoredDraft();
+      _syncTextFields(
+        ref.read(memoryComposerControllerProvider(_draftId)).draft,
+      );
+    } else {
+      await controller.discardStoredDraft();
+    }
+  }
+
+  Future<void> _submit(String generatedTitle) async {
+    final state = ref.read(memoryComposerControllerProvider(_draftId));
+    if (!state.draft.hasMeaningfulContent) {
+      _showError('Hãy thêm một dòng, ảnh/video hoặc lời nhắn trước khi lưu.');
+      return;
+    }
+    final memory = await ref
+        .read(memoryComposerControllerProvider(_draftId).notifier)
+        .submit(title: generatedTitle, onSubmit: widget.onSubmit);
+    if (!mounted) {
+      return;
+    }
+    if (memory == null) {
+      _showError('Chưa thể lưu kỷ niệm. Bản nháp của bạn vẫn được giữ lại.');
+      return;
+    }
+    widget.onSaved(memory);
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.label);
+enum _MediaSource { images, video, camera }
 
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: AppTextStyles.bodyS.copyWith(
-        color: AppColors.roseDark,
-        fontWeight: FontWeight.w800,
-      ),
-    );
-  }
-}
-
-class _LimitPill extends StatelessWidget {
-  const _LimitPill(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 26,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-      decoration: BoxDecoration(
-        color: AppColors.teal.withValues(alpha: .1),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: AppTextStyles.bodyS.copyWith(
-            color: AppColors.teal,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SourceOption extends StatelessWidget {
-  const _SourceOption({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
+class _VideoImportViewState {
+  const _VideoImportViewState({
+    required this.completedFiles,
+    required this.totalFiles,
   });
 
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.paper,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.s),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.s),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: const BoxDecoration(
-                  color: AppColors.rose,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: Colors.white, size: 19),
-              ),
-              const SizedBox(width: AppSpacing.s),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppTextStyles.bodyM.copyWith(
-                        color: AppColors.ink,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      subtitle,
-                      style: AppTextStyles.bodyS.copyWith(
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 44,
-        height: 4,
-        margin: const EdgeInsets.only(bottom: AppSpacing.m),
-        decoration: BoxDecoration(
-          color: AppColors.line,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-        ),
-      ),
-    );
-  }
+  final int completedFiles;
+  final int totalFiles;
 }

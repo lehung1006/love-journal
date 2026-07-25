@@ -88,17 +88,23 @@ class MemoryLocationDraft {
   MemoryLocationDraft copyWith({
     String? displayName,
     String? formattedAddress,
+    bool clearFormattedAddress = false,
     double? latitude,
     double? longitude,
     String? googlePlaceId,
+    bool clearGooglePlaceId = false,
     MemoryLocationSource? source,
   }) {
     return MemoryLocationDraft(
       displayName: displayName ?? this.displayName,
-      formattedAddress: formattedAddress ?? this.formattedAddress,
+      formattedAddress: clearFormattedAddress
+          ? null
+          : formattedAddress ?? this.formattedAddress,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
-      googlePlaceId: googlePlaceId ?? this.googlePlaceId,
+      googlePlaceId: clearGooglePlaceId
+          ? null
+          : googlePlaceId ?? this.googlePlaceId,
       source: source ?? this.source,
     );
   }

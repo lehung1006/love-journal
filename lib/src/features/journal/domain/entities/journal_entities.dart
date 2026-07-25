@@ -3,6 +3,7 @@ export 'journal_enums.dart';
 export 'journal_preferences.dart';
 export 'letter.dart';
 export 'memory.dart';
+export 'memory_composer_draft.dart';
 export 'memory_location.dart';
 export 'place.dart';
 export 'place_search.dart';

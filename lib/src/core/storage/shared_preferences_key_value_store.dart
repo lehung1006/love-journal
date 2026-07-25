@@ -28,6 +28,11 @@ class SharedPreferencesKeyValueStore implements KeyValueStore {
   }
 
   @override
+  Future<void> remove(String key) async {
+    await _preferences.remove(key);
+  }
+
+  @override
   List<String> getStringList(String key) {
     return _preferences.getStringList(key) ?? const [];
   }

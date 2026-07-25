@@ -168,6 +168,7 @@ abstract final class JournalDataDraftCodec {
       'id': media.id,
       'type': media.type.name,
       'uri': media.uri,
+      'thumbnailUri': media.thumbnailUri,
       'width': media.width,
       'height': media.height,
       'alt': media.alt,
@@ -183,6 +184,7 @@ abstract final class JournalDataDraftCodec {
         MemoryMediaType.image,
       ),
       uri: json['uri'] as String,
+      thumbnailUri: json['thumbnailUri'] as String?,
       width: json['width'] as int?,
       height: json['height'] as int?,
       alt: json['alt'] as String?,
@@ -192,6 +194,7 @@ abstract final class JournalDataDraftCodec {
   static Map<String, dynamic> _mediaGroupToJson(MemoryMediaGroup group) {
     return {
       'id': group.id,
+      'title': group.title,
       'note': group.note,
       'items': group.items.map(_mediaToJson).toList(growable: false),
       'sortOrder': group.sortOrder,
@@ -201,6 +204,7 @@ abstract final class JournalDataDraftCodec {
   static MemoryMediaGroup _mediaGroupFromJson(Map<String, dynamic> json) {
     return MemoryMediaGroup(
       id: json['id'] as String,
+      title: json['title'] as String?,
       note: json['note'] as String?,
       items: (json['items'] as List<dynamic>? ?? const [])
           .whereType<Map<String, dynamic>>()

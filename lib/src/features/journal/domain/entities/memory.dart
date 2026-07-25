@@ -45,6 +45,7 @@ class MemoryMedia {
     required this.id,
     required this.type,
     required this.uri,
+    this.thumbnailUri,
     this.width,
     this.height,
     this.alt,
@@ -53,6 +54,7 @@ class MemoryMedia {
   final String id;
   final MemoryMediaType type;
   final String uri;
+  final String? thumbnailUri;
   final int? width;
   final int? height;
   final String? alt;
@@ -61,6 +63,8 @@ class MemoryMedia {
     String? id,
     MemoryMediaType? type,
     String? uri,
+    String? thumbnailUri,
+    bool clearThumbnailUri = false,
     int? width,
     int? height,
     String? alt,
@@ -69,6 +73,9 @@ class MemoryMedia {
       id: id ?? this.id,
       type: type ?? this.type,
       uri: uri ?? this.uri,
+      thumbnailUri: clearThumbnailUri
+          ? null
+          : thumbnailUri ?? this.thumbnailUri,
       width: width ?? this.width,
       height: height ?? this.height,
       alt: alt ?? this.alt,
@@ -127,23 +134,29 @@ class MemoryMediaGroup {
     required this.id,
     required this.items,
     required this.sortOrder,
+    this.title,
     this.note,
   });
 
   final String id;
+  final String? title;
   final String? note;
   final List<MemoryMedia> items;
   final int sortOrder;
 
   MemoryMediaGroup copyWith({
     String? id,
+    String? title,
+    bool clearTitle = false,
     String? note,
+    bool clearNote = false,
     List<MemoryMedia>? items,
     int? sortOrder,
   }) {
     return MemoryMediaGroup(
       id: id ?? this.id,
-      note: note ?? this.note,
+      title: clearTitle ? null : title ?? this.title,
+      note: clearNote ? null : note ?? this.note,
       items: items ?? this.items,
       sortOrder: sortOrder ?? this.sortOrder,
     );

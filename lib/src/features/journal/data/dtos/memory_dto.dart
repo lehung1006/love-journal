@@ -6,6 +6,7 @@ class MemoryMediaDto {
     required this.id,
     required this.type,
     required this.uri,
+    this.thumbnailUri,
     this.width,
     this.height,
     this.alt,
@@ -16,6 +17,7 @@ class MemoryMediaDto {
       id: json['id'] as String,
       type: json['type'] as String? ?? 'image',
       uri: json['uri'] as String,
+      thumbnailUri: json['thumbnailUri'] as String?,
       width: json['width'] as int?,
       height: json['height'] as int?,
       alt: json['alt'] as String?,
@@ -25,6 +27,7 @@ class MemoryMediaDto {
   final String id;
   final String type;
   final String uri;
+  final String? thumbnailUri;
   final int? width;
   final int? height;
   final String? alt;
@@ -34,6 +37,7 @@ class MemoryMediaDto {
       id: id,
       type: memoryMediaTypeFromDto(type),
       uri: uri,
+      thumbnailUri: thumbnailUri,
       width: width,
       height: height,
       alt: alt,

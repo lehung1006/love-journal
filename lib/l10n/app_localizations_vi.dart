@@ -58,10 +58,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homeKicker => 'Chào em';
 
   @override
+  String get homeTitle => 'Mình & Em';
+
+  @override
   String get homeRecapTooltip => 'Kỷ niệm 3 năm';
 
   @override
-  String get homeHeroKicker => 'Kỷ niệm của tụi mình';
+  String get homeHeroKicker => 'Hành trình của tụi mình';
 
   @override
   String homeLoveDays(String days) {
@@ -72,10 +75,53 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homeHeroSubtitle => 'Và anh vẫn muốn đi tiếp cùng em.';
 
   @override
+  String get homeDaysTogether => 'ngày bên nhau';
+
+  @override
   String get homeMemoriesWritten => 'kỷ niệm đã viết';
 
   @override
   String get homePlacesVisited => 'nơi mình đã qua';
+
+  @override
+  String get homeRecentKicker => 'Gần đây';
+
+  @override
+  String get homeRecentMemories => 'Những mảnh ghép';
+
+  @override
+  String get homeFeaturedBadge => 'Mình đã ghim';
+
+  @override
+  String homePageIndicator(int current, int total) {
+    return '$current/$total';
+  }
+
+  @override
+  String get homeLetterKicker => 'Dành cho em';
+
+  @override
+  String get homeLetterSectionTitle => 'Một lá thư đang đợi';
+
+  @override
+  String get homeRecapTitle => 'Chuyện của tụi mình';
+
+  @override
+  String get homeRecapBody =>
+      'Xem lại hành trình qua những điều hai đứa đã cùng nhau giữ lại.';
+
+  @override
+  String get homeEmptyKicker => 'Trang đầu tiên';
+
+  @override
+  String get homeEmptyTitle => 'Mình bắt đầu giữ lại một ngày nhé?';
+
+  @override
+  String get homeEmptyBody =>
+      'Một tấm ảnh, một câu chuyện nhỏ, hay chỉ là giọng nói của hai đứa.';
+
+  @override
+  String get homeEmptyCta => 'Tạo kỷ niệm đầu tiên';
 
   @override
   String get homeFeaturedMemory => 'Kỷ niệm nổi bật';
@@ -690,6 +736,71 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get locationPickerPinHelper =>
       'Kéo bản đồ để đặt ghim vào đúng vị trí.';
+
+  @override
+  String get locationPickerMapBrowseMode => 'Xem';
+
+  @override
+  String get locationPickerMapSelectMode => 'Chọn vị trí';
+
+  @override
+  String get locationPickerMapReset => 'Đặt lại vị trí';
+
+  @override
+  String get locationPickerMapTapHelper =>
+      'Chạm vào một điểm để tìm các địa điểm Google gần đó.';
+
+  @override
+  String get locationPickerMapBrowseHelper =>
+      'Bật Chọn trên bản đồ khi bạn muốn đặt hoặc di chuyển ghim.';
+
+  @override
+  String get locationPickerResolvingPlace => 'Đang mở thông tin địa điểm...';
+
+  @override
+  String get locationPickerNearbyLoading =>
+      'Đang tìm những nơi gần điểm ghim...';
+
+  @override
+  String get locationPickerNearbyTitle => 'Những nơi gần điểm ghim';
+
+  @override
+  String get locationPickerNearbyEmpty =>
+      'Không có địa điểm Google nào đủ gần. Bạn vẫn có thể giữ tọa độ này.';
+
+  @override
+  String get locationPickerNearbyError =>
+      'Chưa tải được các địa điểm gần đây. Bạn vẫn có thể giữ tọa độ này.';
+
+  @override
+  String get locationPickerNearbyAddressFallback =>
+      'Địa điểm gần tọa độ đã chọn';
+
+  @override
+  String get locationPickerUseManualCoordinate => 'Giữ tọa độ này';
+
+  @override
+  String get locationPickerUseSelectedPlace => 'Dùng nơi này';
+
+  @override
+  String get locationPickerOpenGoogleMaps => 'Mở Maps';
+
+  @override
+  String get locationPickerOpenLinkError => 'Chưa thể mở liên kết này';
+
+  @override
+  String locationPickerPhotoAttribution(String author) {
+    return 'Ảnh: $author';
+  }
+
+  @override
+  String get locationPickerBusinessOperational => 'Đang hoạt động';
+
+  @override
+  String get locationPickerBusinessClosedTemporarily => 'Tạm thời đóng cửa';
+
+  @override
+  String get locationPickerBusinessClosedPermanently => 'Đã đóng cửa';
 
   @override
   String get locationPickerContinueNaming => 'Tiếp tục đặt tên';

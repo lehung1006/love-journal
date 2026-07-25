@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/ui/local_or_asset_image.dart';
 import '../../domain/entities/journal_entities.dart';
 import '_pressable_scale.dart';
 
@@ -16,8 +17,8 @@ class AssetCoverImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      imagePath,
+    return buildLocalOrAssetImage(
+      path: imagePath,
       fit: fit,
       errorBuilder: (context, error, stackTrace) {
         return const DecoratedBox(
@@ -41,9 +42,15 @@ class AssetCoverImage extends StatelessWidget {
 }
 
 class MemoryThumbnail extends StatelessWidget {
-  const MemoryThumbnail({required this.imagePath, this.size = 84, super.key});
+  const MemoryThumbnail({
+    required this.imagePath,
+    this.content,
+    this.size = 84,
+    super.key,
+  });
 
   final String? imagePath;
+  final Widget? content;
   final double size;
 
   @override
@@ -52,12 +59,12 @@ class MemoryThumbnail extends StatelessWidget {
       dimension: size,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.s),
-        child: imagePath == null
+        child: imagePath == null && content == null
             ? const ColoredBox(color: AppColors.surfaceWarm)
             : Stack(
                 fit: StackFit.expand,
                 children: [
-                  AssetCoverImage(imagePath: imagePath!),
+                  content ?? AssetCoverImage(imagePath: imagePath!),
                   DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -83,6 +90,7 @@ class HeroMemoryCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.kicker,
+    this.background,
     this.onTap,
     this.height = 252,
     super.key,
@@ -92,6 +100,7 @@ class HeroMemoryCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String? kicker;
+  final Widget? background;
   final VoidCallback? onTap;
   final double height;
 
@@ -109,7 +118,7 @@ class HeroMemoryCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            AssetCoverImage(imagePath: imagePath),
+            background ?? AssetCoverImage(imagePath: imagePath),
             const DecoratedBox(
               decoration: BoxDecoration(gradient: AppColors.photoOverlay),
             ),

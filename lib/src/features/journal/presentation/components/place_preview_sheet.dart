@@ -5,6 +5,7 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/journal_entities.dart';
 import 'buttons_and_chips.dart';
 import 'media_components.dart';
+import 'memory_media_viewer.dart';
 
 class PlacePreviewSheet extends StatelessWidget {
   const PlacePreviewSheet({
@@ -21,7 +22,7 @@ class PlacePreviewSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final cover = memories.isEmpty ? null : memories.first.coverMedia?.uri;
+    final cover = memories.isEmpty ? null : memories.first.coverMedia;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
@@ -45,7 +46,15 @@ class PlacePreviewSheet extends StatelessWidget {
             const SizedBox(height: AppSpacing.m),
             Row(
               children: [
-                MemoryThumbnail(imagePath: cover),
+                MemoryThumbnail(
+                  imagePath: cover?.uri,
+                  content: cover?.type == MemoryMediaType.video
+                      ? MemoryVideoPreview(
+                          uri: cover!.uri,
+                          thumbnailUri: cover.thumbnailUri,
+                        )
+                      : null,
+                ),
                 const SizedBox(width: AppSpacing.s),
                 Expanded(
                   child: Column(

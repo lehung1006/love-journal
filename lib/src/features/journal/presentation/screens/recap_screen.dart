@@ -45,6 +45,13 @@ class RecapScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.m),
             HeroMemoryCard(
               imagePath: featured?.coverMedia?.uri ?? AppAssets.heroImage,
+              background: featured?.coverMedia?.type == MemoryMediaType.video
+                  ? MemoryVideoPreview(
+                      uri: featured!.coverMedia!.uri,
+                      thumbnailUri: featured.coverMedia!.thumbnailUri,
+                      showPlayIcon: false,
+                    )
+                  : null,
               kicker: l10n.recapKicker,
               title: l10n.recapTitle,
               subtitle: l10n.recapSubtitle,

@@ -1,6 +1,6 @@
 # Current Context - Flutter Love Journal
 
-Last updated: 2026-07-13
+Last updated: 2026-07-25
 
 ## Project Intent
 
@@ -26,9 +26,10 @@ The app has moved beyond the original static gift MVP. It now has the foundation
 - A redesigned local-first Time module with add/edit/delete memory flow.
 - A structured Location Picker inside Add/Edit Memory with Google Places search, manual pinning, existing-location reuse, and atomic memory/location save.
 - A read-only Map projection built from visible memories and their `locationId` references.
+- A stage-1 Home "Nhật ký sống" experience with a scrapbook hero, real journal stats, recent-memory discovery carousel, compact letter section, recap band, and reduced-motion support.
 - Android application id and iOS bundle id are `vn.hung.le.lovejournal`.
 
-The current codebase is still local-first. There is no auth, partner invite, cloud sync, real media picker, real audio recorder, or backend yet.
+The current codebase is still local-first. Native image/video picking and voice recording are implemented, but there is no auth, partner invite, cloud sync, cloud media storage, or backend yet.
 
 ## Important Project Files
 
@@ -38,6 +39,9 @@ Design and product context:
 - `docs/designs/love-journal-current-ui-ux.md`
 - `docs/designs/love-journal-design-tokens.json`
 - `docs/designs/love-journal-figma-handoff.html`
+- `docs/designs/love-journal-home-living-journal-handoff.html`
+- `docs/designs/love-journal-home-living-journal-preview.png`
+- `docs/designs/love-journal-memory-composer-handoff.html`
 - `docs/designs/love-journal-time-management-handoff.html`
 - `docs/current-context.md`
 - [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC)
@@ -156,11 +160,13 @@ Current key providers:
   - iOS priority: `GOOGLE_MAPS_IOS_API_KEY` dart define, then `Info.plist` value.
 
 - `placeSearchRepositoryProvider`
-  - Calls the Google Places Web Service through a data source/repository boundary.
+  - Uses Places API (New) REST through the platform-neutral `GooglePlacesApiDataSource`, including on Android during local-first development.
+  - Keeps the data-source boundary so production can replace direct client calls with a backend/proxy without changing controllers or UI.
   - It is consumed only by Location Picker.
 
 - `locationSearchControllerProvider`
-  - Holds Location Picker query state, autocomplete suggestions, selected search result, and loading/error states.
+  - Holds immutable Location Picker state for autocomplete, Nearby Search candidates, selected Place Details, transient photo bytes, and independent loading/error states.
+  - Uses request generations so a slower result from an older map tap cannot overwrite the latest selection.
 
 ## Navigation Snapshot
 
@@ -236,6 +242,39 @@ Implemented screens:
 - Letter Detail
 - Recap
 
+## Home Module Current State
+
+Home has been redesigned from a summary dashboard into the stage-1 "Nhật ký sống" experience.
+
+Implemented Home behavior:
+
+- Header uses `Chào em` / `Mình & Em`; the heart action opens Recap.
+- The 334px living hero uses the featured memory, or the first visible memory when none is explicitly featured.
+- The hero shows the love-day count, memory title, date, and location.
+- An image cover renders directly; a video cover renders its static thumbnail and does not initialize playback.
+- The stats ribbon shows love days, visible memory count, and the number of unique valid Map location groups from `JournalData.mapLocationGroups`.
+- `Những mảnh ghép` is a PageView of up to five newest memories, excluding the hero memory and revealing part of the next card.
+- Tapping a discovery card opens Memory Detail.
+- The compact letter section uses the current pinned/next letter and preserves locked/opened state copy.
+- The Recap band and hero both open Recap.
+- When no memory exists, Home uses the anniversary fallback image, hides the discovery carousel, and shows `Tạo kỷ niệm đầu tiên`, routed to `/timeline/new-memory`.
+- Header, hero, stats, and lower sections use one short staggered entrance animation.
+- Carousel cards scale slightly by page distance.
+- When `MediaQuery.disableAnimations` is enabled, entrance content appears immediately and PageView scaling is disabled.
+
+Home stage 2 is intentionally deferred:
+
+- daily-memory selection;
+- hero parallax;
+- animated count-up stats;
+- featured-memory priority inside the discovery carousel;
+- muted video autoplay with route/tab lifecycle handling.
+
+Approved visual handoff:
+
+- `docs/designs/love-journal-home-living-journal-handoff.html`
+- `docs/designs/love-journal-home-living-journal-preview.png`
+
 ## Time Module Current State
 
 The Time module has been upgraded from a static JSON timeline into an editable memory management area.
@@ -267,43 +306,47 @@ Screen:
 
 - `MemoryFormScreen`
 
-Main sections:
+Current experience:
 
-- Main info card:
-  - Title.
-  - Description.
-  - Date.
-  - Location as a tappable Location Picker entry, not a free-text field.
-  - Private note.
-  - `Lời nhắn cho khoảnh khắc này`.
+- Add/Edit is a visual `Memory Composer`, not a long detail form.
+- The empty canvas starts with three equal entry points:
+  - image/video;
+  - write one line;
+  - voice message.
+- Date, primary tag, and optional location live in compact metadata chips.
+- Date opens a fixed 42-cell month sheet; previous/next month changes are direct state updates without the default Material date-picker transition.
+- The title is generated from the first story line, location, or tag/date and remains editable from the header.
+- Description and legacy private note are merged into one story field when an old memory is edited.
+- `Lời nhắn cho khoảnh khắc này` supports importing audio or recording with the device microphone.
+- Images/videos use native device pickers and are copied into the app documents directory before entering the draft.
+- Video selection supports multi-select with a hard limit of 3 videos across the whole memory.
+- A blocking warm loading overlay appears while selected videos are prepared/copied; multiple files show the current `x/n` item, and selections beyond the remaining slots are skipped with feedback.
+- Every imported video generates a static first-frame JPEG thumbnail. Each media item stores its own `thumbnailUri`, so multiple videos in one segment render independently without keeping several video decoders alive.
+- Tapping an image or video opens a full-screen, swipeable viewer without leaving or discarding the composer draft.
+- Media groups remain dynamic, mixed image/video, sortable, and limited to 3.
+- Every media group has an editable title plus an optional note; legacy groups without a stored title fall back to `Đoạn x`.
+- Voice messages are limited to 3.
+- A selected location can be changed through Location Picker or removed directly from its metadata chip.
+- Saving opens the resulting Memory Detail instead of only popping the route.
 
-- Tag selector:
-  - Uses wrap/flex behavior.
-  - Each chip sizes to text.
-  - Chips flow horizontally and wrap to the next line.
-  - Supports creating custom tag.
-  - The create-tag bottom sheet owns its `TextEditingController` inside a stateful sheet to avoid controller-after-dispose errors when dismissed.
+State and persistence:
 
-- Media groups:
-  - Dynamic groups.
-  - MVP max: 3 groups per memory.
-  - Each group has optional note.
-  - Each group can contain images/videos mixed.
-  - Add media source sheet exists.
-  - Remove media item.
-  - Remove group.
-  - Move group up/down.
+- `MemoryComposerDraft` is immutable and serialized independently from the journal data draft.
+- `MemoryComposerController` is a Riverpod family controller keyed by new/edit memory draft id.
+- Composer changes debounce-save to SharedPreferences and flush immediately when the close/back action occurs.
+- Reopening offers to resume or discard a meaningful local draft.
+- Successful submit cancels pending autosave and deletes the composer draft.
 
 Validation:
 
-- Title is required.
-- Date is required.
+- Title is generated automatically when the user does not override it.
 - At least one body element is required:
-  - description,
-  - note,
+  - story,
   - voice message,
   - image,
   - video.
+- Date and the default `Đời thường` tag are preselected.
+- Location alone is not meaningful content.
 
 Previous location limitation (resolved):
 
@@ -346,15 +389,24 @@ Approved behavior:
 
 - Location is optional and is selected while creating or editing a memory.
 - Tapping the Location area opens a dedicated Location Picker.
-- The user can reuse an existing memory location, search a new geographic result with Google Places, or pin a coordinate manually.
-- Selecting a Google suggestion fetches Place Details only at that point.
-- The user can drag the map to refine the coordinate after search or use manual pinning as a fallback.
+- The user can reuse an existing memory location, search a new geographic result with Google Places, or select a coordinate directly on the map.
+- The map starts in browse mode. A compact segmented control switches between `Xem` and `Chọn vị trí`; the reset icon appears separately only when a marker exists.
+- The toolbar contains no long status sentence. Browse/select instructions are shown in the contextual bottom panel.
+- Pan/zoom never changes the selected coordinate and never starts a Places request.
+- A map tap or marker drag-end creates a temporary manual marker and runs Nearby Search within 150 meters, ranked by distance, with at most 8 candidates.
+- Nearby candidates appear as tappable map markers and as a mirrored list for dense areas and accessibility.
+- Selecting an Autocomplete suggestion or Nearby candidate fetches compact Place Details only at that point.
+- The selected-place preview can show one transient Google photo, place type, address, business status, attribution, and a Google Maps link.
+- If Nearby Search is empty or fails, the manual coordinate remains usable.
+- Focusing Google Places Search hides the contextual bottom panel immediately, before keyboard insets animate. The search/map step does not resize its Stack for the keyboard, so the input and suggestions remain anchored at the top.
+- Dismissing the keyboard restores the same bottom-panel content without clearing the selected place, marker, photo, query, or draft. Choose and Name steps retain normal keyboard resize/scroll behavior.
 - The final display name is user-controlled. The Google place name is only an initial suggestion.
 - A new location is committed together with the memory, not immediately when it is picked.
 - Map tab is read-only: it has no search, add, edit, or standalone place management action.
 - Map markers are projected from visible memories with valid locations.
 - Memories sharing one internal `locationId` are grouped under one marker.
 - Tapping a marker opens a warm bottom sheet listing the visible memories at that location; tapping a memory opens Memory Detail.
+- The marker sheet is presented on the root navigator so its surface and modal barrier stay above the persistent bottom tab bar.
 - Memories without location are omitted. Soft-deleted memories do not contribute to markers or counts.
 - If no visible memory has a location, Map shows an emotional, actionable empty state that sends the user to Time/Add Memory.
 - If no platform Maps key is configured, Map keeps a clear non-crashing fallback state.
@@ -373,19 +425,33 @@ Map API key configuration:
 - iOS bundle id: `vn.hung.le.lovejournal`.
 - Android native map rendering reads `GOOGLE_MAPS_ANDROID_API_KEY` from a Gradle property, environment variable, or ignored `android/local.properties`, then injects it into the manifest placeholder.
 - iOS native map rendering reads `GOOGLE_MAPS_IOS_API_KEY` from `ios/Flutter/Secrets.xcconfig`, which feeds `Info.plist` through `$(GOOGLE_MAPS_IOS_API_KEY)`.
-- Dart/Places search can read the native key through the `love_journal/maps_config` platform channel as a temporary local-first path. For production, move Places calls behind a backend/proxy and keep the Places key server-side.
-- Direct Android Places REST requests include `X-Android-Package` and the runtime signing certificate SHA-1 in `X-Android-Cert` without delimiters. Direct iOS requests include `X-Ios-Bundle-Identifier`.
+- Location Picker calls Places API (New) REST through `GooglePlacesApiDataSource` on Android and the other currently supported clients.
+- The Dart repository contract remains platform-neutral so the direct REST implementation can be replaced by a backend/proxy later.
+- Autocomplete uses a 50,000 meter circular location bias and reuses one session token through Place Details.
+- Nearby Search uses a 150 meter circle, returns at most 8 candidates, requests all place types, and ranks by distance.
+- Nearby Search has no Autocomplete session token. Place Details receives a session token only when it completes an Autocomplete selection.
+- Place Details requests compact Pro fields. The first photo is fetched lazily only after selection and is not persisted.
+- Map camera movement is local UI behavior; only map tap and marker drag-end trigger Nearby Search.
 - The Google Cloud project must enable `Places API (New)` and include it in the key's API restrictions; enabling only the platform Maps SDK is not enough for autocomplete.
-- Restrict Android keys in Google Cloud to package `vn.hung.le.lovejournal` plus the signing certificate SHA-1. Restrict iOS keys to bundle id `vn.hung.le.lovejournal`.
+- Places Web Service does not support Android/iOS application restrictions. The direct client REST key is temporarily unrestricted by application for local development and must be limited by API restriction to the required Maps/Places services.
+- Production must not ship an unrestricted Places Web Service key. Move Places calls behind a backend/proxy, and use a separate Android-restricted key for native Maps rendering.
 - Do not commit real API keys.
 
-Current Google Places blocker:
+Google Places diagnostics and temporary resolution:
 
-- Android Maps rendering can use the configured key path, but Location Picker autocomplete is still blocked by Google Cloud permissions in the current local setup.
-- A direct Places API (New) autocomplete request was tested with the configured Android key, package `vn.hung.le.lovejournal`, and debug signing SHA-1 `9A:27:5D:11:3E:A1:38:DC:CC:25:39:D8:D3:7E:00:A1:94:34:5F:A0`.
-- The direct request returned HTTP `403` / `PERMISSION_DENIED` from Google, which means the app request path reaches Google but the key/project/restriction/billing configuration is still not accepted by Google Cloud.
-- The same key against the legacy Places endpoint returned `REQUEST_DENIED` because the legacy API is not enabled; this is expected because the app uses Places API (New).
-- Do not solve this by moving search back to the Map tab or by hardcoding places. Keep the current Location Picker architecture and resolve the Google Cloud configuration or move Places requests behind a backend/proxy.
+- The former Android implementation called Places API (New) REST directly with an Android-restricted key and received HTTP `403 PERMISSION_DENIED` even with correct package/certificate headers.
+- A native Places SDK for Android bridge was then tested but returned SDK status `9011 REQUEST_DENIED` on-device.
+- Cloud checks confirmed `billingEnabled: true`, active billing, both `places.googleapis.com` and `maps-android-backend.googleapis.com`, and that the key belongs to project `love-journal-map`.
+- A direct Places REST Autocomplete request from Google Cloud Shell returned suggestions with the same unrestricted key, while identical requests from the local Windows host and Android device returned HTTP `403 PERMISSION_DENIED`.
+- `gcloud services api-keys describe` confirms this is a standard API key with no application restriction and only `places.googleapis.com` plus `maps-android-backend.googleapis.com` API targets. The linked payments profile country is Vietnam.
+- Payload isolation confirmed that field mask, query length, session token, and location bias are not the cause; even the minimal request fails outside Cloud Shell. Forced IPv4 and IPv6 requests from the local Windows host both return `403`, so the denial is not specific to one IP protocol. Android keeps the REST path for transparent diagnostics while local egress/Google edge behavior is investigated.
+- Local Windows diagnostics show direct WinHTTP access, no environment/browser proxy, no Google hosts-file override, Google-owned DNS answers, Vietnam egress classification, and Cloudflare WARP off. Recreating more keys in the same project is therefore lower value than testing another physical network and an isolated project.
+- The recurring `Regional Access Boundary` / `Gaia id not found` warning appears before otherwise successful `gcloud` commands and is tracked separately as a Cloud CLI identity-lookup warning; it is not currently treated as proof of the Places denial.
+- REST requests intentionally omit `X-Android-Package`, `X-Android-Cert`, and iOS bundle headers because mobile application restrictions are not supported by Places Web Service.
+- Do not solve Places failures by moving search back to Map or reintroducing hardcoded places.
+- On 2026-07-21, a replacement local key associated with a different Maps/billing setup returned HTTP `200` with five Autocomplete suggestions from the same Windows host. A debug APK then built successfully with the replacement key injected into the merged Android manifest.
+- This proves the Flutter REST request path is functional, but it does not establish production eligibility. Google's current Maps Platform Prohibited Territories list includes Vietnam even though the coverage table shows map data for Vietnam.
+- Cloud Billing country must match the real billing mailing address. Selecting a false country is not an acceptable production workaround; distribution in Vietnam requires a compliance decision and likely a provider strategy that is permitted for the target market.
 
 Fallback behavior:
 
@@ -409,6 +475,7 @@ Newer editable model concepts:
 
 - `MemoryMediaGroup`
   - A story segment.
+  - Has an optional editable title with `Đoạn x` as the legacy/null UI fallback.
   - Has optional note.
   - Holds mixed image/video items.
   - Has `sortOrder`.
@@ -490,31 +557,31 @@ Bundled editable seed state:
 
 This is enough for MVP local-first editing, but should later be replaced by a real local database such as Drift, Isar, or SQLite before cloud sync.
 
-## Current Mocked Areas
+## Native And Incomplete Boundaries
 
-The following UI flows exist but are not native-real yet:
+Native-real now:
 
-- Choosing audio from device.
-- Recording audio.
-- Choosing image/video from library.
-- Capturing photo/video with camera.
-- Real media playback.
-- Real video thumbnails.
+- Image selection and camera capture through `image_picker`.
+- Multi-video selection through `file_picker`, limited to the remaining slots within the 3-video-per-memory rule.
+- Audio-file import through `file_picker`.
+- Voice recording through `record`.
+- Picked files are copied to app-owned storage before draft persistence.
+- Static first-frame video thumbnails through `video_thumbnail_gen`; image/video playback through `video_player` only when playback is requested.
+- Full-screen image/video viewer from both Composer and Memory Detail.
+- A video selected as the Memory Detail cover auto-plays for at most 3 completed runs, then stops; later user-initiated plays run once without automatic replay or seeking.
+
+Still incomplete:
+
+- Real audio playback controls; the current player is visual only.
+- Dedicated permission-denied/settings UX beyond the system prompt and inline error.
+- Cleanup policy for unreferenced attachment files.
 - Search in Time.
 
-Current behavior:
+Future infrastructure still needed:
 
-- Audio/image/video actions create mock attachments.
-- Mock media uses `AppAssets.heroImage`.
-- Mock audio uses `mock://...` URIs.
-
-Future native plugins likely needed:
-
-- `file_picker` for audio import.
-- `record` or similar for audio recording.
-- `image_picker` or `photo_manager` for image/video picking.
-- Permission handling for microphone, photos, camera.
-- A backend/proxy for production-grade Google Places calls if API key protection becomes stricter than mobile key restrictions.
+- Cloud object storage/upload and attachment sync.
+- Media transcoding, cloud thumbnail variants, and long-term cache lifecycle.
+- A backend/proxy for production-grade Google Places calls; Places Web Service cannot safely use mobile application restrictions from a shipped client.
 
 ## Known Product Decisions
 
@@ -535,12 +602,28 @@ Decisions already made:
 - Use Google Maps + Google Places for the first real Map implementation; keep the API key out of Git and provide a static fallback when the key is absent.
 - Location is owned by the Add/Edit Memory flow; there is no standalone add-place flow in Map.
 - Google Places Autocomplete exists only in Location Picker.
+- Location Picker map selection is an explicit toggle mode; browsing the camera must never mutate the draft.
+- The map mode toggle is the compact `Xem` / `Chọn vị trí` segmented control. Keep explanatory copy in the bottom context panel, not beside the control.
+- Search focus temporarily hides the bottom context panel and the search/map Stack does not resize for the keyboard; dismissing the keyboard restores the existing selection.
+- A deliberate map tap or marker drag-end may use Nearby Search to resolve Google places around the selected coordinate.
+- Google place photos and business metadata are transient picker data, not persisted journal fields.
 - Map is a read-only projection of visible memories with locations.
 - Use an internal `locationId` for memory references and Map grouping; keep `googlePlaceId` optional external metadata.
 - Let users choose the display name even when Google Places supplied the coordinate and address.
 - Keep private notes attached to memories, not locations, for this milestone.
+- Generate and persist one first-frame JPEG thumbnail per imported video. Store its app-owned path in `MemoryMedia.thumbnailUri`; legacy media without that field uses runtime thumbnail extraction as a fallback.
+- Keep video playback controls to play/pause only. Cover video may auto-play 3 times; viewer videos play once per opened playback cycle.
+- Limit each memory to 3 video attachments. Enforce the rule in both the picker flow and `MemoryComposerController`, and show a modal loading state while large files are copied into app-owned storage.
 
 ## Quality/Verification Status
+
+After implementing Home "Nhật ký sống" stage 1:
+
+- Home widget tests cover 320, 393, and 430 logical pixel widths, large text scale, empty/one/many memory states, hero/recap interaction, recent-memory navigation, empty Add Memory CTA, static video thumbnail behavior, and Reduce Motion.
+- `flutter analyze`: passed.
+- `flutter test --no-pub`: passed, 36 tests.
+- `flutter build apk --debug --no-pub`: passed.
+- Android build currently emits a non-blocking future-compatibility warning because `file_picker` still applies Kotlin Gradle Plugin instead of Flutter's Built-in Kotlin flow.
 
 Recent checks after implementing the Time editable module:
 
@@ -569,8 +652,52 @@ After implementing Memory-owned locations and read-only Map projection:
 - `flutter analyze`: passed.
 - `flutter test --no-pub`: passed.
 - `flutter build apk --debug --no-pub`: passed.
-- Android debug package/SHA-1 used for API key restriction: `vn.hung.le.lovejournal` / `9A:27:5D:11:3E:A1:38:DC:CC:25:39:D8:D3:7E:00:A1:94:34:5F:A0`.
-- Runtime Places autocomplete remains blocked by Google Cloud with HTTP `403 PERMISSION_DENIED` even after uninstalling the app, `flutter clean`, `flutter pub get`, and rebuilding locally.
+- Android debug restriction identity retained for native Maps and future production key setup: `vn.hung.le.lovejournal` / `9A:27:5D:11:3E:A1:38:DC:CC:25:39:D8:D3:7E:00:A1:94:34:5F:A0`.
+- The native Places bridge was removed after on-device `9011 REQUEST_DENIED`; the old key succeeded only from Cloud Shell and was denied from the local host/device.
+- REST data-source tests cover the supported authentication headers. The replacement key now succeeds from Windows; on-device Autocomplete/Place Details still needs a fresh runtime verification.
+
+After implementing Memory Composer:
+
+- `flutter pub get`: passed.
+- `flutter analyze --no-pub`: passed with no issues.
+- `flutter test --no-pub`: all tests passed.
+- `flutter build apk --debug --no-pub`: passed.
+- `flutter build web --no-pub`: passed, including Wasm dry run.
+- Android emits a forward-looking KGP warning for `file_picker 10.x`; 10.x is intentionally pinned while this AGP 9 project remains on the Flutter template's Built-in Kotlin opt-out.
+
+After implementing video thumbnails, media viewer, and cover playback:
+
+- `flutter pub get`: passed; `video_player 2.13.0` and platform implementations resolved.
+- `flutter analyze`: passed with no issues.
+- `flutter test --no-pub`: all 9 tests passed, including the 3-play cover replay policy.
+- `flutter build apk --debug --no-pub`: passed.
+- Android `minSdk` is now 24, matching the supported Android baseline for the selected `video_player` version.
+
+After adding multi-video import progress and the 3-video limit:
+
+- `flutter analyze`: passed with no issues.
+- `flutter test --no-pub`: all 12 tests passed, including batch limiting and loading-overlay coverage.
+- `flutter build apk --debug --no-pub`: passed.
+
+After replacing live tile decoders with per-video static thumbnails:
+
+- `flutter pub get`: passed; `video_thumbnail_gen 0.6.3` resolved.
+- `flutter analyze`: passed with no issues.
+- `flutter test --no-pub`: all 12 tests passed, including `thumbnailUri` draft-codec round-trip coverage.
+- `flutter build apk --debug --no-pub`: passed with AGP 9; the existing `file_picker` Built-in Kotlin warning remains.
+
+After compacting the Location Picker toolbar and fixing keyboard overlap:
+
+- `flutter analyze`: passed with no issues.
+- `flutter test --no-pub`: all 24 tests passed.
+- Toolbar widget tests cover 320, 360, and 430 logical pixels plus 200% text scale.
+- Focus tests cover immediate bottom-panel hiding and restoration without losing the existing selection.
+- `flutter build apk --debug --no-pub`: passed; the existing `file_picker` Built-in Kotlin warning remains.
+
+After moving the Map marker sheet above the navigation shell:
+
+- The root-overlay regression test confirms the shell tab bar cannot receive taps through `LocationMemoryListSheet`.
+- `flutter analyze`, the full test suite, and Android debug build pass.
 
 ## Environment Notes
 
@@ -614,7 +741,8 @@ Map API key examples:
 
 ```powershell
 # Android local development: put this in ignored android/local.properties.
-GOOGLE_MAPS_ANDROID_API_KEY=your_android_restricted_key
+# Direct Places REST currently requires Application restriction=None.
+GOOGLE_MAPS_ANDROID_API_KEY=your_local_maps_and_places_key
 ```
 
 ```text
@@ -653,8 +781,8 @@ flutter build apk --debug
 
 Short-term:
 
-1. Resolve Google Cloud Places `403 PERMISSION_DENIED` for the current Android key, or move Places calls to a backend/proxy earlier than planned.
-2. Manually run Time/Add/Edit Memory/Location Picker/Map on Android and iOS with and without a platform Maps key after Places permission is fixed.
+1. Reinstall/run the newly built debug APK and verify Autocomplete, Place Details, manual pinning, memory save, and read-only Map projection on Android.
+2. Decide on a production-compliant map/search provider strategy for distribution in Vietnam; do not treat a mismatched billing country as the production solution.
 3. Add more widget/controller tests for:
    - Time empty state.
    - Add memory.
@@ -664,17 +792,17 @@ Short-term:
    - Reusing a location groups memories under one marker.
    - Moving/removing/soft-deleting a memory updates Map projection.
    - Map and Location Picker missing-key states.
-4. Add localization coverage for new Location Picker and Map copy.
-5. Replace mock media/audio with native picker/recorder behind small service abstractions.
+4. Audit localization coverage whenever new Composer, Location Picker, Map, or media error copy is added.
+5. Add real audio playback, list-card video thumbnail polish, and cleanup for unreferenced attachment files.
 
 Medium-term:
 
 1. Move editable data from SharedPreferences draft JSON to a local database.
 2. Add search in Time.
 3. Add undo or trash for soft-deleted memories.
-4. Add real media preview/playback.
+4. Add media preloading/cache policy and richer failure recovery for large or unreadable local files.
 5. Add permission handling UX.
-6. Move Places Web Service calls behind a backend/proxy before production if mobile restrictions are insufficient.
+6. Move all Places Web Service calls behind a backend/proxy before production and restore an Android package/SHA-1-restricted key for native Maps rendering.
 
 Long-term:
 

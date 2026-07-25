@@ -1,7 +1,7 @@
 # Mình & Em - Current UI/UX Source Of Truth
 
-Last updated: 2026-07-13
-Implementation status: reflects the implemented Map/Memory Location flow, empty bundled memory/place seeds, and the current Google Places permission blocker.
+Last updated: 2026-07-25
+Implementation status: reflects the implemented Home "Nhật ký sống" stage 1, visual Memory Composer, native local attachments, static video thumbnails and viewer playback, interactive Location Picker with Nearby Search/Place Details, read-only memory-derived Map, empty bundled memory/place seeds, and direct Places API (New) REST for the local-first milestone.
 
 ## Purpose
 
@@ -21,6 +21,9 @@ Related design files:
 
 - `love-journal-design-tokens.json`: design tokens.
 - `love-journal-figma-handoff.html`: original MVP visual handoff.
+- `love-journal-home-living-journal-handoff.html`: implemented Home stage-1 handoff.
+- `love-journal-home-living-journal-preview.png`: rendered Home handoff preview.
+- `love-journal-memory-composer-handoff.html`: implemented visual Memory Composer handoff.
 - `love-journal-time-management-handoff.html`: Time/Add Memory extension handoff.
 - `love-journal-implementation-spec.md`: product and implementation spec.
 - [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC): approved Map and Location Picker flow.
@@ -248,51 +251,92 @@ Notes:
 
 ## Screen: Home
 
-File:
+Status:
 
-- `lib/src/features/journal/presentation/screens/home_screen.dart`
+- Implemented: stage 1 "Nhật ký sống".
+- Approved visual handoff: `docs/designs/love-journal-home-living-journal-handoff.html`.
+- Preview: `docs/designs/love-journal-home-living-journal-preview.png`.
 
 Purpose:
 
-- emotional dashboard;
-- first landing screen after opening;
-- not a dense utility dashboard.
+- The emotional front page of the journal.
+- It should feel like a living scrapbook, not a utility dashboard or a collection of summary cards.
+- It keeps Recap as the primary emotional action while making memories easier to rediscover.
 
 Current sections:
 
 1. Top bar
-   - kicker: `Chào em`;
-   - title: `Mình & Em`;
-   - heart icon leading to recap.
+   - Kicker: `Chào em`.
+   - Title: `Mình & Em`.
+   - Heart icon opens Recap.
 
-2. Hero memory card
-   - image from featured memory or fallback hero image;
-   - kicker: `Kỷ niệm của tụi mình`;
-   - large love day count;
-   - subtitle: `Và anh vẫn muốn đi tiếp cùng em.`
+2. Living hero
+   - Height: 334 logical pixels.
+   - Uses the featured memory, or the first visible memory when none is explicitly featured.
+   - Paper layers behind the media create a restrained scrapbook feeling.
+   - Shows `Hành trình của tụi mình`, love-day count, `ngày bên nhau`, memory title, date, and location.
+   - Image cover renders normally.
+   - Video cover renders a static first-frame thumbnail in stage 1; no player or autoplay is created.
+   - Tapping the hero opens Recap.
+   - If there is no memory, the hero uses the anniversary fallback image and becomes the first-memory prompt.
 
-3. Stats row
-   - number of visible memories;
-   - number of places.
+3. Stats ribbon
+   - One continuous horizontal ribbon, not three floating cards.
+   - Shows love days, visible-memory count, and unique valid locations.
+   - Location count comes from `JournalData.mapLocationGroups.length`, not legacy `places.json`.
 
-4. Featured memory
-   - shows `MemoryListCard`;
-   - if no visible memory exists, shows empty state:
-     - `Chưa có kỷ niệm nổi bật`
-     - `Khi thêm kỷ niệm đầu tiên, Home sẽ giữ lại khoảnh khắc đáng nhớ nhất ở đây.`
+4. Recent-memory discovery
+   - Kicker: `Gần đây`.
+   - Title: `Những mảnh ghép`.
+   - PageView contains up to five newest visible memories after excluding the hero memory.
+   - `viewportFraction` leaves a visible hint of the next card.
+   - Current card scales subtly by page distance; this transform is disabled when Reduce Motion is enabled.
+   - Card tap opens Memory Detail.
+   - This section is hidden when there are no eligible recent memories.
 
-5. Next letter
-   - shows pinned letter or first available letter;
-   - empty state if no letter exists.
+5. Compact letter section
+   - Kicker: `Dành cho em`.
+   - Title: `Một lá thư đang đợi`.
+   - Uses the pinned letter or next available letter.
+   - Keeps locked/opened state and opens Letter Detail on tap.
+   - Uses an unframed horizontal strip instead of another large dashboard card.
 
-6. Recap CTA
-   - primary button: `Xem recap ba năm`.
+6. Recap band
+   - Wine-colored full-width band titled `Chuyện của tụi mình`.
+   - Short supporting copy and `Xem recap ba năm` action.
+   - Entire band opens Recap.
+
+Empty memory state:
+
+- Fallback anniversary image remains visually dominant.
+- Copy:
+  - `Trang đầu tiên`
+  - `Mình bắt đầu giữ lại một ngày nhé?`
+  - `Một tấm ảnh, một câu chuyện nhỏ, hay chỉ là giọng nói của hai đứa.`
+- CTA: `Tạo kỷ niệm đầu tiên`.
+- CTA navigates to Add Memory.
+- Recent-memory carousel is not shown.
+
+Motion:
+
+- Home owns one 760ms entrance controller.
+- Header, hero, stats, recent memories, letter, and recap fade/translate in with short staggered intervals.
+- Press feedback uses the existing scale interaction.
+- With system Reduce Motion enabled, all entrance content appears immediately and PageView card scaling is disabled.
 
 UX notes:
 
-- Home now handles an empty memory list safely.
-- Featured memory respects soft delete.
-- Home still intentionally has one main emotional action: recap.
+- Featured and recent-memory data only use visible memories, so soft-deleted memories never appear.
+- Home still has one primary emotional action: Recap. The empty-state Add Memory action only replaces it as the immediate next step when the journal is empty.
+- Text is capped to stable line counts inside fixed-height hero and carousel surfaces.
+
+Approved but deferred to stage 2:
+
+- Daily-memory selector based on the current date.
+- Hero parallax.
+- Animated count-up statistics.
+- Featured-memory priority inside the discovery carousel.
+- Muted hero-video autoplay with pause/offstage/tab lifecycle management.
 
 ## Screen: Time
 
@@ -416,34 +460,78 @@ Approved child routes:
 Purpose:
 
 - create or update one curated memory;
-- keep form story-first;
+- let the user begin from media, one written line, or voice;
 - avoid becoming a generic file/media manager.
 
 The bottom tab bar is hidden on this screen.
 
-### App Bar
+Design handoff:
+
+- `docs/designs/love-journal-memory-composer-handoff.html`
+
+### Composer Header
 
 Current UI:
 
-- back circular icon;
-- centered title:
-  - `Kỷ niệm mới`;
-  - `Sửa kỷ niệm`;
-- save circular icon;
-- sticky bottom primary CTA:
-  - `Lưu kỷ niệm`;
-  - loading label: `Đang lưu...`.
+- close icon;
+- centered new/edit or autosave status;
+- edit-title icon;
+- generated title below metadata, with an optional user override.
 
-### Main Info Card
+Generated title priority:
 
-Fields:
+1. explicit title override;
+2. first non-empty story line;
+3. selected location display name;
+4. primary tag and date.
 
-- `Tiêu đề`;
-- `Mô tả`;
-- `Thời gian`;
-- `Địa điểm`;
-- `Ghi chú`;
-- `Lời nhắn cho khoảnh khắc này`.
+### Empty Canvas
+
+When no meaningful content exists, the first viewport shows:
+
+- scrapbook/polaroid visual;
+- prompt `Bắt đầu từ điều bạn nhớ`;
+- three circular actions:
+  - `Ảnh / video` opens the device source sheet;
+  - `Viết một dòng` focuses the story editor and keyboard;
+  - `Giọng nói` opens import/record choices.
+
+The story editor remains available below the prompt so the user can continue without another step.
+
+### Compact Metadata
+
+The horizontal metadata row contains shrink-wrapped chips for:
+
+- date, defaulting to today;
+- one primary tag, defaulting to `Đời thường`;
+- optional location.
+
+Tags open a wrap/flex bottom sheet and support custom-tag creation. A selected location chip includes a clear action.
+
+Date opens a custom warm bottom sheet with a stable 6-row/42-cell calendar. Month arrows update the visible month immediately without the heavier default `showDatePicker` page transition.
+
+### Story, Voice, And Media
+
+- One expanding story field replaces separate description/private-note fields in the composer.
+- Legacy `note` is merged after `story` when an existing memory is first edited.
+- Voice source sheet supports device audio import and microphone recording, maximum 3 messages.
+- Native image/video files are copied into app-owned storage before autosave.
+- Video source supports selecting several files at once, while the whole memory is limited to 3 videos.
+- After video confirmation, a modal warm loading surface blocks conflicting actions while files are prepared/copied. One file uses an indeterminate loading state; multiple files show `x/n` progress.
+- If the user selects more videos than the remaining slots, only the allowed files are imported and the skipped count is reported.
+- Video tiles show their own static first-frame JPEG thumbnail with a play affordance, including when several videos are in the same segment.
+- Tapping any image/video tile opens the full-screen media viewer at that item; the viewer supports horizontal paging, image zoom, and video play/pause without a seek bar.
+- Up to 3 media segments can be created.
+- Each segment defaults to `Đoạn x`, but that title is directly editable and persisted.
+- Each segment also supports an optional note, mixed media, add/remove, delete, and move up/down.
+- The persistent bottom toolbar repeats media/story/voice actions and owns the `Lưu kỷ niệm` CTA.
+
+### Draft Recovery
+
+- Meaningful changes debounce-save locally.
+- Close/back flushes the current draft immediately.
+- Reopening shows a resume/discard sheet.
+- Successful memory save removes the temporary composer draft and opens Memory Detail.
 
 Previous location behavior (removed):
 
@@ -461,11 +549,9 @@ Current location behavior:
 
 Validation:
 
-- title is required;
-- date is required;
+- title is generated when not manually provided;
 - at least one meaningful body element must exist:
-  - description,
-  - note,
+  - story,
   - voice message,
   - image,
   - video.
@@ -483,6 +569,7 @@ Purpose:
 - attach optional geographic context to a memory;
 - keep location creation inside the memory workflow;
 - offer accurate Google search without forcing users to position every pin by hand;
+- let users explicitly select a point on the map and resolve nearby Google places;
 - let the couple use their own emotional name for a place.
 
 Approved design states:
@@ -493,7 +580,8 @@ Approved design states:
 2. `02 / Map from memories`
    - read-only map with markers projected from visible memories.
 3. `03 / Place memory list`
-   - marker bottom sheet lists all visible memories sharing the location.
+    - marker bottom sheet lists all visible memories sharing the location.
+    - the sheet and modal barrier appear above the persistent bottom tab bar; the tab bar never covers or receives taps through the sheet.
 4. `04 / Location empty`
    - Add/Edit Memory has no selected location yet.
 5. `05 / Choose a location`
@@ -504,10 +592,18 @@ Approved design states:
    - autocomplete suggestions appear after a short debounce;
    - results include Google attribution and a manual-pin fallback.
 8. `08 / Search result selected`
-   - Place Details supplies the exact coordinate, formatted address, and `googlePlaceId`;
-   - user may drag the map to refine the pin before continuing.
+   - Place Details supplies the exact coordinate, formatted address, type, business status, Google Maps URI, photo reference, and `googlePlaceId`;
+   - a compact preview lazily loads one photo and shows its attribution;
+   - user confirms `Dùng nơi này` before naming.
 9. `09 / Manual pin fallback`
-   - user pans/zooms the map and places the coordinate without a Google result;
+    - map opens in browse mode and pan/zoom never changes the location;
+    - a compact segmented control offers `Xem` and `Chọn vị trí`;
+    - the toolbar has no descriptive status sentence and shows a separate reset icon only while a marker exists;
+    - user enables `Chọn vị trí`, then taps or drags the real selection marker;
+    - the explicit coordinate triggers Nearby Search within 150 meters;
+   - up to 8 candidates appear as tappable markers plus a synchronized list;
+   - selecting a candidate opens the same compact Place Details preview;
+   - empty/error Nearby Search keeps `Giữ tọa độ này` available;
    - manual locations do not require `googlePlaceId`.
 10. `10 / Name and save`
     - user confirms a required display name;
@@ -531,10 +627,14 @@ flowchart TD
   E --> G["Find or pin a new location"]
   G --> H["Google Places suggestions"]
   H --> I["Fetch Place Details"]
-  I --> J["Selected result + optional pin refinement"]
-  G --> K["Manual pin fallback"]
+  I --> J["Compact place preview"]
+  G --> K["Enable map selection mode"]
+  K --> O["Tap or drag marker"]
+  O --> P["Nearby Search candidates"]
+  P --> I
+  O --> Q["Keep manual coordinate"]
   J --> L["Name and save"]
-  K --> L
+  Q --> L
   F --> M["Return temporary selection"]
   L --> M
   M --> N["Save memory atomically"]
@@ -543,8 +643,17 @@ flowchart TD
 Interaction and validation:
 
 - Search begins after at least two trimmed characters and a short debounce.
+- Focusing the search input hides the bottom place/context panel immediately; this does not clear the selected place, marker, photo, query, or draft.
+- The search/map Stack does not resize when the keyboard opens. Search and suggestions stay anchored below the header, while dismissing the keyboard restores the previous bottom panel.
+- Choose and Name keep normal keyboard resize and scrolling behavior.
 - One autocomplete session token is reused through suggestion selection, then rotated.
-- Place Details is requested only after the user selects a suggestion.
+- Place Details is requested only after the user selects an Autocomplete suggestion or Nearby candidate.
+- Nearby Search runs only after map tap or marker drag-end while map selection mode is enabled.
+- Pan, zoom, and camera idle never move the marker and never make a Places request.
+- Nearby Search uses a 150 meter radius, distance ranking, all place types, and at most 8 candidates.
+- Nearby candidates are exposed through both map markers and a list; the list is the accessibility and marker-overlap fallback.
+- Moving a Google-backed selection manually clears its `googlePlaceId`, formatted address, and dynamic Google metadata immediately.
+- The first Google photo is loaded only for the selected preview, remains in memory, and does not block selection on failure.
 - Search errors keep the query and expose retry/manual pin options.
 - `displayName` is required before returning a new location.
 - Coordinates must be finite and within valid latitude/longitude ranges.
@@ -554,11 +663,14 @@ Interaction and validation:
 
 Current Google Places status:
 
-- The Flutter Location Picker UI, debounce/controller flow, repository boundary, request headers, and error state are implemented.
-- In the current local Android setup, autocomplete still returns no suggestions because Google Cloud responds with HTTP `403 PERMISSION_DENIED`.
-- The tested Android restriction identity is package `vn.hung.le.lovejournal` with SHA-1 `9A:27:5D:11:3E:A1:38:DC:CC:25:39:D8:D3:7E:00:A1:94:34:5F:A0`.
-- This is treated as an environment/API-key blocker, not a reason to move search into Map or reintroduce hardcoded places.
-- The UI must continue to offer manual pin fallback and a clear retry/error state while Places permission is unresolved.
+- The Flutter Location Picker UI, compact `Xem` / `Chọn vị trí` segmented control, focus-aware bottom panel, stable keyboard layout, real draggable marker, Nearby candidates, debounce/controller flow, compact Place Details preview, photo loading, repository boundary, and error states are implemented.
+- Android Autocomplete, Nearby Search, Place Details, and Place Photos currently use Places API (New) REST through the platform-neutral data-source boundary.
+- The original local key returned `403 PERMISSION_DENIED` from Windows/Android while succeeding from Cloud Shell; request isolation ruled out field mask, query, session token, location bias, IPv4/IPv6, proxy, DNS, and hosts-file causes.
+- On 2026-07-21, a replacement local key returned HTTP `200` and five suggestions from Windows, confirming that the implemented Flutter REST request shape is valid. Android runtime behavior still needs a fresh device check with the rebuilt APK.
+- The native Android Places bridge returned `9011 REQUEST_DENIED` and has been removed from the current runtime path.
+- Direct mobile REST is temporary: production must proxy Places requests through a backend and restore a package/SHA-1-restricted key for native Maps rendering.
+- Google currently lists Vietnam as a Maps Platform Prohibited Territory. The successful replacement key is a technical development result, not approval to distribute the Google Maps-based experience in Vietnam; production provider/compliance decisions remain open.
+- The UI continues to offer manual pin fallback and clear retry/error states for network, key, quota, and SDK failures.
 
 ### Lời Nhắn Cho Khoảnh Khắc Này
 
@@ -581,8 +693,8 @@ Recorder sheet:
 
 - title: `Lời nhắn cho khoảnh khắc này`;
 - circular mic visual;
-- timer mock: `00:34`;
-- waveform/player mock;
+- live elapsed timer while recording;
+- recording state and stop/cancel actions;
 - actions:
   - `Hủy ghi âm`;
   - `Lưu lời nhắn`.
@@ -603,9 +715,9 @@ Limits:
 
 Current implementation note:
 
-- File picking and recording are mocked.
-- Mock URI format: `mock://...`.
-- Native implementation should be added later behind service abstractions.
+- Audio import uses `file_picker` and microphone recording uses `record` behind `MemoryAttachmentService`.
+- Imported and recorded files are copied into app-owned storage before entering immutable composer state.
+- Playback rows remain visual-only in this milestone; real audio playback, waveform extraction, rename/replace, and richer permission-denied/settings UX are still pending.
 
 ### Tag Selector
 
@@ -681,13 +793,16 @@ Media source sheet:
 
 - `Thêm ảnh từ thư viện`;
 - `Thêm video từ thư viện`;
-- `Chụp hoặc quay mới`.
+- `Chụp ảnh`.
 
 Current implementation note:
 
-- Image/video picking is mocked.
-- Mock media uses `AppAssets.heroImage`.
-- Video is represented by a thumbnail plus play icon.
+- Image, video, camera, audio-file import, and microphone recording use native device plugins behind `MemoryAttachmentService`.
+- Selected files are copied to app-owned storage before entering the composer draft.
+- Video selection supports multiple files and is capped at 3 videos per memory, independent of media-group placement.
+- Loading begins before the native picker result is awaited, then updates with the accepted file count during app-storage copy.
+- Video import creates one static first-frame JPEG per item; tiles display that image with a play icon layered above it and do not reserve live video decoders.
+- Tapping an image or video opens a full-screen viewer. Images support pinch zoom; videos expose play/pause only and intentionally have no seek control.
 
 Media group flow:
 
@@ -705,9 +820,9 @@ flowchart TD
   E --> I["Edit group note"]
   E --> J["Add media"]
   J --> K["Media source sheet"]
-  K --> L["Add image mock"]
-  K --> M["Add video mock"]
-  K --> N["Camera mock"]
+  K --> L["Pick images from device"]
+  K --> M["Pick video from device"]
+  K --> N["Capture photo"]
 
   E --> O["Group menu"]
   O --> P["Move up/down"]
@@ -728,21 +843,24 @@ Purpose:
 Current UI:
 
 1. Cover media
-   - height around 324;
-   - hero image transition tag;
-   - photo overlay;
-   - back and favorite circular buttons.
+   - expanded sliver cover when real media exists;
+   - image covers retain the hero image transition and open the media viewer when tapped;
+   - video covers render an actual player, auto-play for 3 completed runs, then stop;
+   - after the automatic sequence ends, user Play starts one non-looping run; user can pause/resume but cannot seek;
+   - no hardcoded fallback photo for text/voice-only memories;
+   - text-only fallback uses a quiet paper header;
+   - back, edit, and favorite actions.
 
-2. Detail sheet
+2. Unframed story body
    - date/place;
    - title;
-   - story split into shorter blocks when long;
+   - story and legacy note;
    - favorite quote if available;
    - `Lời nhắn cho khoảnh khắc này` if voice messages exist.
 
 3. Additional content
    - message for her quote if available;
-   - media groups if available;
+   - numbered media segments with optional caption and large horizontal media rail;
    - old flat media carousel fallback if no groups.
 
 Voice message display:
@@ -754,7 +872,8 @@ Voice message display:
 Media group display:
 
 - group note appears before its carousel;
-- carousel shows group items;
+- carousel shows group items, using each video's persisted first-frame thumbnail;
+- tapping an item opens the viewer at that item and allows paging through the same group;
 - falls back to flat `memory.media` when no groups exist.
 
 ## Screen: Map
@@ -795,7 +914,7 @@ Interaction:
 
 Implemented limitation:
 
-- The current implementation uses `google_maps_flutter` and Google Places Web Service.
+- The previous implementation used `google_maps_flutter` and Google Places Web Service.
 - API keys are supplied by environment/build configuration, never committed.
 - Search result selection is exploratory for now; searched places and notes are not persisted yet.
 - If the API key is absent, the app keeps a static fallback surface so local development and tests do not crash.
@@ -951,6 +1070,17 @@ Core presentation components:
 - `StatCard`
 - `LetterCard`
 - `PlacePreviewSheet`
+- `HomeLivingHero`
+- `HomeStatsRibbon`
+- `HomeMemoryDiscoveryCarousel`
+- `HomeCompactLetterSection`
+- `HomeRecapBand`
+- `MemoryVideoPreview`
+- `MemoryVideoPlayer`
+- `MemoryMediaViewer`
+- `LocationMapToolbar`
+- `LocationMapBottomPanel`
+- `LocationMemoryListSheet`
 
 Component behavior notes:
 
@@ -974,7 +1104,7 @@ Used for:
 - memory action menu;
 - create custom tag;
 - voice message source;
-- recorder mock;
+- microphone recorder;
 - media source.
 
 Current visual style:
@@ -990,29 +1120,27 @@ Current visual style:
 
 Local-first:
 
-- app works offline with bundled assets and local draft data.
+- journal browsing, editing, local attachments, and draft recovery work from bundled/local data;
+- Google Maps tiles, Places search/details/photos, and external Google Maps links require network access and valid service configuration.
 
 Current persistence:
 
 - app session uses SharedPreferences;
 - editable memories/tags use SharedPreferences draft JSON.
 
-Current mock limitations:
+Current limitations:
 
-- media picker is mocked;
-- audio picker is mocked;
-- recorder is mocked;
-- video playback is mocked;
 - voice playback is mocked;
+- imported videos persist app-owned first-frame JPEG thumbnails; legacy video records without `thumbnailUri` fall back to runtime extraction;
 - Time search is not implemented;
-- Google Places search UI is implemented in Location Picker but currently blocked by Google Cloud `403 PERMISSION_DENIED` in the local Android setup;
+- Google Places Autocomplete, Nearby Search, compact Place Details, and one-photo preview are implemented in Location Picker through direct REST; production distribution still requires a compliant provider/key strategy;
 - no undo/trash UI for soft delete;
 - no account/cloud sync.
 
 ## UX Rules To Preserve
 
 1. Time is not just a list of photos.
-2. Add/Edit Memory must remain story-first.
+2. Add/Edit Memory may begin from media, one line, or voice, while the saved memory remains story-centered.
 3. `Lời nhắn cho khoảnh khắc này` replaces a generic `Audio` field.
 4. Media groups are dynamic and limited to 3 for MVP.
 5. `Tất cả` is a UI filter, not stored as a tag.
@@ -1028,6 +1156,11 @@ Current mock limitations:
 15. Keep Map read-only and derive it from visible memories.
 16. Use a user-controlled location display name even when coordinates came from Google.
 17. Keep private notes attached to memories, not locations.
+18. Every video media tile must show its own static first-frame thumbnail, not a generic video placeholder or a live preview controller.
+19. Image/video viewer is available from both Add/Edit and Memory Detail; video controls remain play/pause only.
+20. A video cover auto-plays at most 3 completed runs, then requires manual one-run playback.
+21. A memory contains at most 3 videos across all media groups.
+22. Large or multi-video imports must show a blocking progress surface until app-storage copy finishes.
 
 ## UI/UX Verification Checklist
 
@@ -1048,7 +1181,17 @@ Use this checklist after major UI changes:
 - Canceling Location Picker does not create or persist a location.
 - The form can reuse an existing location without duplicating it.
 - Google Places search appears only in Location Picker.
-- Selecting a suggestion fetches Place Details and allows pin refinement.
+- Selecting an Autocomplete suggestion fetches compact Place Details.
+- Map selection is off by default; pan/zoom never changes location.
+- The toolbar fits narrow screens without status-copy ellipsis and keeps reset as a separate icon action.
+- Enabling map selection allows map tap and marker drag-end to run Nearby Search.
+- Search focus hides the lower information panel before keyboard animation; dismissing the keyboard restores the same selection.
+- The search/map step does not resize its Stack for the keyboard, while Choose and Name continue to resize/scroll normally.
+- Nearby results appear as markers and a synchronized list.
+- Selecting a Nearby candidate fetches the same compact Place Details preview.
+- Nearby empty/error states still allow saving the manual coordinate.
+- Moving a Google result manually clears stale Google metadata.
+- Selected-place photo loading and link failures do not block location selection.
 - Manual pinning works without a `googlePlaceId`.
 - A new location requires a user-confirmed display name.
 - Tag selector wraps chips to next line.
@@ -1060,8 +1203,15 @@ Use this checklist after major UI changes:
 - Media groups show `0/3`, `1/3`, `2/3`, `3/3` style limit.
 - Add group is disabled/hidden at 3 groups.
 - Memory Detail shows voice messages and media groups.
+- Composer and Memory Detail video tiles show the correct first-frame thumbnail for every video, including multiple videos in one segment.
+- Tapping any image/video tile opens the viewer at the correct item.
+- Viewer images zoom; viewer videos play/pause and do not expose seeking.
+- A video cover stops after the third completed run and does not resume automatic looping after manual replay.
+- Video source can select multiple files, but no memory can exceed 3 videos across all groups.
+- Large video import displays loading; multi-video import displays the current `x/n` item and reports files skipped by the limit.
 - Locked letters do not expose body content.
 - Map bottom sheet has visible background.
+- Map marker bottom sheet is presented above the navigation shell and remains fully usable down to the device safe area.
 - Map shows a real Google Map when a platform Maps key is configured.
 - Map shows a clear API-key fallback state when the key is absent.
 - Map has no search/add/edit place controls after the approved refactor.
@@ -1077,7 +1227,7 @@ Recommended next design/implementation passes:
 
 1. Add more widget tests for Time empty, add memory, custom tag, soft delete, Location Picker, and Map projection.
 2. Design real permission states for microphone, photos, and camera.
-3. Replace mock audio/media with native services.
+3. Add audio playback, thumbnail cache cleanup for large libraries, and orphan-file cleanup.
 4. Add Time search UX and undo/trash recovery.
 5. Add accessibility pass:
    - semantic labels;
