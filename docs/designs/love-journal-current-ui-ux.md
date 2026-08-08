@@ -1,7 +1,7 @@
 # Mình & Em - Current UI/UX Source Of Truth
 
-Last updated: 2026-07-25
-Implementation status: reflects the implemented Home "Nhật ký sống" stage 1, visual Memory Composer, native local attachments, static video thumbnails and viewer playback, interactive Location Picker with Nearby Search/Place Details, read-only memory-derived Map, empty bundled memory/place seeds, and direct Places API (New) REST for the local-first milestone.
+Last updated: 2026-08-08
+Implementation status: reflects the implemented Auth client and gate, Home "Nhật ký sống" stage 1, visual Memory Composer, native local attachments, static video thumbnails and viewer playback, interactive Location Picker with Nearby Search/Place Details, read-only memory-derived Map, empty bundled memory/place seeds, and direct Places API (New) REST for the local-first milestone. Real Firebase credentials and the Email OTP backend remain external setup work.
 
 ## Purpose
 
@@ -25,6 +25,8 @@ Related design files:
 - `love-journal-home-living-journal-preview.png`: rendered Home handoff preview.
 - `love-journal-memory-composer-handoff.html`: implemented visual Memory Composer handoff.
 - `love-journal-time-management-handoff.html`: Time/Add Memory extension handoff.
+- `love-journal-auth-handoff.html`: implemented Auth screen/state handoff.
+- `love-journal-auth-preview.png`: rendered Auth handoff preview.
 - `love-journal-implementation-spec.md`: product and implementation spec.
 - [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC): approved Map and Location Picker flow.
 
@@ -123,9 +125,50 @@ Localization:
 - Vietnamese is the current template locale in `lib/l10n/app_vi.arb`.
 - Domain/data IDs, route names, JSON keys, asset paths, and mock URIs remain technical strings outside localization.
 
+## Authentication UX
+
+Status: **Implemented in Flutter; real service configuration pending.**
+
+### Sign In
+
+- Full-width anniversary image anchors the first viewport with privacy lock, `Nhật ký riêng của hai đứa`, and `Mình & Em`.
+- The warm lower surface contains one neutral Google action and one rose Email action; no marketing carousel or settings content appears here.
+- Google loading replaces its mark with a compact progress indicator and disables both sign-in methods until the provider returns.
+- Missing config, cancellation, network, provider and rate-limit errors appear inline without discarding local journal data.
+- Debug bypass is visibly identified and is impossible in profile/release builds.
+
+### Email
+
+- One email field and one `Gửi mã` CTA keep this path short.
+- Invalid email is handled locally at the field; backend/config/network errors appear immediately below it.
+- A successful request navigates to OTP while keeping the challenge in Riverpod state.
+
+### Email OTP
+
+- One real numeric input drives six visual cells and platform OTP autofill.
+- The screen keeps the destination email visible, shows a resend countdown, and supports invalid, expired, max-attempt, rate-limit and offline states.
+- Verification returns a Firebase custom token through the backend adapter, then the auth controller starts the Firebase session.
+- In debug bypass only, code `123456` is shown as development guidance.
+
+### Account Sheet
+
+- Home shows the authenticated avatar/initials beside the Recap heart.
+- Tap opens a root-navigator sheet above the tab shell with display name, email and `Đăng xuất` only.
+- Sign-out clears the provider session and the router returns to Sign In.
+
+The implemented presentation is source-aligned with `love-journal-auth-handoff.html`. Partner pairing, couple selection and local-data migration remain separate future flows.
+
 ## Navigation UX
 
 The app uses GoRouter with a `StatefulShellRoute.indexedStack`.
+
+Root auth routes, always outside the tab shell:
+
+```txt
+/auth/sign-in
+/auth/email
+/auth/email/otp
+```
 
 Bottom tabs:
 
@@ -164,7 +207,14 @@ Navigation diagram:
 
 ```mermaid
 flowchart TD
-  A["Opening Gate"] --> B["Main Tabs"]
+  A["App start"] --> AU{"Authenticated?"}
+  AU -- "No" --> SI["Sign In"]
+  SI --> GG["Google"]
+  SI --> EM["Email OTP"]
+  GG --> OG["Opening Gate"]
+  EM --> OG
+  AU -- "Yes" --> OG
+  OG --> B["Main Tabs"]
 
   B --> H["Home"]
   B --> T["Time"]
@@ -185,13 +235,16 @@ flowchart TD
   MS --> MD["Memory Detail"]
 
   L --> LD["Letter Detail"]
+
+  H --> AS["Account sheet"]
+  AS --> SI
 ```
 
 ## Global States
 
 ### Loading
 
-Used while journal data or session preferences are loading.
+Used while auth session, journal data or session preferences are loading.
 
 Current UI:
 
@@ -200,7 +253,7 @@ Current UI:
 
 ### Error
 
-Used when journal data or session preferences fail.
+Used when an unrecoverable auth initialization, journal data or session preference load fails. Recoverable sign-in/OTP failures remain inline on their own screen.
 
 Current UI:
 
@@ -211,7 +264,7 @@ Current UI:
 
 ### Opening Gate
 
-If `hasSeenOpening` is false, user is redirected to Opening Gift.
+After authentication, if `hasSeenOpening` is false, user is redirected to Opening Gift.
 
 When CTA is tapped:
 

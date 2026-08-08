@@ -1,13 +1,15 @@
 # Mình & Em - Mobile App Implementation Spec
 
-Version: 1.2
+Version: 1.3
 Target: Flutter
-Last updated: 2026-07-25
+Last updated: 2026-08-08
 Design board: `love-journal-figma-handoff.html`
 Time management extension: `love-journal-time-management-handoff.html`
 Memory Composer handoff: `love-journal-memory-composer-handoff.html`
 Home stage-1 handoff: `love-journal-home-living-journal-handoff.html`
 Home preview: `love-journal-home-living-journal-preview.png`
+Auth handoff: `love-journal-auth-handoff.html`
+Auth preview: `love-journal-auth-preview.png`
 Map/Memory Location design: [Figma - Love Journal Map + Memory Location](https://www.figma.com/design/b3zJU0jnS7ZFAaJNX6G5lC)
 Current UI/UX source of truth: `love-journal-current-ui-ux.md`  
 Token file: `love-journal-design-tokens.json`
@@ -50,6 +52,7 @@ Current product milestone:
 5. Support moment voice messages and grouped image/video sections per memory.
 6. Route user-facing app copy through localization resources.
 7. Make Memory the owner of location selection and make Map a read-only projection of located memories.
+8. Add an auth gate with Google/Firebase identity, backend-owned Email OTP and minimal account sign-out.
 
 Current implementation note:
 
@@ -57,6 +60,7 @@ Current implementation note:
 - Bundled `assets/data/memories.json` and `assets/data/places.json` are intentionally empty so new memories/locations are created by the user instead of restored from hardcoded seed data.
 - Google Places Autocomplete, explicit map selection with Nearby Search, compact Place Details, and lazy one-photo preview are implemented in Location Picker. The current local-first build uses Places API (New) REST through a platform-neutral data source, including on Android. Do not reintroduce Map search or hardcoded places.
 - Native image/video selection, voice recording, persisted first-frame video thumbnails, full-screen media viewing, and controlled cover-video playback are implemented for the local-first Android flow.
+- Auth presentation, Riverpod session state, GoRouter gate, Firebase/Google adapter, provisional Email OTP adapter and Home account sheet are implemented. Real Firebase values and backend OTP deployment are not stored in this repository and remain required before production login works.
 
 ## Navigation
 
@@ -64,29 +68,31 @@ Recommended structure:
 
 ```txt
 AppRoot
-  OpeningGate
-    OpeningGift
-  MainTabs
-    HomeTab
-      HomeScreen
-      MemoryDetailScreen
-      RecapScreen
-    TimelineTab
-      TimelineScreen
-      MemoryDetailScreen
-      AddMemoryScreen
-        LocationPickerScreen
-      EditMemoryScreen
-        LocationPickerScreen
-    MapTab
-      MapScreen
-      LocationMemoryListSheet
-      MemoryDetailScreen
-    LettersTab
-      LettersScreen
-      LetterDetailScreen
-  AddMemoryScreen
-  EditMemoryScreen
+  AuthGate
+    SignInScreen
+    EmailSignInScreen
+    EmailOtpScreen
+    OpeningGate
+      OpeningGift
+    MainTabs
+      HomeTab
+        HomeScreen
+        MemoryDetailScreen
+        RecapScreen
+      TimelineTab
+        TimelineScreen
+        MemoryDetailScreen
+        AddMemoryScreen
+          LocationPickerScreen
+        EditMemoryScreen
+          LocationPickerScreen
+      MapTab
+        MapScreen
+        LocationMemoryListSheet
+        MemoryDetailScreen
+      LettersTab
+        LettersScreen
+        LetterDetailScreen
 ```
 
 Approved Location Picker routes:
@@ -102,9 +108,70 @@ Approved Location Picker routes:
 
 Opening logic:
 
+- Require an authenticated session before Opening or the main shell.
 - Show `OpeningGift` on first launch.
 - Persist `hasSeenOpening = true` locally after CTA tap.
 - Allow replay later from Settings or hidden debug menu.
+
+## Authentication Implementation
+
+### Ownership
+
+- Firebase Authentication owns identity and session restoration.
+- Google Sign-In is the first Android provider.
+- The standalone backend owns Email OTP creation, delivery, expiry, attempts and rate limiting.
+- Flutter owns presentation, local validation, challenge state, service adapters and router redirects.
+- Partner/couple membership is not an auth custom claim and is not inferred after login.
+
+### Flutter boundaries
+
+```txt
+features/auth/
+  domain/entities + repository interfaces
+  data/Firebase + HTTP + debug-only adapters
+  application/AuthController + EmailOtpController + providers
+  presentation/Sign In + Email + OTP + account components
+```
+
+Widgets never call Firebase or HTTP. `AuthController` publishes checking, signed-out and authenticated state plus Google/custom-token/sign-out operations. `EmailOtpController` owns request, code-sent, verify and resend states.
+
+### Routes and redirect policy
+
+```txt
+/auth/sign-in
+/auth/email
+/auth/email/otp
+```
+
+- Signed-out users opening any journal route are redirected to Sign In.
+- Signed-in users opening `/auth/*` continue through Opening or Home.
+- A direct OTP route without an in-memory challenge shows a recoverable missing-challenge state and returns to Email.
+- Sign-out changes provider state; GoRouter performs the redirect instead of the sheet manually navigating.
+
+### Runtime config
+
+Auth values are compile-time dart-defines loaded from an ignored JSON file. Required production fields are Firebase API key, Android app ID, messaging sender ID, project ID, Google Web OAuth/server client ID and the backend API base URL. No real value belongs in source control.
+
+The checked-in `config/auth.dev.example.json` defines the accepted keys. `AUTH_DEV_BYPASS=true` is honored only in debug builds and uses OTP `123456`; release/profile always selects real adapters.
+
+### Provisional Email OTP adapter
+
+Until the backend publishes OpenAPI, Flutter provisionally calls:
+
+```txt
+POST /v1/auth/email-otp/request
+POST /v1/auth/email-otp/verify
+```
+
+Request returns a challenge ID plus expiry/resend/attempt metadata. Verify returns `firebaseCustomToken`, which Flutter passes to Firebase Authentication. The released shared contract replaces this provisional response shape when available.
+
+### Deferred auth-adjacent work
+
+- Android Firebase console/OAuth/SHA setup and end-to-end Google verification.
+- Backend OTP delivery and custom-token minting.
+- iOS Firebase and Apple Sign-In.
+- legal-content routes behind Terms/Privacy copy.
+- UID-scoped local persistence, local-data migration and Partner onboarding.
 
 ## Design Tokens
 
@@ -960,7 +1027,8 @@ Later product:
 
 - Move data to SQLite/Isar/Realm.
 - Add sync layer.
-- Add auth and partner pairing.
+- Scope local data by authenticated UID and couple space.
+- Add partner pairing as a separate post-auth flow.
 
 ## Seed Data Checklist
 
@@ -1008,6 +1076,12 @@ Before giving the app:
 - Text does not overflow on small devices.
 - App icon and name are polished.
 - No accidental private/dev content in release build.
+- Signed-out users cannot reach the journal shell through a deep link.
+- Missing Firebase/backend config produces an inline recoverable error, not a fake session or crash.
+- Google loading prevents duplicate auth requests; cancel keeps local data intact.
+- Email and OTP validation, resend countdown, invalid/expired/rate-limit/offline states remain inline.
+- Auth session survives app restart after real Firebase setup; sign-out returns to Sign In.
+- `AUTH_DEV_BYPASS` cannot activate in profile/release builds.
 - Location Picker cancel does not persist a location.
 - Google Places search is visible only in Location Picker.
 - Map has no add/search/edit place controls.
@@ -1024,15 +1098,15 @@ Before giving the app:
 If deadline is close:
 
 1. Build with local JSON and bundled assets.
-2. Skip account/auth/sync.
+2. Use the debug-only auth bypass for UI demos; never ship it as production authentication.
 3. Use static map if map SDK setup is risky.
 4. Add only one polished animation: Opening to Home.
 5. Make Memory Detail and Letters emotionally strong.
 
 For product version:
 
-1. Add Add/Edit Memory.
-2. Add partner invite.
-3. Add cloud media storage.
-4. Add privacy lock.
-5. Add recap/export.
+1. Connect Firebase and publish the backend Auth/Couple OpenAPI contract.
+2. Add partner invite and local-data migration.
+3. Move editable data to a sync-ready local database.
+4. Add cloud media storage and synchronization.
+5. Add privacy lock and recap/export hardening.

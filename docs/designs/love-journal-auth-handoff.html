@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mình & Em · Auth Design Handoff</title>
+  <style>
+    :root {
+      --paper: #fff8f2;
+      --paper-muted: #f4ebe4;
+      --surface: #ffffff;
+      --surface-warm: #fff4ee;
+      --ink: #20191d;
+      --ink-soft: #3a3036;
+      --muted: #75686f;
+      --muted-light: #9b8d93;
+      --line: #e7d9cf;
+      --rose: #bf5363;
+      --rose-dark: #923b4a;
+      --wine: #5f2634;
+      --teal: #3f7b84;
+      --moss: #687f6f;
+      --amber: #c5964f;
+      --danger: #a9424f;
+      --frame-w: 393px;
+      --frame-h: 852px;
+      --shadow-frame: 0 24px 72px rgba(47, 30, 39, .16);
+      --shadow-soft: 0 14px 38px rgba(47, 30, 39, .10);
+      color: var(--ink);
+      background: var(--paper-muted);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      letter-spacing: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-width: 1180px;
+      margin: 0;
+      background:
+        linear-gradient(rgba(231, 217, 207, .46) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(231, 217, 207, .46) 1px, transparent 1px),
+        linear-gradient(180deg, #fffaf6 0%, #f5ebe4 100%);
+      background-size: 32px 32px, 32px 32px, auto;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1,
+    h2,
+    .display,
+    .brand {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 600;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .board {
+      width: 1656px;
+      max-width: calc(100% - 48px);
+      margin: 0 auto;
+      padding: 48px 0 100px;
+    }
+
+    .cover {
+      min-height: 430px;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border: 1px solid rgba(231, 217, 207, .74);
+      border-radius: 8px;
+      color: #fff;
+      background:
+        linear-gradient(90deg, rgba(25, 21, 29, .94) 0%, rgba(25, 21, 29, .70) 52%, rgba(25, 21, 29, .14) 100%),
+        url("assets/anniversary-hero.png") center 44% / cover no-repeat;
+      box-shadow: 0 26px 72px rgba(35, 24, 31, .22);
+    }
+
+    .eyebrow {
+      color: var(--rose-dark);
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .cover .eyebrow {
+      color: rgba(255, 255, 255, .70);
+    }
+
+    h1 {
+      max-width: 880px;
+      margin-top: 12px;
+      font-size: 66px;
+      line-height: 70px;
+    }
+
+    .cover-copy {
+      max-width: 760px;
+      margin-top: 20px;
+      color: rgba(255, 255, 255, .78);
+      font-size: 17px;
+      line-height: 27px;
+    }
+
+    .cover-tags {
+      display: flex;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .cover-tag {
+      min-height: 34px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, .24);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, .88);
+      background: rgba(255, 255, 255, .10);
+      font-size: 12px;
+      font-weight: 750;
+      backdrop-filter: blur(12px);
+    }
+
+    .section {
+      margin-top: 64px;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 520px minmax(0, 1fr);
+      gap: 48px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      margin-top: 8px;
+      font-size: 44px;
+      line-height: 49px;
+    }
+
+    .section-note {
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 25px;
+    }
+
+    .flow-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .72);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .flow-step {
+      min-height: 112px;
+      padding: 20px;
+      position: relative;
+      border-right: 1px solid var(--line);
+    }
+
+    .flow-step:last-child {
+      border-right: 0;
+    }
+
+    .flow-number {
+      color: var(--rose-dark);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .flow-title {
+      margin-top: 12px;
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .flow-copy {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    .frames {
+      display: grid;
+      grid-template-columns: repeat(4, var(--frame-w));
+      gap: 28px;
+      align-items: start;
+    }
+
+    .frame-wrap {
+      display: grid;
+      gap: 12px;
+    }
+
+    .frame-label {
+      min-height: 58px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 17px;
+    }
+
+    .frame-label strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .phone {
+      width: var(--frame-w);
+      height: var(--frame-h);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(32, 25, 29, .11);
+      border-radius: 34px;
+      background: var(--paper);
+      box-shadow: var(--shadow-frame);
+    }
+
+    .status-bar {
+      height: 44px;
+      padding: 0 20px;
+      position: absolute;
+      inset: 0 0 auto;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 850;
+      pointer-events: none;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 7px;
+      border: 1.6px solid currentColor;
+      border-radius: 2px;
+    }
+
+    .login-photo {
+      height: 362px;
+      position: relative;
+      color: #fff;
+      background:
+        linear-gradient(180deg, rgba(25, 21, 29, .05) 0%, rgba(25, 21, 29, .18) 48%, rgba(25, 21, 29, .84) 100%),
+        url("assets/anniversary-hero.png") center 46% / cover no-repeat;
+    }
+
+    .login-photo-copy {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 30px;
+    }
+
+    .privacy-mark {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 18px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 50%;
+      background: rgba(28, 22, 26, .22);
+      backdrop-filter: blur(12px);
+    }
+
+    .login-kicker {
+      color: rgba(255, 255, 255, .74);
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .brand {
+      margin-top: 7px;
+      font-size: 43px;
+      line-height: 47px;
+    }
+
+    .login-body {
+      height: calc(100% - 362px);
+      padding: 24px 20px 18px;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, #fff8f2 0%, #fffaf7 100%);
+    }
+
+    .screen-title {
+      color: var(--ink);
+      font-size: 24px;
+      line-height: 30px;
+      font-weight: 850;
+    }
+
+    .screen-copy {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 21px;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .action {
+      width: 100%;
+      height: 52px;
+      padding: 0 16px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 14px;
+      font-weight: 820;
+    }
+
+    .action.primary {
+      border-color: var(--rose);
+      color: #fff;
+      background: var(--rose);
+    }
+
+    .action:disabled {
+      opacity: .58;
+      cursor: default;
+    }
+
+    .action-icon {
+      position: absolute;
+      left: 16px;
+    }
+
+    .google-g {
+      font-size: 21px;
+      font-weight: 900;
+      line-height: 1;
+      background: conic-gradient(from -44deg, #4285f4 0 25%, #34a853 0 42%, #fbbc05 0 66%, #ea4335 0 82%, #4285f4 0);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .fine-print {
+      margin-top: auto;
+      padding: 0 14px;
+      color: var(--muted-light);
+      text-align: center;
+      font-size: 11px;
+      line-height: 16px;
+    }
+
+    .fine-print strong {
+      color: var(--muted);
+    }
+
+    .loading-line {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(32, 25, 29, .16);
+      border-top-color: var(--rose);
+      border-radius: 50%;
+      animation: spin .9s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .form-screen {
+      height: 100%;
+      padding: 56px 20px 24px;
+      background: linear-gradient(180deg, #fff8f2 0%, #fffaf7 100%);
+    }
+
+    .back-button {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .86);
+    }
+
+    .form-heading {
+      margin-top: 54px;
+    }
+
+    .form-icon {
+      width: 50px;
+      height: 50px;
+      margin-bottom: 22px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--rose);
+      background: var(--surface-warm);
+    }
+
+    .form-kicker {
+      color: var(--rose-dark);
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .form-title {
+      margin-top: 8px;
+      font-size: 32px;
+      line-height: 38px;
+      font-weight: 850;
+    }
+
+    .form-copy {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 21px;
+    }
+
+    .field-wrap {
+      margin-top: 34px;
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink-soft);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .field {
+      width: 100%;
+      height: 54px;
+      padding: 0 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      outline: none;
+      color: var(--ink);
+      background: rgba(255, 255, 255, .92);
+      font-size: 15px;
+    }
+
+    .field.focused {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(191, 83, 99, .10);
+    }
+
+    .field.error {
+      border-color: var(--danger);
+    }
+
+    .inline-error {
+      margin-top: 8px;
+      display: flex;
+      gap: 7px;
+      align-items: flex-start;
+      color: var(--danger);
+      font-size: 12px;
+      line-height: 18px;
+      font-weight: 700;
+    }
+
+    .inline-error .icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      margin-top: 1px;
+    }
+
+    .form-action {
+      margin-top: 18px;
+    }
+
+    .otp-row {
+      margin-top: 34px;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 7px;
+    }
+
+    .otp-cell {
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .94);
+      font-size: 20px;
+      font-weight: 850;
+    }
+
+    .otp-cell.active {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(191, 83, 99, .10);
+    }
+
+    .otp-cell.error {
+      border-color: var(--danger);
+      background: rgba(169, 66, 79, .04);
+    }
+
+    .otp-meta {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    .text-action {
+      padding: 0;
+      color: var(--rose-dark);
+      background: transparent;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .auth-note {
+      margin-top: 20px;
+      padding: 12px;
+      display: flex;
+      gap: 9px;
+      border: 1px solid rgba(197, 150, 79, .34);
+      border-radius: 8px;
+      color: var(--ink-soft);
+      background: rgba(197, 150, 79, .09);
+      font-size: 11px;
+      line-height: 17px;
+    }
+
+    .auth-note .icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      color: var(--amber);
+    }
+
+    .sheet-demo {
+      height: 100%;
+      position: relative;
+      background:
+        linear-gradient(rgba(255, 248, 242, .72), rgba(255, 248, 242, .94)),
+        url("assets/anniversary-hero.png") center / cover no-repeat;
+    }
+
+    .home-ghost {
+      padding: 78px 20px 0;
+    }
+
+    .home-ghost .form-kicker {
+      color: var(--muted);
+    }
+
+    .home-ghost .display {
+      margin-top: 7px;
+      font-size: 42px;
+    }
+
+    .sheet-scrim {
+      position: absolute;
+      inset: 0;
+      background: rgba(25, 21, 29, .38);
+    }
+
+    .account-sheet {
+      min-height: 300px;
+      padding: 12px 20px 28px;
+      position: absolute;
+      inset: auto 0 0;
+      border-radius: 22px 22px 0 0;
+      background: var(--paper);
+      box-shadow: 0 -20px 60px rgba(32, 25, 29, .18);
+    }
+
+    .handle {
+      width: 42px;
+      height: 5px;
+      margin: 0 auto;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .account-row {
+      margin-top: 28px;
+      display: flex;
+      gap: 13px;
+      align-items: center;
+    }
+
+    .avatar {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--rose-dark);
+      background: var(--surface-warm);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .account-name {
+      font-size: 17px;
+      font-weight: 850;
+    }
+
+    .account-email {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .sheet-divider {
+      height: 1px;
+      margin: 24px 0 16px;
+      background: var(--line);
+    }
+
+    .danger-action {
+      border-color: rgba(169, 66, 79, .32);
+      color: var(--danger);
+      background: transparent;
+    }
+
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .spec-block {
+      min-height: 220px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .76);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .spec-block h3 {
+      margin-top: 12px;
+      font-size: 18px;
+    }
+
+    .spec-block ul {
+      margin: 16px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 21px;
+    }
+
+    .legend {
+      margin-top: 28px;
+      padding: 22px;
+      border-left: 4px solid var(--rose);
+      background: rgba(255, 255, 255, .66);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 22px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <section class="cover">
+      <div class="eyebrow">Mình & Em · Auth module · Design-first</div>
+      <h1>Một cánh cửa riêng tư, không phải một biểu mẫu lạnh lẽo.</h1>
+      <p class="cover-copy">Đăng nhập giữ đúng chất liệu cảm xúc của nhật ký nhưng vẫn rõ ràng, ngắn gọn và đủ trạng thái để kết nối Firebase Auth cùng backend Email OTP sau này.</p>
+      <div class="cover-tags">
+        <span class="cover-tag">Google cho Android demo</span>
+        <span class="cover-tag">Email OTP 6 số</span>
+        <span class="cover-tag">Local-first migration sau đăng nhập</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Luồng đã chốt</div>
+          <h2>Ít bước, rõ trạng thái</h2>
+        </div>
+        <p class="section-note">Partner pairing không nằm trong auth. Sau khi xác thực thành công, router quyết định đi Opening, Home hoặc onboarding couple-space theo trạng thái tài khoản và dữ liệu local.</p>
+      </div>
+      <div class="flow-strip">
+        <div class="flow-step"><div class="flow-number">01</div><div class="flow-title">Chọn phương thức</div><div class="flow-copy">Google là đường chính, Email là đường thay thế.</div></div>
+        <div class="flow-step"><div class="flow-number">02</div><div class="flow-title">Xác thực</div><div class="flow-copy">Firebase Google hoặc challenge Email OTP từ backend.</div></div>
+        <div class="flow-step"><div class="flow-number">03</div><div class="flow-title">Khôi phục phiên</div><div class="flow-copy">Auth state quyết định route, không để widget tự điều hướng tùy ý.</div></div>
+        <div class="flow-step"><div class="flow-number">04</div><div class="flow-title">Xử lý local data</div><div class="flow-copy">Hỏi giữ, gắn hoặc bỏ dữ liệu cũ khi có UID thật.</div></div>
+        <div class="flow-step"><div class="flow-number">05</div><div class="flow-title">Vào nhật ký</div><div class="flow-copy">Opening lần đầu, Home nếu người dùng đã hoàn tất.</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Core screens</div>
+          <h2>Đăng nhập và Email</h2>
+        </div>
+        <p class="section-note">Màn đầu chỉ giữ hai lựa chọn. Không thêm slogan dài, carousel hay card marketing. Ảnh thật của hai người là tín hiệu đầu tiên, hành động luôn nằm trong vùng ngón tay thuận.</p>
+      </div>
+      <div class="frames">
+        <div class="frame-wrap">
+          <div class="frame-label"><strong>01 · Sign in</strong>Trạng thái mặc định, Google ưu tiên.</div>
+          <div class="phone">
+            <div class="status-bar" style="color:#fff"><span>9:41</span><span class="status-icons"><span>5G</span><span class="status-dot"></span></span></div>
+            <div class="login-photo">
+              <div class="login-photo-copy">
+                <div class="privacy-mark"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></div>
+                <div class="login-kicker">Nhật ký riêng của hai đứa</div>
+                <div class="brand">Mình & Em</div>
+              </div>
+            </div>
+            <div class="login-body">
+              <div class="screen-title">Mình lại gặp nhau nhé</div>
+              <p class="screen-copy">Những ngày bình thường nhất, được giữ trong một nơi chỉ dành cho hai người.</p>
+              <div class="actions">
+                <button class="action"><span class="action-icon google-g">G</span>Tiếp tục với Google</button>
+                <button class="action primary"><svg class="icon action-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>Tiếp tục bằng email</button>
+              </div>
+              <p class="fine-print">Bằng việc tiếp tục, bạn đồng ý với <strong>Điều khoản</strong> và <strong>Quyền riêng tư</strong>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="frame-wrap">
+          <div class="frame-label"><strong>02 · Google loading</strong>Khoá hai action, không điều hướng lặp.</div>
+          <div class="phone">
+            <div class="status-bar" style="color:#fff"><span>9:41</span><span class="status-icons"><span>5G</span><span class="status-dot"></span></span></div>
+            <div class="login-photo">
+              <div class="login-photo-copy">
+                <div class="privacy-mark"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></div>
+                <div class="login-kicker">Nhật ký riêng của hai đứa</div>
+                <div class="brand">Mình & Em</div>
+              </div>
+            </div>
+            <div class="login-body">
+              <div class="screen-title">Mình lại gặp nhau nhé</div>
+              <p class="screen-copy">Những ngày bình thường nhất, được giữ trong một nơi chỉ dành cho hai người.</p>
+              <div class="actions">
+                <button class="action" disabled><span class="action-icon loading-line"></span>Đang kết nối Google</button>
+                <button class="action primary" disabled><svg class="icon action-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>Tiếp tục bằng email</button>
+              </div>
+              <p class="fine-print">Bạn có thể hủy ở cửa sổ Google mà không làm mất dữ liệu local.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="frame-wrap">
+          <div class="frame-label"><strong>03 · Email entry</strong>Một field, một CTA, bàn phím email.</div>
+          <div class="phone">
+            <div class="status-bar"><span>9:41</span><span class="status-icons"><span>5G</span><span class="status-dot"></span></span></div>
+            <div class="form-screen">
+              <button class="back-button" aria-label="Quay lại"><svg class="icon" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button>
+              <div class="form-heading">
+                <div class="form-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"></path></svg></div>
+                <div class="form-kicker">Đăng nhập</div>
+                <div class="form-title">Email của bạn</div>
+                <p class="form-copy">Mình sẽ gửi một mã gồm 6 số để xác nhận đây là bạn.</p>
+              </div>
+              <div class="field-wrap">
+                <label class="field-label">Email</label>
+                <div class="field focused" style="display:flex;align-items:center">ban@email.com</div>
+                <button class="action primary form-action"><svg class="icon action-icon" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>Gửi mã</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="frame-wrap">
+          <div class="frame-label"><strong>04 · Email validation</strong>Lỗi sát field, không dùng dialog.</div>
+          <div class="phone">
+            <div class="status-bar"><span>9:41</span><span class="status-icons"><span>5G</span><span class="status-dot"></span></span></div>
+            <div class="form-screen">
+              <button class="back-button" aria-label="Quay lại"><svg class="icon" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button>
+              <div class="form-heading">
+                <div class="form-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"></path></svg></div>
+                <div class="form-kicker">Đăng nhập</div>
+                <div class="form-title">Email của bạn</div>
+                <p class="form-copy">Mình sẽ gửi một mã gồm 6 số để xác nhận đây là bạn.</p>
+              </div>
+              <div class="field-wrap">
+                <label class="field-label">Email</label>
+                <div class="field error" style="display:flex;align-items:center">ban@email</div>
+                <div class="inline-error"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><path d="M12 17h.01"></path></svg><span>Nhập một địa chỉ email hợp lệ nhé.</span></div>
+                <button class="action primary form-action">Gửi mã</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Verification states</div>
+          <h2>OTP và tài khoản</h2>
+        </div>
+        <p class="section-note">Mã OTP dùng một input thật và sáu ô hiển thị. Tất cả lỗi từ backend nằm ngay dưới mã. Bottom sheet tài khoản chỉ phục vụ nhận diện phiên và đăng xuất, không biến Home thành màn Settings.</p>
+      </div>
+      <div class="frames">
+        <div class="frame-wrap">
+          <div class="frame-label"><strong>05 · OTP entry</strong>Tự focus, autofill khi nền tảng hỗ trợ.</div>
+          <div class="phone">
+            <div class="status-bar"><span>9:41</span><span class="status-icons"><span>5G</span><span class="status-dot"></span></span></div>
+            <div class="form-screen">
+              <button class="back-button" aria-label="Quay lại"><svg class="icon" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button>
+              <div class="form-heading" style="margin-top:42px">
+                <div class="form-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M7 10h10"></path><path d="M7 14h.01"></path><path d="M11 14h.01"></path><path d="M15 14h2"></path><rect x="3" y="5" width="18" height="14" rx="2"></rect></svg></div>
+                <div class="form-kicker">Xác nhận email</div>
+                <div class="form-title">Nhập mã xác nhận</div>
+                <p class="form-copy">Mã gồm 6 số đã được gửi tới <strong style="color:var(--ink-soft)">ban@email.com</strong>.</p>
+              </div>
+              <div class="otp-row"><div class="otp-cell">4</div><div class="otp-cell">8</div><div class="otp-cell active"></div><div class="otp-cell"></div><div class="otp-cell"></div><div class="otp-cell"></div></div>
+              <div class="otp-meta"><span>Mã có hiệu lực 10 phút</span><span>Gửi lại sau 42s</span></div>
+              <button class="action primary form-action" disabled>Xác nhận mã</button>
+              <button class="text-action" style="margin-top:18px">Đổi email</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="frame-wrap">
+          <div class="frame-label"><strong>06 · OTP rejected</strong>Giữ mã để người dùng sửa nhanh.</div>
+          <div class="phone">
+            <div class="status-bar"><span>9:41</span><span class="status-icons"><span>5G</span><span class="status-dot"></span></span></div>
+            <div class="form-screen">
+              <button class="back-button" aria-label="Quay lại"><svg class="icon" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button>
+              <div class="form-heading" style="margin-top:42px">
+                <div class="form-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M7 10h10"></path><path d="M7 14h.01"></path><path d="M11 14h.01"></path><path d="M15 14h2"></path><rect x="3" y="5" width="18" height="14" rx="2"></rect></svg></div>
+                <div class="form-kicker">Xác nhận email</div>
+                <div class="form-title">Mã chưa đúng</div>
+                <p class="form-copy">Kiểm tra lại 6 số trong email rồi thử thêm một lần nhé.</p>
+              </div>
+              <div class="otp-row"><div class="otp-cell error">4</div><div class="otp-cell error">8</div><div class="otp-cell error">2</div><div class="otp-cell error">1</div><div class="otp-cell error">0</div><div class="otp-cell error">6</div></div>
+              <div class="inline-error"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><path d="M12 17h.01"></path></svg><span>Mã không hợp lệ. Bạn còn 4 lần thử.</span></div>
+              <div class="otp-meta"><span>Mã có hiệu lực 10 phút</span><button class="text-action">Gửi mã mới</button></div>
+              <button class="action primary form-action">Xác nhận lại</button>
+              <button class="text-action" style="margin-top:18px">Đổi email</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="frame-wrap">
+          <div class="frame-label"><strong>07 · OTP unavailable</strong>Lỗi hệ thống có hành động hồi phục.</div>
+          <div class="phone">
+            <div class="status-bar"><span>9:41</span><span class="status-icons"><span>5G</span><span class="status-dot"></span></span></div>
+            <div class="form-screen">
+              <button class="back-button" aria-label="Quay lại"><svg class="icon" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button>
+              <div class="form-heading" style="margin-top:42px">
+                <div class="form-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M7 10h10"></path><path d="M7 14h.01"></path><path d="M11 14h.01"></path><path d="M15 14h2"></path><rect x="3" y="5" width="18" height="14" rx="2"></rect></svg></div>
+                <div class="form-kicker">Xác nhận email</div>
+                <div class="form-title">Chưa gửi được mã</div>
+                <p class="form-copy">Kết nối đang không ổn định. Email của bạn vẫn được giữ lại.</p>
+              </div>
+              <div class="auth-note"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M8.5 16a6 6 0 0 1 7 0"></path><path d="M12 20h.01"></path></svg><span>Không có kết nối. Kiểm tra mạng rồi thử gửi lại.</span></div>
+              <button class="action primary form-action"><svg class="icon action-icon" viewBox="0 0 24 24"><path d="M20 11a8.1 8.1 0 1 0 2 5"></path><path d="M20 4v7h-7"></path></svg>Thử gửi lại</button>
+              <button class="text-action" style="margin-top:18px">Dùng Google thay thế</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="frame-wrap">
+          <div class="frame-label"><strong>08 · Account sheet</strong>Nhận diện phiên và đăng xuất.</div>
+          <div class="phone">
+            <div class="status-bar"><span>9:41</span><span class="status-icons"><span>5G</span><span class="status-dot"></span></span></div>
+            <div class="sheet-demo">
+              <div class="home-ghost"><div class="form-kicker">Chào em</div><div class="display">Mình & Em</div></div>
+              <div class="sheet-scrim"></div>
+              <div class="account-sheet">
+                <div class="handle"></div>
+                <div class="account-row"><div class="avatar">HL</div><div><div class="account-name">Hùng Lê</div><div class="account-email">hello@minhvaem.app</div></div></div>
+                <div class="sheet-divider"></div>
+                <button class="action danger-action"><svg class="icon action-icon" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>Đăng xuất</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Implementation notes</div>
+          <h2>Ranh giới cần giữ</h2>
+        </div>
+        <p class="section-note">Design này là nguồn duyệt trước khi code. Nó không khẳng định backend hoặc Firebase đã tồn tại và không thay đổi contract trong shared context.</p>
+      </div>
+      <div class="spec-grid">
+        <article class="spec-block"><div class="eyebrow">Client</div><h3>Flutter chịu trách nhiệm</h3><ul><li>Form state, validation cơ bản và motion.</li><li>Riverpod auth session state.</li><li>GoRouter redirect theo auth/opening/onboarding.</li><li>Không tự quyết định couple membership.</li></ul></article>
+        <article class="spec-block"><div class="eyebrow">Identity</div><h3>Firebase chịu trách nhiệm</h3><ul><li>Google sign-in cho Android demo.</li><li>Nhận custom token sau Email OTP.</li><li>Phát ID token cho backend request.</li><li>Apple sign-in được thêm cùng iOS.</li></ul></article>
+        <article class="spec-block"><div class="eyebrow">Backend</div><h3>API chịu trách nhiệm</h3><ul><li>Request và verify Email OTP.</li><li>Rate limit theo email, device và IP.</li><li>Expiry 10 phút, tối đa 5 lần thử.</li><li>Không tiết lộ email đã có tài khoản hay chưa.</li></ul></article>
+      </div>
+      <div class="legend"><strong>Quyết định UX:</strong> đăng nhập thành công không tự động ghép partner. Nếu thiết bị đang có journal local, ứng dụng phải chạy một migration decision flow riêng trước khi gắn dữ liệu vào UID/couple-space. Luồng đó sẽ được thiết kế trong module Onboarding & Partner, không đặt vào các màn auth ở trên.</div>
+    </section>
+  </main>
+</body>
+</html>

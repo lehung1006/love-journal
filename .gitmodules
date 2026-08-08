@@ -1,0 +1,4 @@
+[submodule ".context/love-journal-context"]
+	path = .context/love-journal-context
+	url = https://github.com/lehung1006/love-journal-context.git
+	branch = main
